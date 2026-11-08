@@ -52,6 +52,7 @@ pub fn prepare_request() -> PrepareRequest {
 
 fn labels() -> HandoutLabels {
     HandoutLabels {
+        demonstration: t!("licensing.watermark").into_owned(),
         handout: t!("handout.label.handout").into_owned(),
         contents: t!("handout.label.contents").into_owned(),
         key_points: t!("handout.label.key_points").into_owned(),

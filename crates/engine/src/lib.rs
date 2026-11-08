@@ -15,6 +15,7 @@ mod documents;
 mod handouts;
 mod illustrations;
 mod lesson;
+pub mod license;
 mod mock;
 mod models;
 mod ocr;
@@ -166,6 +167,7 @@ pub enum Command {
     CloseReview,
 
     SaveSettings(Settings),
+    ActivateLicense(String),
     TestConnection,
     /// Tests settings not saved yet (first-run setup).
     TestAiConfig(Box<AiConfig>),
@@ -334,6 +336,8 @@ pub enum Command {
 /// Top-level error, wrapping each layer's error.
 #[derive(Debug, thiserror::Error)]
 pub enum EngineError {
+    #[error(transparent)]
+    License(#[from] license::LicenseError),
     #[error(transparent)]
     Study(#[from] StudyError),
     #[error(transparent)]
@@ -570,6 +574,7 @@ pub struct Engine {
     next_session_id: u64,
     /// Demonstration limits and clock; `None` in full builds.
     demo: Option<(demo::DemoLimit, demo::DemoClock)>,
+    license: Option<license::License>,
 }
 
 impl std::fmt::Debug for Engine {
@@ -603,6 +608,7 @@ impl Engine {
         };
         let mut engine = Self::with_store(store, paths, env_ai, notices);
         engine.start_demo(demo::clock_file());
+        engine.load_license();
         Ok(engine)
     }
 
@@ -617,6 +623,16 @@ impl Engine {
 
     /// Whether this is a demonstration build and how long it has left.
     pub fn demo(&self) -> DemoStatus {
+        if let Some(license) = &self.license {
+            return if license.valid_on(self.license_day()) {
+                DemoStatus::Full
+            } else {
+                DemoStatus::Expired
+            };
+        }
+        if kg_brand::LICENSE_REQUIRED && self.demo.is_none() {
+            return DemoStatus::Expired;
+        }
         self.demo.map_or(DemoStatus::Full, |(limit, clock)| {
             limit.status(clock, Self::today())
         })
@@ -701,6 +717,7 @@ impl Engine {
             waker: Arc::new(|| {}),
             next_session_id: 1,
             demo: None,
+            license: None,
         };
         engine.restore_chatgpt_session();
         engine.recover_writing();
@@ -954,6 +971,9 @@ impl Engine {
             }
 
             Command::SaveSettings(settings) => self.save_settings(settings),
+            Command::ActivateLicense(token) => {
+                self.activate_license(&token).map_err(EngineError::from)
+            }
             Command::InstallOcrModel => self.install_ocr_model(),
             Command::CancelOcrModelDownload => {
                 self.cancel_ocr_model_download();

@@ -23,7 +23,7 @@ pub enum LegalDoc {
 
 macro_rules! doc {
     ($name:literal) => {
-        include_str!(concat!("../../../docs/legal/", $name, ".md"))
+        kg_brand::legal_document($name)
     };
 }
 

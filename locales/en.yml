@@ -1470,3 +1470,15 @@ mock:
     rule_wrong_cancels: "Each wrong answer cancels a right one; blanks lose nothing."
     rule_essay: "Write the essay on the numbered answer sheet; drafts are not graded."
     rule_app: "When done, copy your marks into the app (Mock exams → Answer card only) and hand in."
+
+licensing:
+  title: "License"
+  support: "Contact support"
+  details: "%{customer} · %{seats} seats · valid through %{expires}"
+  active: "License active"
+  expired: "License expired"
+  offline: "Local verification. Seats are a contractual limit; there is no online counting."
+  placeholder: "Paste the license key provided by the company"
+  activate: "Activate license"
+  invalid: "Could not activate the license. Check the key, brand and validity. Your data was preserved."
+  watermark: "Demonstration"

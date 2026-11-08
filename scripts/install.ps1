@@ -1,4 +1,4 @@
-# Installs or updates Know Giver for the current user (no administrator
+# Installs or updates the application for the current user (no administrator
 # rights), from the latest GitHub release:
 #
 #   irm https://raw.githubusercontent.com/czarist/know-giver/main/scripts/install.ps1 | iex
@@ -10,22 +10,26 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 # Windows PowerShell 5.1 may still offer TLS 1.0 first; GitHub needs 1.2.
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
-$repo = 'czarist/know-giver'
+$repo = $env:KG_INSTALL_REPOSITORY
+$dataDir = $env:KG_INSTALL_DATA_DIR
+if ($repo -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$' -or $dataDir -notmatch '^[A-Za-z0-9_-]+$') {
+    throw 'Set KG_INSTALL_REPOSITORY (owner/repository) and KG_INSTALL_DATA_DIR before running this installer'
+}
 $base = "https://github.com/$repo/releases/latest/download"
-$asset = 'KnowGiver-setup.exe'
+$asset = "$dataDir-setup.exe"
 
 # A clear message when no release is published yet (or it lacks the installer).
 try {
-    $latest = Invoke-RestMethod "https://api.github.com/repos/$repo/releases/latest" -UseBasicParsing -Headers @{ 'User-Agent' = 'KnowGiver-installer' }
+    $latest = Invoke-RestMethod "https://api.github.com/repos/$repo/releases/latest" -UseBasicParsing -Headers @{ 'User-Agent' = "$dataDir-installer" }
 }
 catch {
-    throw "No Know Giver release is published yet. See https://github.com/$repo/releases"
+    throw "No the application release is published yet. See https://github.com/$repo/releases"
 }
 if (-not ($latest.assets | Where-Object { $_.name -eq $asset })) {
     throw "Release $($latest.tag_name) has no $asset yet. See $($latest.html_url)"
 }
 
-$dir = Join-Path ([System.IO.Path]::GetTempPath()) ('KnowGiver-' + [guid]::NewGuid())
+$dir = Join-Path ([System.IO.Path]::GetTempPath()) ("$dataDir-" + [guid]::NewGuid())
 New-Item -ItemType Directory -Force $dir | Out-Null
 try {
     $installer = Join-Path $dir $asset
@@ -48,7 +52,7 @@ try {
     $arguments = @('/SILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CLOSEAPPLICATIONS')
     # Optional install choices are asked once; updates keep their existing
     # startup entry and reminder preference. Environment variables answer in advance.
-    $installed = Test-Path (Join-Path $env:LOCALAPPDATA 'Programs\KnowGiver\know-giver.exe')
+    $installed = Test-Path (Join-Path $env:LOCALAPPDATA "Programs\$dataDir\know-giver.exe")
     if (-not $installed) {
         $tasks = @()
         $answer = $env:KG_DESKTOP_SHORTCUT
@@ -59,13 +63,13 @@ try {
 
         $answer = $env:KG_STARTUP
         if (-not $answer) {
-            try { $answer = Read-Host 'Start Know Giver when you sign in to Windows? [y/N]' } catch { $answer = '' }
+            try { $answer = Read-Host 'Start the application when you sign in to Windows? [y/N]' } catch { $answer = '' }
         }
         if ($answer -match '^(1|y|s)') { $tasks += 'startup' }
 
         $answer = $env:KG_STUDY_REMINDERS
         if (-not $answer) {
-            try { $answer = Read-Host 'Receive study reminders every 3 hours while Know Giver is running, including in the system tray? [y/N]' } catch { $answer = '' }
+            try { $answer = Read-Host 'Receive study reminders every 3 hours while the application is running, including in the system tray? [y/N]' } catch { $answer = '' }
         }
         if ($answer -match '^(1|y|s)') { $tasks += 'studyreminders' }
 
@@ -77,25 +81,27 @@ try {
         if (-not $claude -and -not (Test-Path $nativeClaude)) {
             $answer = $env:KG_CLAUDE_CODE
             if (-not $answer) {
-                try { $answer = Read-Host "Also install Claude Code (Anthropic's official program) to use your Claude subscription in Know Giver? [y/N]" } catch { $answer = '' }
+                try { $answer = Read-Host "Also install Claude Code (Anthropic's official program) to use your Claude subscription in the application? [y/N]" } catch { $answer = '' }
             }
             $installClaude = $answer -match '^(1|y|s)'
         }
     }
 
-    Write-Host 'Installing Know Giver'
-    $process = Start-Process $installer -ArgumentList $arguments -Wait -PassThru
+    Write-Host 'Installing the application'
+    $process = Start-Process $installer -WindowStyle Hidden -ArgumentList $arguments -Wait -PassThru
     if ($process.ExitCode -ne 0) { throw "The installer stopped with code $($process.ExitCode)." }
-    Write-Host "Installed in $env:LOCALAPPDATA\Programs\KnowGiver"
+    Write-Host "Installed in $env:LOCALAPPDATA\Programs\$dataDir"
     if ($installClaude) {
         Write-Host "Installing Claude Code with Anthropic's official installer"
         try {
             & powershell -NoProfile -ExecutionPolicy Bypass -Command 'irm https://claude.ai/install.ps1 | iex'
         } catch {
-            Write-Host "Claude Code was not installed: $_. Know Giver can install it later from the AI step."
+            Write-Host "Claude Code was not installed: $_. the application can install it later from the AI step."
         }
     }
 }
 finally {
+    $resolvedTemp = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath()).TrimEnd('\') + '\'
+    if (-not ([System.IO.Path]::GetFullPath($dir)).StartsWith($resolvedTemp, [StringComparison]::OrdinalIgnoreCase)) { throw 'Refusing to remove a path outside the temporary directory' }
     Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction SilentlyContinue
 }

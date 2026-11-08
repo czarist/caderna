@@ -1470,3 +1470,15 @@ mock:
     rule_wrong_cancels: "每答错一题抵消一道对题；留空不扣分。"
     rule_essay: "作文写在有行号的答题纸上；草稿不评分。"
     rule_app: "结束后，把涂卡结果填入应用（模拟考试 → 只看答题卡）并交卷。"
+
+licensing:
+  title: "许可证"
+  support: "联系支持"
+  details: "%{customer} · %{seats} 个席位 · 有效期至 %{expires}"
+  active: "许可证有效"
+  expired: "许可证已过期"
+  offline: "在本机验证。席位数是合同限制，不进行在线计数。"
+  placeholder: "粘贴公司提供的许可证密钥"
+  activate: "激活许可证"
+  invalid: "无法激活。请检查密钥、品牌和有效期。你的数据已保留。"
+  watermark: "演示版"

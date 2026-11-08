@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Installs or updates Know Giver for the current user (no administrator
+# Installs or updates the application for the current user (no administrator
 # rights), from the latest GitHub release:
 #
 #   curl -fsSL https://raw.githubusercontent.com/czarist/know-giver/main/scripts/install.sh | bash
 #
-# macOS (Apple silicon): "Know Giver.app" in ~/Applications.
-# Linux (x86_64): the app in ~/.local/opt/KnowGiver, the command in
+# macOS (Apple silicon): "${data_dir}.app" in ~/Applications.
+# Linux (x86_64): the app in ~/.local/opt/${data_dir}, the command in
 # ~/.local/bin and an entry in the applications menu.
 # A first install asks about a desktop shortcut, login startup, and study
 # reminders. Startup and reminders are off unless selected. The program
@@ -20,14 +20,30 @@
 # questions in advance.
 set -euo pipefail
 
-repo="czarist/know-giver"
+# Brand values come from the package or the invoking updater, never shell-evaluated.
+data_dir="${KG_INSTALL_DATA_DIR:-}"
+slug="${KG_INSTALL_SLUG:-}"
+repo="${KG_INSTALL_REPOSITORY:-}"
+app_name="${KG_INSTALL_NAME:-}"
+config_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || true)"
+if [[ -n "$config_dir" && -f "$config_dir/brand.conf" ]]; then
+  { IFS= read -r data_dir; IFS= read -r slug; IFS= read -r repo; IFS= read -r app_name; } < "$config_dir/brand.conf"
+fi
+[[ "$data_dir" =~ ^[A-Za-z0-9_-]+$ && "$slug" =~ ^[a-z0-9-]+$ ]] || { printf 'Set valid KG_INSTALL_DATA_DIR and KG_INSTALL_SLUG\n' >&2; exit 1; }
+[[ -n "$app_name" ]] || app_name="$data_dir"
+[[ "$app_name" != *$'\n'* && "$app_name" != *$'\r'* ]] || exit 1
+
+
+if [[ -z "${KG_ARCHIVE:-}" && ! "$repo" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+  printf 'Set KG_INSTALL_REPOSITORY to owner/repository\n' >&2; exit 1
+fi
 base="https://github.com/$repo/releases/latest/download"
 
 case "$(uname -s)-$(uname -m)" in
-  Linux-x86_64) asset="KnowGiver-linux-x86_64.tar.gz" ;;
-  Darwin-arm64) asset="KnowGiver-macos-arm64.tar.gz" ;;
+  Linux-x86_64) asset="${data_dir}-linux-x86_64.tar.gz" ;;
+  Darwin-arm64) asset="${data_dir}-macos-arm64.tar.gz" ;;
   *)
-    printf 'No Know Giver package for %s %s yet. Build it from source: https://github.com/%s\n' \
+    printf 'No the application package for %s %s yet. Build it from source: https://github.com/%s\n' \
       "$(uname -s)" "$(uname -m)" "$repo" >&2
     exit 1
     ;;
@@ -58,7 +74,7 @@ want_startup() {
     1) return 0 ;;
     0) return 1 ;;
   esac
-  ask "Start Know Giver automatically when you sign in?"
+  ask "Start the application automatically when you sign in?"
 }
 
 want_study_reminders() {
@@ -66,7 +82,7 @@ want_study_reminders() {
     1) return 0 ;;
     0) return 1 ;;
   esac
-  ask "Receive study reminders every 3 hours while Know Giver is running, including in the tray?"
+  ask "Receive study reminders every 3 hours while the application is running, including in the tray?"
 }
 
 xml_escape() {
@@ -96,7 +112,7 @@ want_claude_code() {
     1) return 0 ;;
     0) return 1 ;;
   esac
-  ask "Also install Claude Code (Anthropic's official program) to use your Claude subscription in Know Giver?"
+  ask "Also install Claude Code (Anthropic's official program) to use your Claude subscription in the application?"
 }
 
 collect_install_choices() {
@@ -121,7 +137,7 @@ if [[ -z "$archive" ]]; then
   printf 'Downloading %s\n' "$asset"
   if ! curl -fL --progress-bar -o "$tmp/$asset" "$base/$asset" ||
      ! curl -fsSL -o "$tmp/SHA256SUMS.txt" "$base/SHA256SUMS.txt"; then
-    printf 'No Know Giver release with %s is published yet. See https://github.com/%s/releases\n' \
+    printf 'No the application release with %s is published yet. See https://github.com/%s/releases\n' \
       "$asset" "$repo" >&2
     exit 1
   fi
@@ -143,17 +159,17 @@ tar -xzf "$archive" -C "$tmp/x"
 
 if [[ "$(uname -s)" == Darwin ]]; then
   apps="$HOME/Applications"
-  app="$apps/Know Giver.app"
+  app="$apps/${data_dir}.app"
   first_install=1
   [[ -d "$app" ]] && first_install=0
   collect_install_choices
   mkdir -p "$apps"
   rm -rf -- "$app.new"
-  mv "$tmp/x/Know Giver.app" "$app.new"
+  mv "$tmp/x/${data_dir}.app" "$app.new"
   rm -rf -- "$app"
   mv "$app.new" "$app"
   if [[ $shortcut_choice == 1 ]]; then
-    ln -sfn "$app" "$HOME/Desktop/Know Giver"
+    ln -sfn "$app" "$HOME/Desktop/${data_dir}"
   fi
   if [[ $reminder_choice == 1 ]]; then
     touch "$app/Contents/MacOS/.study-reminders-enabled"
@@ -162,16 +178,16 @@ if [[ "$(uname -s)" == Darwin ]]; then
     launch_agents="$HOME/Library/LaunchAgents"
     mkdir -p "$launch_agents"
     executable="$(xml_escape "$app/Contents/MacOS/know-giver")"
-    cat > "$launch_agents/com.knowgiver.desktop.plist" <<EOF
+    cat > "$launch_agents/org.study.${slug}.desktop.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-<key>Label</key><string>com.knowgiver.desktop</string>
+<key>Label</key><string>org.study.${slug}.desktop</string>
 <key>ProgramArguments</key><array><string>$executable</string><string>--background</string></array>
 <key>RunAtLoad</key><true/>
 </dict></plist>
 EOF
-    if ! launchctl bootstrap "gui/$(id -u)" "$launch_agents/com.knowgiver.desktop.plist"; then
+    if ! launchctl bootstrap "gui/$(id -u)" "$launch_agents/org.study.${slug}.desktop.plist"; then
       printf 'The login item was saved, but could not be started in this session. It will run at the next login.\n' >&2
     fi
   fi
@@ -181,7 +197,7 @@ EOF
     open -n "$app"
   fi
 else
-  dest="$HOME/.local/opt/KnowGiver"
+  dest="$HOME/.local/opt/${data_dir}"
   bin="$HOME/.local/bin"
   menu="$HOME/.local/share/applications"
   icons="$HOME/.local/share/icons/hicolor/256x256/apps"
@@ -190,34 +206,36 @@ else
   collect_install_choices
   mkdir -p "$dest" "$bin" "$menu" "$icons"
   # Replaced by renaming, so a running copy keeps working until it closes.
-  cp "$tmp/x/KnowGiver/know-giver" "$dest/know-giver.new"
+  cp "$tmp/x/${data_dir}/brand.conf" "$dest/brand.conf"
+  cp -R "$tmp/x/${data_dir}/local-runtime" "$dest/"
+  cp "$tmp/x/${data_dir}/know-giver" "$dest/know-giver.new"
   chmod +x "$dest/know-giver.new"
   mv -f "$dest/know-giver.new" "$dest/know-giver"
   # Read-me files in each app language (one README.txt before v0.33.1).
   rm -f -- "$dest"/README*.txt
-  cp "$tmp/x/KnowGiver/"README*.txt "$tmp/x/KnowGiver/.env.example" "$dest/"
-  if [[ -f "$tmp/x/KnowGiver/uninstall.sh" ]]; then
-    cp "$tmp/x/KnowGiver/uninstall.sh" "$dest/uninstall.sh"
+  cp "$tmp/x/${data_dir}/"README*.txt "$tmp/x/${data_dir}/.env.example" "$dest/"
+  if [[ -f "$tmp/x/${data_dir}/uninstall.sh" ]]; then
+    cp "$tmp/x/${data_dir}/uninstall.sh" "$dest/uninstall.sh"
     chmod +x "$dest/uninstall.sh"
   fi
-  cp "$tmp/x/KnowGiver/know-giver.png" "$icons/know-giver.png"
-  ln -sf "$dest/know-giver" "$bin/know-giver"
+  cp "$tmp/x/${data_dir}/${slug}.png" "$icons/${slug}.png"
+  ln -sf "$dest/know-giver" "$bin/${slug}"
   entry="[Desktop Entry]
 Type=Application
-Name=Know Giver
+Name=$app_name
 Comment=Study plans and voice lessons for exams
 Exec=$dest/know-giver
-Icon=know-giver
+Icon=$slug
 Categories=Education;
 Terminal=false"
-  printf '%s\n' "$entry" > "$menu/know-giver.desktop"
+  printf '%s\n' "$entry" > "$menu/${slug}.desktop"
   if [[ $shortcut_choice == 1 ]]; then
     desktop="$(xdg-user-dir DESKTOP 2>/dev/null || printf '%s' "$HOME/Desktop")"
     mkdir -p "$desktop"
-    printf '%s\n' "$entry" > "$desktop/know-giver.desktop"
-    chmod +x "$desktop/know-giver.desktop"
+    printf '%s\n' "$entry" > "$desktop/${slug}.desktop"
+    chmod +x "$desktop/${slug}.desktop"
     # GNOME asks before opening an untrusted launcher.
-    gio set "$desktop/know-giver.desktop" metadata::trusted true 2>/dev/null || true
+    gio set "$desktop/${slug}.desktop" metadata::trusted true 2>/dev/null || true
   fi
   if [[ $reminder_choice == 1 ]]; then
     touch "$dest/.study-reminders-enabled"
@@ -226,13 +244,13 @@ Terminal=false"
     autostart="$HOME/.config/autostart"
     mkdir -p "$autostart"
     executable="$(desktop_escape "$dest/know-giver")"
-    cat > "$autostart/know-giver.desktop" <<EOF
+    cat > "$autostart/${slug}.desktop" <<EOF
 [Desktop Entry]
 Type=Application
-Name=Know Giver
+Name=$app_name
 Comment=Study plans and voice lessons for exams
 Exec="$executable" --background
-Icon=know-giver
+Icon=$slug
 Categories=Education;
 Terminal=false
 NoDisplay=true
@@ -243,7 +261,7 @@ EOF
   if [[ "${claude_choice:-0}" == 1 ]]; then
     printf "Installing Claude Code with Anthropic's official installer\n"
     curl -fsSL https://claude.ai/install.sh | bash ||
-      printf 'Claude Code was not installed; Know Giver can install it later from the AI step.\n'
+      printf 'Claude Code was not installed; the application can install it later from the AI step.\n'
   fi
   printf 'To uninstall: %s/uninstall.sh\n' "$dest"
   case ":$PATH:" in

@@ -382,6 +382,13 @@ fn run_installer(package: &Path, dir: &Path) -> Result<(), String> {
     let status = std::process::Command::new("bash")
         .arg(&script)
         .env("KG_ARCHIVE", package)
+        .env("KG_INSTALL_DATA_DIR", kg_brand::DATA_DIR)
+        .env("KG_INSTALL_SLUG", kg_brand::SLUG)
+        .env("KG_INSTALL_NAME", kg_brand::NAME)
+        .env(
+            "KG_INSTALL_REPOSITORY",
+            kg_brand::REPOSITORY.trim_start_matches("https://github.com/"),
+        )
         .env("KG_LAUNCH", "1")
         .status()
         .map_err(|e| format!("could not run the install script: {e}"))?;

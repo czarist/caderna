@@ -28,7 +28,7 @@
   #define AppUrl "https://trentin.software"
 #endif
 #ifndef AppIcon
-  #define AppIcon RepoRoot + "\cratesppssets\know-giver.ico"
+  #define AppIcon RepoRoot + "\crates\app\assets\know-giver.ico"
 #endif
 
 [Setup]

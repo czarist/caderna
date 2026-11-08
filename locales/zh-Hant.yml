@@ -1470,3 +1470,15 @@ mock:
     rule_wrong_cancels: "每答錯一題抵銷一道對題；留空不扣分。"
     rule_essay: "作文寫在有行號的答案紙上；草稿不評分。"
     rule_app: "結束後，把劃記結果填入應用程式（模擬考試 → 只看答案卡）並交卷。"
+
+licensing:
+  title: "授權"
+  support: "聯絡支援"
+  details: "%{customer} · %{seats} 個席位 · 有效期至 %{expires}"
+  active: "授權有效"
+  expired: "授權已到期"
+  offline: "在本機驗證。席位數是合約限制，不進行線上計數。"
+  placeholder: "貼上公司提供的授權金鑰"
+  activate: "啟用授權"
+  invalid: "無法啟用。請檢查金鑰、品牌及有效期。你的資料已保留。"
+  watermark: "示範版"

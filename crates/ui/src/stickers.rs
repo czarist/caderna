@@ -14,44 +14,143 @@ const RIMS: [&str; 4] = ["#B07A4A", "#B9C2C7", "#D4A932", "#7FD1BE"];
 /// The colour the art leaves for the rim and dots.
 const RIM_TOKEN: &str = "#RIM000";
 
+fn sticker_art(name: &str, fallback: &'static str) -> &'static str {
+    kg_brand::artwork("stickers", name)
+        .and_then(|b| std::str::from_utf8(b).ok())
+        .unwrap_or(fallback)
+}
+
 fn family_svg(family: Family) -> &'static str {
     match family {
-        Family::Lessons => include_str!("../assets/stickers/lessons.svg"),
-        Family::LessonDays => include_str!("../assets/stickers/lesson_days.svg"),
-        Family::Quizzes => include_str!("../assets/stickers/quizzes.svg"),
-        Family::RightAnswers => include_str!("../assets/stickers/right_answers.svg"),
-        Family::PerfectQuizzes => include_str!("../assets/stickers/perfect_quizzes.svg"),
-        Family::HighQuizzes => include_str!("../assets/stickers/high_quizzes.svg"),
-        Family::Recoveries => include_str!("../assets/stickers/recoveries.svg"),
-        Family::CleanNotebook => include_str!("../assets/stickers/clean_notebook.svg"),
-        Family::Coverage => include_str!("../assets/stickers/coverage.svg"),
-        Family::CoverageShare => include_str!("../assets/stickers/coverage_share.svg"),
-        Family::Weeks => include_str!("../assets/stickers/weeks.svg"),
-        Family::PlanComplete => include_str!("../assets/stickers/plan_complete.svg"),
-        Family::Mastered => include_str!("../assets/stickers/mastered.svg"),
-        Family::SubjectsMastered => include_str!("../assets/stickers/subjects_mastered.svg"),
-        Family::NoticeMastered => include_str!("../assets/stickers/notice_mastered.svg"),
-        Family::Reviews => include_str!("../assets/stickers/reviews.svg"),
-        Family::PastExams => include_str!("../assets/stickers/past_exams.svg"),
-        Family::HandoutsRead => include_str!("../assets/stickers/handouts_read.svg"),
-        Family::Highlights => include_str!("../assets/stickers/highlights.svg"),
-        Family::HandoutsMade => include_str!("../assets/stickers/handouts_made.svg"),
-        Family::Essays => include_str!("../assets/stickers/essays.svg"),
-        Family::EssaysHigh => include_str!("../assets/stickers/essays_high.svg"),
-        Family::EssayTop => include_str!("../assets/stickers/essay_top.svg"),
-        Family::Mocks => include_str!("../assets/stickers/mocks.svg"),
-        Family::MocksHigh => include_str!("../assets/stickers/mocks_high.svg"),
-        Family::MockTop => include_str!("../assets/stickers/mock_top.svg"),
-        Family::SubjectsStarted => include_str!("../assets/stickers/subjects_started.svg"),
-        Family::Hours => include_str!("../assets/stickers/hours.svg"),
-        Family::StudyDays => include_str!("../assets/stickers/study_days.svg"),
-        Family::LongDay => include_str!("../assets/stickers/long_day.svg"),
-        Family::Plans => include_str!("../assets/stickers/plans.svg"),
-        Family::AllLessons => include_str!("../assets/stickers/all_lessons.svg"),
-        Family::AllQuizzes => include_str!("../assets/stickers/all_quizzes.svg"),
-        Family::AllRightAnswers => include_str!("../assets/stickers/all_right_answers.svg"),
-        Family::AllMastered => include_str!("../assets/stickers/all_mastered.svg"),
-        Family::Stickers => include_str!("../assets/stickers/stickers.svg"),
+        Family::Lessons => sticker_art(
+            "lessons.svg",
+            include_str!("../assets/stickers/lessons.svg"),
+        ),
+        Family::LessonDays => sticker_art(
+            "lesson_days.svg",
+            include_str!("../assets/stickers/lesson_days.svg"),
+        ),
+        Family::Quizzes => sticker_art(
+            "quizzes.svg",
+            include_str!("../assets/stickers/quizzes.svg"),
+        ),
+        Family::RightAnswers => sticker_art(
+            "right_answers.svg",
+            include_str!("../assets/stickers/right_answers.svg"),
+        ),
+        Family::PerfectQuizzes => sticker_art(
+            "perfect_quizzes.svg",
+            include_str!("../assets/stickers/perfect_quizzes.svg"),
+        ),
+        Family::HighQuizzes => sticker_art(
+            "high_quizzes.svg",
+            include_str!("../assets/stickers/high_quizzes.svg"),
+        ),
+        Family::Recoveries => sticker_art(
+            "recoveries.svg",
+            include_str!("../assets/stickers/recoveries.svg"),
+        ),
+        Family::CleanNotebook => sticker_art(
+            "clean_notebook.svg",
+            include_str!("../assets/stickers/clean_notebook.svg"),
+        ),
+        Family::Coverage => sticker_art(
+            "coverage.svg",
+            include_str!("../assets/stickers/coverage.svg"),
+        ),
+        Family::CoverageShare => sticker_art(
+            "coverage_share.svg",
+            include_str!("../assets/stickers/coverage_share.svg"),
+        ),
+        Family::Weeks => sticker_art("weeks.svg", include_str!("../assets/stickers/weeks.svg")),
+        Family::PlanComplete => sticker_art(
+            "plan_complete.svg",
+            include_str!("../assets/stickers/plan_complete.svg"),
+        ),
+        Family::Mastered => sticker_art(
+            "mastered.svg",
+            include_str!("../assets/stickers/mastered.svg"),
+        ),
+        Family::SubjectsMastered => sticker_art(
+            "subjects_mastered.svg",
+            include_str!("../assets/stickers/subjects_mastered.svg"),
+        ),
+        Family::NoticeMastered => sticker_art(
+            "notice_mastered.svg",
+            include_str!("../assets/stickers/notice_mastered.svg"),
+        ),
+        Family::Reviews => sticker_art(
+            "reviews.svg",
+            include_str!("../assets/stickers/reviews.svg"),
+        ),
+        Family::PastExams => sticker_art(
+            "past_exams.svg",
+            include_str!("../assets/stickers/past_exams.svg"),
+        ),
+        Family::HandoutsRead => sticker_art(
+            "handouts_read.svg",
+            include_str!("../assets/stickers/handouts_read.svg"),
+        ),
+        Family::Highlights => sticker_art(
+            "highlights.svg",
+            include_str!("../assets/stickers/highlights.svg"),
+        ),
+        Family::HandoutsMade => sticker_art(
+            "handouts_made.svg",
+            include_str!("../assets/stickers/handouts_made.svg"),
+        ),
+        Family::Essays => sticker_art("essays.svg", include_str!("../assets/stickers/essays.svg")),
+        Family::EssaysHigh => sticker_art(
+            "essays_high.svg",
+            include_str!("../assets/stickers/essays_high.svg"),
+        ),
+        Family::EssayTop => sticker_art(
+            "essay_top.svg",
+            include_str!("../assets/stickers/essay_top.svg"),
+        ),
+        Family::Mocks => sticker_art("mocks.svg", include_str!("../assets/stickers/mocks.svg")),
+        Family::MocksHigh => sticker_art(
+            "mocks_high.svg",
+            include_str!("../assets/stickers/mocks_high.svg"),
+        ),
+        Family::MockTop => sticker_art(
+            "mock_top.svg",
+            include_str!("../assets/stickers/mock_top.svg"),
+        ),
+        Family::SubjectsStarted => sticker_art(
+            "subjects_started.svg",
+            include_str!("../assets/stickers/subjects_started.svg"),
+        ),
+        Family::Hours => sticker_art("hours.svg", include_str!("../assets/stickers/hours.svg")),
+        Family::StudyDays => sticker_art(
+            "study_days.svg",
+            include_str!("../assets/stickers/study_days.svg"),
+        ),
+        Family::LongDay => sticker_art(
+            "long_day.svg",
+            include_str!("../assets/stickers/long_day.svg"),
+        ),
+        Family::Plans => sticker_art("plans.svg", include_str!("../assets/stickers/plans.svg")),
+        Family::AllLessons => sticker_art(
+            "all_lessons.svg",
+            include_str!("../assets/stickers/all_lessons.svg"),
+        ),
+        Family::AllQuizzes => sticker_art(
+            "all_quizzes.svg",
+            include_str!("../assets/stickers/all_quizzes.svg"),
+        ),
+        Family::AllRightAnswers => sticker_art(
+            "all_right_answers.svg",
+            include_str!("../assets/stickers/all_right_answers.svg"),
+        ),
+        Family::AllMastered => sticker_art(
+            "all_mastered.svg",
+            include_str!("../assets/stickers/all_mastered.svg"),
+        ),
+        Family::Stickers => sticker_art(
+            "stickers.svg",
+            include_str!("../assets/stickers/stickers.svg"),
+        ),
     }
 }
 

@@ -37,6 +37,9 @@ pub(crate) struct DemoClock {
 }
 
 impl DemoClock {
+    pub(crate) fn effective_day(self, today: NaiveDate) -> NaiveDate {
+        today.max(self.last_seen)
+    }
     /// Joins two records: the earliest start and the latest day seen.
     fn merge(self, other: Self) -> Self {
         Self {

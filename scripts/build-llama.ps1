@@ -1,5 +1,9 @@
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
+$previousCl = $env:_CL_
+$previousGlslc = $env:KG_REAL_GLSLC
+$previousShaderLock = $env:KG_SHADER_LOCK
+$env:_CL_ = "$previousCl /MP1"
 Push-Location $root
 try {
     $llama = @{}
@@ -17,7 +21,7 @@ try {
         throw 'llama.cpp version, commit or repository is invalid in local-ai.toml'
     }
 
-    $target = Join-Path $root 'target'
+    $target = if ($env:CARGO_TARGET_DIR) { [System.IO.Path]::GetFullPath($env:CARGO_TARGET_DIR) } else { Join-Path $root 'target' }
     $source = Join-Path $target 'local-ai-src\llama.cpp'
     $build = Join-Path $target 'local-ai-build'
     $runtime = Join-Path $target 'release\local-runtime'
@@ -61,12 +65,17 @@ try {
         '-DLLAMA_USE_PREBUILT_UI=OFF',
         '-DLLAMA_OPENSSL=OFF'
     )
+    cargo build -p kg-brand --example shader_serial -j 2
+    if ($LASTEXITCODE -ne 0) { throw 'Could not build the shader compiler limiter' }
+    $shaderWrapper = Join-Path $target 'debug\examples\shader_serial.exe'
+    $env:KG_REAL_GLSLC = Join-Path $env:VULKAN_SDK 'Bin\glslc.exe'
+    $env:KG_SHADER_LOCK = Join-Path $target 'shader-compiler.lock'
     cmake -S $source -B $cpuBuild @commonOptions -DGGML_VULKAN=OFF
     if ($LASTEXITCODE -ne 0) { throw 'Could not configure the CPU llama.cpp runtime' }
     cmake --build $cpuBuild --config Release --target llama-server --parallel 2
     if ($LASTEXITCODE -ne 0) { throw 'Could not build the CPU llama-server' }
 
-    cmake -S $source -B $vulkanBuild @commonOptions -DGGML_VULKAN=ON
+    cmake -S $source -B $vulkanBuild @commonOptions -DGGML_VULKAN=ON "-DVulkan_GLSLC_EXECUTABLE=$shaderWrapper"
     if ($LASTEXITCODE -ne 0) { throw 'Could not configure the Vulkan llama.cpp runtime' }
     cmake --build $vulkanBuild --config Release --target llama-server --parallel 2
     if ($LASTEXITCODE -ne 0) { throw 'Could not build the Vulkan llama-server' }
@@ -140,5 +149,8 @@ try {
     Copy-Item -LiteralPath $vulkanLicense -Destination (Join-Path $runtime 'Vulkan-SDK-LICENSE.txt') -Force
 }
 finally {
+    $env:_CL_ = $previousCl
+    $env:KG_REAL_GLSLC = $previousGlslc
+    $env:KG_SHADER_LOCK = $previousShaderLock
     Pop-Location
 }

@@ -118,6 +118,8 @@ impl TopicHandout {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct Labels {
+    /// Localized demo stamp. Empty after full-license activation.
+    pub demonstration: String,
     pub handout: String,
     pub contents: String,
     pub key_points: String,
@@ -318,6 +320,7 @@ mod tests {
             answers: "Gabarito".into(),
             picture_source: "Imagem: Wikipédia".into(),
             answer_grid: "Respostas".into(),
+            demonstration: String::new(),
         }
     }
 

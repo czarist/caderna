@@ -125,7 +125,13 @@ impl Engine {
 
     /// Starts preparing every topic of the active plan. Topics that already
     /// have a handout and a question bank are skipped.
-    pub(crate) fn prepare_content(&mut self, request: PrepareRequest) -> Result<(), EngineError> {
+    pub(crate) fn prepare_content(
+        &mut self,
+        mut request: PrepareRequest,
+    ) -> Result<(), EngineError> {
+        if self.demo() == crate::DemoStatus::Full {
+            request.labels.demonstration.clear();
+        }
         if self.prepare_job.is_some() || self.handout_job.is_some() {
             return Ok(());
         }
