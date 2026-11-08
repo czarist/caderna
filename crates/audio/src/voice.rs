@@ -131,9 +131,8 @@ impl Default for Voice {
 }
 
 impl Voice {
-    pub const ALL: [Self; 10] = [
+    pub const ALL: [Self; 9] = [
         Self::Kokoro(KokoroVoice::Dora),
-        Self::Piper(PiperVoice::Dii),
         Self::Kokoro(KokoroVoice::Sara),
         Self::Kokoro(KokoroVoice::Heart),
         Self::Kokoro(KokoroVoice::Emma),

@@ -32,3 +32,48 @@ pub fn expired(ui: &mut egui::Ui) {
         }
     }
 }
+
+/// Offline activation input shared by Settings and the expired screen.
+pub fn activation(ui: &mut egui::Ui, engine: &kg_engine::Engine) -> Option<String> {
+    if kg_brand::LICENSE_PUBLIC_KEY.is_empty() {
+        return None;
+    }
+    ui.add_space(16.0);
+    ui.label(t!("licensing.title"));
+    if let Some(license) = engine.license() {
+        let claims = license.claims();
+        ui.label(t!(
+            "licensing.details",
+            customer = claims.customer.as_str(),
+            seats = claims.seats,
+            expires = claims.expires.to_string()
+        ));
+        if engine.demo() == kg_engine::DemoStatus::Full {
+            ui.label(t!("licensing.active"));
+        } else {
+            ui.label(t!("licensing.expired"));
+        }
+    }
+    widgets::hint(ui, &t!("licensing.offline"));
+    let id = egui::Id::new("license_input");
+    let mut input = ui
+        .ctx()
+        .data_mut(|d| d.get_temp::<String>(id))
+        .unwrap_or_default();
+    ui.add(
+        egui::TextEdit::multiline(&mut input)
+            .hint_text(t!("licensing.placeholder"))
+            .desired_width(480.0)
+            .desired_rows(3)
+            .char_limit(8192),
+    );
+    let activate = ui
+        .add_enabled(
+            !input.trim().is_empty(),
+            egui::Button::new(t!("licensing.activate")),
+        )
+        .clicked();
+    let token = activate.then(|| std::mem::take(&mut input));
+    ui.ctx().data_mut(|d| d.insert_temp(id, input));
+    token
+}

@@ -111,6 +111,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         generated: "Gerada pelo teste e2e".into(),
         lang: "pt".into(),
         labels: kg_engine::HandoutLabels {
+            demonstration: String::new(),
             handout: "Apostila".into(),
             contents: "Sumário".into(),
             key_points: "Pontos-chave".into(),

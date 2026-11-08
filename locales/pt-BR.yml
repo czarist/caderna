@@ -1470,3 +1470,15 @@ mock:
     rule_wrong_cancels: "Cada resposta errada anula uma certa; em branco não perde pontos."
     rule_essay: "A redação vai na folha de resposta numerada; o rascunho não é corrigido."
     rule_app: "No fim, passe as marcações para o app (Simulados → Só o cartão-resposta) e entregue."
+
+licensing:
+  title: "Licença"
+  support: "Falar com o suporte"
+  details: "%{customer} · %{seats} assentos · válida até %{expires}"
+  active: "Licença ativa"
+  expired: "Licença expirada"
+  offline: "Validação local. Os assentos são um limite contratual; não há contagem online."
+  placeholder: "Cole a chave de licença recebida da empresa"
+  activate: "Ativar licença"
+  invalid: "Não foi possível ativar a licença. Confira a chave, a marca e a validade. Seus dados foram preservados."
+  watermark: "Demonstração"

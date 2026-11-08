@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="760" viewBox="0 0 1180 760">
+<rect width="1180" height="760" fill="#F6F4EF"/>
+<rect width="230" height="760" fill="#ECE9E2"/>
+<g fill="none" stroke="#52613C" stroke-width="5"><path d="M24 28h24l14 10v42L48 70H24zM62 38l14-10h24v42H76L62 80"/></g>
+<g fill="#2B2A28" font-family="monospace"><text x="24" y="114" font-size="25" font-weight="bold">CADERNA</text><text x="24" y="142" font-size="12">v0.1.0 · prévia</text></g>
+<path d="M24 169h180" stroke="#1C1B19" stroke-width="3"/>
+<rect x="14" y="192" width="201" height="34" fill="#52613C"/>
+<g font-family="sans-serif" font-size="16"><text x="32" y="215" fill="white">Hoje</text><g fill="#2B2A28"><text x="32" y="259">Plano de estudo</text><text x="32" y="303">Apostilas</text><text x="32" y="347">Aula</text><text x="32" y="391">Configurações</text></g></g>
+<g font-family="sans-serif" font-size="13" fill="#52613C"><text x="24" y="694">Demonstração · faltam 14 dias</text><text x="24" y="724">Caderna Educação</text></g>
+<rect x="272" y="34" width="868" height="146" fill="#1C1B19"/>
+<rect x="266" y="28" width="868" height="146" fill="#FFFEFB" stroke="#1C1B19"/>
+<path d="M267 33h866" stroke="#52613C" stroke-width="8"/>
+<g fill="#2B2A28"><text x="290" y="74" font-family="monospace" font-size="13">PLANO DE ESTUDO</text><text x="290" y="114" font-family="monospace" font-weight="bold" font-size="25">Bom dia, Ana</text><text x="290" y="147" font-family="sans-serif" font-size="16">Seu próximo tópico está pronto para estudar.</text></g>
+<g stroke="#D9D5CC" fill="#FFFEFB"><rect x="266" y="208" width="868" height="134"/><rect x="266" y="370" width="424" height="165"/><rect x="710" y="370" width="424" height="165"/><rect x="266" y="563" width="868" height="166"/></g>
+<g fill="#2B2A28" font-family="sans-serif" font-size="16"><text x="286" y="238">Sobre · contato e licença</text><text x="286" y="271">Suporte: contato definido pela empresa cliente</text><text x="286" y="305">Licença ativa · Empresa cliente · validade e identificação</text><text x="286" y="403">Sem licença / demonstração</text><text x="286" y="437">Cole a chave recebida da empresa.</text><text x="286" y="471">Chave inválida: mensagem local,</text><text x="286" y="496">sem apagar os dados de estudo.</text><text x="730" y="403">Licença validada</text><text x="730" y="437">Assinatura verificada neste computador.</text><text x="730" y="471">Plano e progresso preservados.</text><text x="730" y="496">Sem consulta online por padrão.</text><text x="286" y="600">Demonstração encerrada</text><text x="286" y="634">A navegação fica oculta. Os dados permanecem salvos.</text></g>
+<rect x="286" y="659" width="220" height="36" fill="#52613C"/><text x="300" y="683" font-family="sans-serif" font-size="15" fill="white">Falar com a empresa</text>
+<rect x="526" y="659" width="220" height="36" fill="#FFFEFB" stroke="#52613C"/><text x="542" y="683" font-family="sans-serif" font-size="15" fill="#52613C">Ativar licença</text>
+</svg>

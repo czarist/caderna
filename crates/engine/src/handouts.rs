@@ -114,7 +114,13 @@ impl Engine {
         self.handouts_cached
     }
 
-    pub(crate) fn export_handout(&mut self, request: HandoutRequest) -> Result<(), EngineError> {
+    pub(crate) fn export_handout(
+        &mut self,
+        mut request: HandoutRequest,
+    ) -> Result<(), EngineError> {
+        if self.demo() == crate::DemoStatus::Full {
+            request.labels.demonstration.clear();
+        }
         if self.handout_job.is_some() || self.prepare_job.is_some() {
             return Ok(());
         }

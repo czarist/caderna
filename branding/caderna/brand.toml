@@ -1,0 +1,61 @@
+# Template for a client brand. Copy this folder (e.g. to branding/acme),
+# replace the pictures and values, then build with:
+#
+#   PowerShell:  $env:KG_BRAND_DIR = "branding/acme"; cargo build --release -p know-giver
+#   or:          scripts\package.ps1 -Brand branding\acme
+#
+# Paths below are relative to this file. This example still points at the
+# Know Giver pictures so it builds as is; ship the client's own.
+
+[app]
+name = "Caderna"          # product name shown to students
+slug = "caderna"          # a-z, 0-9 and - only
+data_dir = "Caderna"       # data folder and install folder
+# A new GUID per client: PowerShell [guid]::NewGuid()
+installer_guid = "F104D038-F0C6-44A0-9C76-2FC42659D335"
+
+[company]
+name = "Caderna Educação"
+support_url = "https://example.com/suporte"
+url = "https://example.com"       # opened by the credits; "" for none
+url_label = "example.com"         # printed on handouts
+show_credit = true                # "Made by …" in the app and on handouts
+mark_license = ""                 # licence of the mark if not the client's own
+
+[colors]                          # #RRGGBB
+accent_light = "#52613C"
+accent_dark = "#B5C79A"
+highlight_light = "#795B36"
+highlight_dark = "#D7BB8A"
+company = "#53623D"               # handout credit and watermark text
+
+[assets]
+icon_png = "icon.png"                  # 512x512, transparent corners
+cover_png = "cover.png"          # square, corners filled
+engraving_png = "engraving.png"  # reminder pop-up art
+icon_ico = "icon.ico"           # Windows icon
+mark_svg = "mark.svg"  # white, one colour
+watermark_svg = "watermark.svg"  # faint, in the company colour
+
+[updates]
+repository = ""                   # https://github.com/<owner>/<name> with releases, or ""
+
+[demo]
+enabled = true
+days = 14                         # days from the first start; 0 = no day limit
+expires = "2027-03-31"            # last day of use, whatever the first start; "" = none
+contact_url = "https://example.com/contato"   # https:// or mailto:
+
+# Editable drafts. Set reviewed only after review for the actual client.
+[legal]
+directory = "legal"
+version = "2026-11-08.1"
+provider = "Caderna Educação — empresa demonstrativa"
+licensor = "TRENTIN SOLUÇÕES EM SOFTWARE LTDA – ME, CNPJ 36.154.590/0001-54"
+contact = "https://example.com/suporte"
+reviewed = false
+commercial_reviewed = false
+
+[licensing]
+required = false
+public_key = "" # Public Ed25519 key only. Never put a private key here.
