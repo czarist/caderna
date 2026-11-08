@@ -8,7 +8,7 @@ architecture="$(uname -m)"
 case "$platform" in Linux) package_os=linux ;; Darwin) package_os=macos ;; *) exit 1 ;; esac
 target_dir="${CARGO_TARGET_DIR:-$repo_root/target}"
 [[ "$target_dir" == /* ]] || target_dir="$repo_root/$target_dir"
-cargo build -p kg-brand --example metadata -j 2
+cargo build -p kg-brand --example metadata
 metadata="$target_dir/debug/examples/metadata"
 app_name="$("$metadata" name)"
 data_dir="$("$metadata" data_dir)"
@@ -24,7 +24,7 @@ if [[ "${KG_COMMERCIAL:-0}" == 1 ]]; then
 fi
 version="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -n 1)"
 bash scripts/build-llama-unix.sh
-cargo build --locked --release -p know-giver -j 2
+cargo build --locked --release -p know-giver
 mkdir -p dist
 stage="$(mktemp -d "$repo_root/dist/.package.XXXXXX")"
 trap 'rm -rf -- "$stage"' EXIT

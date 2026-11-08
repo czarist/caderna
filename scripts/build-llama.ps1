@@ -1,9 +1,5 @@
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
-$previousCl = $env:_CL_
-$previousGlslc = $env:KG_REAL_GLSLC
-$previousShaderLock = $env:KG_SHADER_LOCK
-$env:_CL_ = "$previousCl /MP1"
 Push-Location $root
 try {
     $llama = @{}
@@ -65,19 +61,14 @@ try {
         '-DLLAMA_USE_PREBUILT_UI=OFF',
         '-DLLAMA_OPENSSL=OFF'
     )
-    cargo build -p kg-brand --example shader_serial -j 2
-    if ($LASTEXITCODE -ne 0) { throw 'Could not build the shader compiler limiter' }
-    $shaderWrapper = Join-Path $target 'debug\examples\shader_serial.exe'
-    $env:KG_REAL_GLSLC = Join-Path $env:VULKAN_SDK 'Bin\glslc.exe'
-    $env:KG_SHADER_LOCK = Join-Path $target 'shader-compiler.lock'
     cmake -S $source -B $cpuBuild @commonOptions -DGGML_VULKAN=OFF
     if ($LASTEXITCODE -ne 0) { throw 'Could not configure the CPU llama.cpp runtime' }
-    cmake --build $cpuBuild --config Release --target llama-server --parallel 2
+    cmake --build $cpuBuild --config Release --target llama-server --parallel
     if ($LASTEXITCODE -ne 0) { throw 'Could not build the CPU llama-server' }
 
-    cmake -S $source -B $vulkanBuild @commonOptions -DGGML_VULKAN=ON "-DVulkan_GLSLC_EXECUTABLE=$shaderWrapper"
+    cmake -S $source -B $vulkanBuild @commonOptions -DGGML_VULKAN=ON
     if ($LASTEXITCODE -ne 0) { throw 'Could not configure the Vulkan llama.cpp runtime' }
-    cmake --build $vulkanBuild --config Release --target llama-server --parallel 2
+    cmake --build $vulkanBuild --config Release --target llama-server --parallel
     if ($LASTEXITCODE -ne 0) { throw 'Could not build the Vulkan llama-server' }
 
     $cpuServer = Get-ChildItem -LiteralPath (Join-Path $cpuBuild 'bin') -Filter 'llama-server.exe' -Recurse -File |
@@ -149,8 +140,5 @@ try {
     Copy-Item -LiteralPath $vulkanLicense -Destination (Join-Path $runtime 'Vulkan-SDK-LICENSE.txt') -Force
 }
 finally {
-    $env:_CL_ = $previousCl
-    $env:KG_REAL_GLSLC = $previousGlslc
-    $env:KG_SHADER_LOCK = $previousShaderLock
     Pop-Location
 }

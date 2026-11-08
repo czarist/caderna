@@ -66,7 +66,7 @@ cpu_build="$build/cpu"
 cmake -S "$source" -B "$cpu_build" \
   "${common_options[@]}" \
   -DGGML_VULKAN=OFF
-cmake --build "$cpu_build" --config Release --target llama-server --parallel 2
+cmake --build "$cpu_build" --config Release --target llama-server --parallel
 
 cpu_server="$cpu_build/bin/llama-server"
 if [[ ! -f "$cpu_server" ]]; then
@@ -78,13 +78,10 @@ install -m 755 "$cpu_server" "$runtime/llama-server"
 
 if [[ "$platform" == Linux ]]; then
   vulkan_build="$build/vulkan"
-  cargo build -p kg-brand --example shader_serial -j 2
-  export KG_REAL_GLSLC="$(command -v glslc)"
-  export KG_SHADER_LOCK="$target_dir/shader-compiler.lock"
   cmake -S "$source" -B "$vulkan_build" \
     "${common_options[@]}" \
-    -DGGML_VULKAN=ON "-DVulkan_GLSLC_EXECUTABLE=$target_dir/debug/examples/shader_serial"
-  cmake --build "$vulkan_build" --config Release --target llama-server --parallel 2
+    -DGGML_VULKAN=ON
+  cmake --build "$vulkan_build" --config Release --target llama-server --parallel
 
   vulkan_server="$vulkan_build/bin/llama-server"
   if [[ ! -f "$vulkan_server" ]]; then

@@ -27,7 +27,7 @@ This is a prototype, not a screenshot of implemented behavior.
   not a claim of enforcement across machines. Online checks remain opt-in and require
   a real client service contract before implementation.
 - Five UI locales and legal document languages; region selection stays unchanged.
-- All heavy builds use two jobs, including compiler and shader subprocesses.
+- Builds use every core by default; limit a single run with `-j N` when needed.
 - Client legal review, third-party commercial review and signing credentials are
   release prerequisites, never assertions inferred from a passing build.
 - Verify default/demo/neutral builds, key and prompt parity, license tampering,

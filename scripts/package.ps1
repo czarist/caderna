@@ -36,7 +36,7 @@ try {
     if (-not (Test-Path -LiteralPath $brandFile)) { throw "Brand file not found: $brandFile" }
     $env:KG_BRAND_DIR = $brandDir
     $target = if ($env:CARGO_TARGET_DIR) { [System.IO.Path]::GetFullPath($env:CARGO_TARGET_DIR) } else { Join-Path $root 'target' }
-    cargo build -p kg-brand --example metadata -j 2
+    cargo build -p kg-brand --example metadata
     if ($LASTEXITCODE -ne 0) { throw 'Invalid brand metadata' }
     $metadata = Join-Path $target 'debug\examples\metadata.exe'
     $appName = & $metadata name
@@ -61,7 +61,7 @@ try {
 
     & (Join-Path $PSScriptRoot 'build-llama.ps1')
     if ($LASTEXITCODE -ne 0) { throw "llama.cpp build failed" }
-    cargo build --release -p know-giver -j 2
+    cargo build --release -p know-giver
     if ($LASTEXITCODE -ne 0) { throw "cargo build failed" }
 
     $dist = Join-Path $root 'dist'

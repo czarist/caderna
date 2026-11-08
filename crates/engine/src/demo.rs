@@ -49,6 +49,22 @@ impl DemoClock {
     }
 }
 
+/// A one-day demonstration that ended long ago, for tests.
+#[cfg(test)]
+pub(crate) fn ended() -> (DemoLimit, DemoClock) {
+    let day = NaiveDate::from_ymd_opt(2000, 1, 1).unwrap_or_default();
+    (
+        DemoLimit {
+            days: 1,
+            expires: None,
+        },
+        DemoClock {
+            started: day,
+            last_seen: day,
+        },
+    )
+}
+
 /// The limits a brand sets.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct DemoLimit {

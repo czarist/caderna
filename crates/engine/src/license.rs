@@ -150,6 +150,13 @@ mod tests {
     use ring::signature::{Ed25519KeyPair, KeyPair};
 
     fn signed() -> (String, String, Claims) {
+        signed_between(
+            NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2026, 12, 31).unwrap(),
+        )
+    }
+
+    fn signed_between(not_before: NaiveDate, expires: NaiveDate) -> (String, String, Claims) {
         let key = Ed25519KeyPair::from_seed_unchecked(&[42; 32]).unwrap();
         let claims = Claims {
             version: 1,
@@ -157,8 +164,8 @@ mod tests {
             brand: "client".into(),
             customer: "School".into(),
             seats: 5,
-            not_before: NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
-            expires: NaiveDate::from_ymd_opt(2026, 12, 31).unwrap(),
+            not_before,
+            expires,
         };
         let payload = serde_json::to_vec(&claims).unwrap();
         let token = format!(
@@ -199,6 +206,47 @@ mod tests {
         assert!(verify(&token, &STANDARD.encode([0; 32]), "client").is_err());
         assert!(verify(&"a".repeat(8193), &key, "client").is_err());
         assert!(verify("not a license", &key, "client").is_err());
+    }
+
+    #[test]
+    fn a_license_turns_an_ended_demo_into_the_full_app_keeping_study_data() {
+        use crate::DemoStatus;
+        let dir = tempfile::tempdir().unwrap();
+        let mut engine =
+            crate::Engine::in_memory(crate::AppPaths::new(dir.path()), crate::AiConfig::default())
+                .unwrap();
+        engine
+            .store
+            .set_setting("student_note", "keep my progress")
+            .unwrap();
+        engine.demo = Some(crate::demo::ended());
+        assert_eq!(engine.demo(), DemoStatus::Expired);
+
+        let today = engine.license_day();
+        let (token, key, _) = signed_between(
+            today.pred_opt().unwrap(),
+            today.checked_add_days(chrono::Days::new(30)).unwrap(),
+        );
+        engine
+            .activate_checked(&token, &key, "client", today)
+            .unwrap();
+        assert_eq!(engine.demo(), DemoStatus::Full);
+        assert_eq!(
+            engine.store.setting("student_note").unwrap().as_deref(),
+            Some("keep my progress")
+        );
+
+        // When the accepted license lapses the app stops again; data stays.
+        let (old, _, _) = signed_between(
+            today.checked_sub_days(chrono::Days::new(60)).unwrap(),
+            today.checked_sub_days(chrono::Days::new(30)).unwrap(),
+        );
+        engine.license = Some(verify(&old, &key, "client").unwrap());
+        assert_eq!(engine.demo(), DemoStatus::Expired);
+        assert_eq!(
+            engine.store.setting("student_note").unwrap().as_deref(),
+            Some("keep my progress")
+        );
     }
 
     #[test]
