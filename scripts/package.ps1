@@ -1,0 +1,113 @@
+# Builds a release and packages Know Giver, or a branded build, for Windows.
+#
+#   powershell -ExecutionPolicy Bypass -File scripts\package.ps1
+#   powershell -ExecutionPolicy Bypass -File scripts\package.ps1 -Brand brandingcme
+#
+# -Brand picks the brand folder (brand.toml); without it, branding\default.
+# Output in dist\, named after the brand's data_dir (KnowGiver by default):
+#   <DataDir>-<version>-windows-x64.zip     portable build (always)
+#   <DataDir>-<version>-setup.exe           installer (when Inno Setup 6 is installed)
+
+param([switch]$SkipInstaller, [string]$Brand = '')
+
+# Reads `key = "value"` from one [section] of a brand.toml.
+function Get-BrandValue([string[]]$Lines, [string]$Section, [string]$Key) {
+    $current = ''
+    foreach ($line in $Lines) {
+        $trimmed = $line.Trim()
+        if ($trimmed -match '^\[(.+)\]$') { $current = $Matches[1]; continue }
+        if ($current -eq $Section -and $trimmed -match ('^' + [regex]::Escape($Key) + '\s*=\s*"([^"]*)"')) {
+            return $Matches[1]
+        }
+    }
+    return ''
+}
+
+$ErrorActionPreference = 'Stop'
+$root = Split-Path $PSScriptRoot -Parent
+Push-Location $root
+try {
+    $versionLine = Select-String -Path Cargo.toml -Pattern '^version = "(.+)"' | Select-Object -First 1
+    $version = $versionLine.Matches[0].Groups[1].Value
+
+    $brandDir = if ($Brand) { [System.IO.Path]::GetFullPath((Join-Path $root $Brand)) } else { Join-Path $root 'branding\default' }
+    if ([System.IO.Path]::IsPathRooted($Brand)) { $brandDir = [System.IO.Path]::GetFullPath($Brand) }
+    $brandFile = Join-Path $brandDir 'brand.toml'
+    if (-not (Test-Path -LiteralPath $brandFile)) { throw "Brand file not found: $brandFile" }
+    $brandLines = Get-Content -LiteralPath $brandFile -Encoding UTF8
+    $appName = Get-BrandValue $brandLines 'app' 'name'
+    $appDir = Get-BrandValue $brandLines 'app' 'data_dir'
+    $appGuid = Get-BrandValue $brandLines 'app' 'installer_guid'
+    $publisher = Get-BrandValue $brandLines 'company' 'name'
+    $publisherUrl = Get-BrandValue $brandLines 'company' 'url'
+    $icon = [System.IO.Path]::GetFullPath((Join-Path $brandDir (Get-BrandValue $brandLines 'assets' 'icon_ico')))
+    if (-not $appDir) { throw "brand.toml has no [app] data_dir" }
+    # The build scripts of kg-brand and the app read the same folder.
+    $env:KG_BRAND_DIR = $brandDir
+    Write-Host "Brand: $appName ($brandDir)"
+
+    & (Join-Path $PSScriptRoot 'build-llama.ps1')
+    if ($LASTEXITCODE -ne 0) { throw "llama.cpp build failed" }
+    cargo build --release -p know-giver -j 2
+    if ($LASTEXITCODE -ne 0) { throw "cargo build failed" }
+
+    $dist = Join-Path $root 'dist'
+    $stage = [System.IO.Path]::GetFullPath((Join-Path $dist $appDir))
+    $expectedStage = [System.IO.Path]::GetFullPath((Join-Path $root "dist\$appDir"))
+    if ($stage -ne $expectedStage -or -not $stage.StartsWith([System.IO.Path]::GetFullPath($dist) + [System.IO.Path]::DirectorySeparatorChar)) {
+        throw 'Refusing to clean a staging directory outside dist'
+    }
+    if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
+    New-Item -ItemType Directory -Force $stage | Out-Null
+    Copy-Item 'target\release\know-giver.exe' $stage
+    Copy-Item 'target\release\local-runtime' $stage -Recurse
+    foreach ($dll in @('vcruntime140.dll', 'vcruntime140_1.dll')) {
+        $runtimeDll = Join-Path 'target\release\local-runtime' $dll
+        if (-not (Test-Path -LiteralPath $runtimeDll)) {
+            throw "The packaged Windows build is missing the app runtime dependency $dll"
+        }
+        Copy-Item -LiteralPath $runtimeDll -Destination $stage -Force
+    }
+    Copy-Item '.env.example' (Join-Path $stage '.env.example')
+    Copy-Item 'packaging\windows\README.*.txt' $stage
+    if (-not (Test-Path -LiteralPath (Join-Path $stage 'local-runtime\vulkan\llama-server.exe'))) {
+        throw 'The packaged Windows build is missing the Vulkan llama-server'
+    }
+    foreach ($dll in @('msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll', 'vcomp140.dll')) {
+        if (-not (Test-Path -LiteralPath (Join-Path $stage "local-runtime\$dll"))) {
+            throw "The packaged Windows build is missing the CPU runtime dependency $dll"
+        }
+        if (-not (Test-Path -LiteralPath (Join-Path $stage "local-runtime\vulkan\$dll"))) {
+            throw "The packaged Windows build is missing the Vulkan runtime dependency $dll"
+        }
+    }
+    if (-not (Test-Path -LiteralPath (Join-Path $stage 'local-runtime\vulkan\vulkan-1.dll'))) {
+        throw 'The packaged Windows build is missing the Vulkan loader'
+    }
+    if (-not (Test-Path -LiteralPath (Join-Path $stage 'local-runtime\Vulkan-SDK-LICENSE.txt'))) {
+        throw 'The packaged Windows build is missing the Vulkan SDK license registry'
+    }
+
+    $zip = Join-Path $dist "$appDir-$version-windows-x64.zip"
+    Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -Force
+    Write-Host "Portable build: $zip"
+
+    if ($SkipInstaller) { return }
+    $iscc = @(
+        "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+        "$env:ProgramFiles\Inno Setup 6\ISCC.exe",
+        "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe"
+    ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if (-not $iscc) {
+        Write-Host 'Inno Setup 6 not found; skipping the installer (https://jrsoftware.org/isinfo.php).'
+        return
+    }
+    & $iscc "/DAppVersion=$version" "/DSourceDir=$stage" "/DRepoRoot=$root" "/O$dist" `
+        "/DAppName=$appName" "/DAppDir=$appDir" "/DAppGuid=$appGuid" `
+        "/DAppPublisher=$publisher" "/DAppUrl=$publisherUrl" "/DAppIcon=$icon" `
+        'packaging\windows\know-giver.iss'
+    if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed" }
+}
+finally {
+    Pop-Location
+}

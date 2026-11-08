@@ -1,0 +1,259 @@
+<p align="center">
+  <img src="crates/ui/assets/icon.png" width="128" height="128" alt="Know Giver のアイコン：三日月の下のヒヒの姿をしたトート神の版画、翡翠色のタイル">
+</p>
+
+<h1 align="center">Know Giver</h1>
+
+<p align="center"><b>ホワイトラベル版のベース</b></p>
+
+<h3 align="center">あなたの試験。あなたのプラン。対話できる先生。</h3>
+
+<p align="center">
+  <a href="README.md">English</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.ja.md">日本語</a> · <a href="README.zh-Hans.md">简体中文</a> · <a href="README.zh-Hant.md">繁體中文</a>
+</p>
+
+<p align="center">
+  <b>試験のための学習プランを作るデスクトップアプリ。純粋な Rust で作られています。</b><br>
+  試験要項や出題範囲のPDFを入れると、週ごとのプランができ、話を聞き、説明し、問題を出してくれる先生と一緒に学べます。
+</p>
+
+<p align="center">
+  <a href="https://www.rust-lang.org"><img alt="Pure Rust, 2024 edition" src="https://img.shields.io/badge/pure%20Rust-2024-3f8f7c?style=flat-square&logo=rust&logoColor=white"></a>
+  <a href="https://github.com/emilk/egui"><img alt="UI: egui" src="https://img.shields.io/badge/UI-egui%200.36-2c6b5c?style=flat-square"></a>
+  <a href="https://www.sqlite.org"><img alt="Storage: SQLite" src="https://img.shields.io/badge/storage-SQLite-2c6b5c?style=flat-square&logo=sqlite&logoColor=white"></a>
+  <a href="https://typst.app"><img alt="Handouts: Typst" src="https://img.shields.io/badge/handouts-Typst-2c6b5c?style=flat-square&logo=typst&logoColor=white"></a>
+  <img alt="Speech to text: Whisper and Parakeet" src="https://img.shields.io/badge/speech-Whisper%20%C2%B7%20Parakeet-2c6b5c?style=flat-square&logo=huggingface&logoColor=white">
+  <a href="https://github.com/rhasspy/piper"><img alt="Voices: Piper and Kokoro" src="https://img.shields.io/badge/voices-Piper%20%C2%B7%20Kokoro-2c6b5c?style=flat-square"></a>
+  <img alt="AI: OpenAI-compatible APIs and GitHub Copilot" src="https://img.shields.io/badge/AI-OpenAI--compatible-2c6b5c?style=flat-square&logo=ollama&logoColor=white">
+  <img alt="Sign in: ChatGPT, Claude Code, GitHub Copilot" src="https://img.shields.io/badge/Sign%20in-ChatGPT%20%C2%B7%20Claude%20Code%20%C2%B7%20Copilot-2c6b5c?style=flat-square&logo=openid&logoColor=white">
+  <a href="https://github.com/ggml-org/llama.cpp"><img alt="OCR runtime: llama.cpp" src="https://img.shields.io/badge/OCR-llama.cpp-2c6b5c?style=flat-square"></a>
+  <a href="https://www.vulkan.org/"><img alt="GPU acceleration: Vulkan" src="https://img.shields.io/badge/GPU-Vulkan-2c6b5c?style=flat-square&logo=vulkan&logoColor=white"></a>
+  <img alt="Windows" src="https://img.shields.io/badge/-Windows-2c6b5c?style=flat-square&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0wIDBoMTEuNHYxMS40SDB6TTEyLjYgMEgyNHYxMS40SDEyLjZ6TTAgMTIuNmgxMS40VjI0SDB6TTEyLjYgMTIuNkgyNFYyNEgxMi42eiIvPjwvc3ZnPg%3D%3D&logoColor=white&labelColor=111111">
+  <img alt="macOS" src="https://img.shields.io/badge/-macOS-2c6b5c?style=flat-square&logo=apple&logoColor=white&labelColor=111111">
+  <img alt="Linux" src="https://img.shields.io/badge/-Linux-2c6b5c?style=flat-square&logo=linux&logoColor=white&labelColor=111111">
+  <a href="#license"><img alt="License: MIT OR Apache-2.0" src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-2c6b5c?style=flat-square&logo=opensourceinitiative&logoColor=white"></a>
+  <img alt="Languages: Portuguese, English, Japanese, Simplified and Traditional Chinese" src="https://img.shields.io/badge/languages-pt--BR%20%C2%B7%20en%20%C2%B7%20ja%20%C2%B7%20zh--Hans%20%C2%B7%20zh--Hant-2c6b5c?style=flat-square">
+  <img alt="Local-first voice" src="https://img.shields.io/badge/voice-local--first-2c6b5c?style=flat-square">
+</p>
+
+<br>
+
+<p align="center">
+  <img src="docs/images/ja/lesson.png" alt="レッスン画面：先生の肖像と字幕、要点の板書、受験者のマイク" width="100%">
+</p>
+
+<p align="center">
+  <a href="#試験要項からプランへ">要項 → プラン</a> ·
+  <a href="#レッスン">レッスン</a> ·
+  <a href="#板書">板書</a> ·
+  <a href="#テキストを読んでマーカーを引く">テキスト</a> ·
+  <a href="#練習復習テキスト">練習</a> ·
+  <a href="#記述小論文">記述・小論文</a> ·
+  <a href="#初回設定">初回設定</a> ·
+  <a href="#プライバシー">プライバシー</a> ·
+  <a href="#はじめかた">はじめかた</a>
+</p>
+
+<br>
+
+## 試験要項からプランへ
+
+試験要項はお使いのコンピューターで読み取られ、出題範囲だけがAIに送られます。
+
+- **職種を選ぶ。** 複数の職種を募集する試験もあります。Know Giver は職種を見つけて、どれを受験するか尋ねます。プランには共通科目と、*あなたの*職種の専門科目だけが入ります。
+- **あなたの予定に合わせて。** 試験までの週数と1週間の学習時間から、週・科目・トピックごとのプランを作ります。複数の試験を並べて管理できます。
+- **スキャンしたPDF。** 文字のないページは、設定した画像対応モデルで書き起こせます。
+
+<p align="center">
+  <img src="docs/images/ja/edital-roles.png" alt="複数の職種がある試験要項から職種を選ぶ画面" width="80%">
+</p>
+
+## レッスン
+
+先生がトピックを、進め方に沿って一歩ずつ教えます。各ステップでテキストの要点を扱い、理解できたか確認してから次へ進み、クイズで問われる内容をすべて取り上げます。最後にまとめと、クイズへの案内があります。「短め」「標準」「じっくり」から長さを選べます。
+
+**日本語のレッスンは、現在は文字でのやり取りです。** 音声（ローカルの音声認識と読み上げ）は、今のところポルトガル語と英語に対応しています。日本語の音声は今後対応予定です。設定でクラウド音声サービスを使うことはできます。
+
+AIは OpenAI 互換のモデルならどれでも使え（Z.ai、Anthropic、OpenAI、Gemini、Ollama など）、先生への指示（プロンプト）はアプリの言語に合わせて日本語になります。
+
+## 板書
+
+要点に加えて、先生は**式**、**図**、**比較表**、**年表**、**マインドマップ**、**試験のポイント**、**例**を書き、Wikipedia の**画像**も表示します（コンピューターから出るのは検索語だけです）。
+
+<p align="center">
+  <img src="docs/images/ja/whiteboard.png" alt="板書の項目：式、図、表、年表、マインドマップ、試験のポイント" width="80%">
+</p>
+
+先生は4人：**遥**、**莉子**、**涼**、**修**。呼吸し、まばたきし、うなずくインクの肖像です。
+
+<p align="center">
+  <img src="docs/images/teachers.png" alt="4人の先生の状態：休んでいる、聞いている、考えている、話している" width="70%">
+</p>
+
+## テキストを読んでマーカーを引く
+
+作ったテキストはアプリの中で、PDFとまったく同じページで開きます。文章をドラッグしてマーカーを引き、クリックしてメモを書き、サイドの一覧からすべてのマーカーに移動できます。どこまで読んだかを覚えていて、マーカー付きのPDFも保存できます。
+
+<p align="center">
+  <img src="docs/images/ja/reader.png" alt="テキストを読む画面：マーカーを引いた箇所、メモ、読んだ割合" width="100%">
+</p>
+
+## 練習・復習・テキスト
+
+- **クイズ**：試験形式の問題と解説。過去問をアップロードすれば本物の問題も。
+- **間違いノート**：間違えた問題は正解するまで残り、次のクイズで最初に出ます。
+- **間隔をあけた復習（SM-2）**：忘れる直前にトピックが戻ってきます。
+- **過去問と資料**：過去問（解答付き）や資料を、要項に照らして選別します。除外したものには理由を示します。
+- **テキスト**：トピック、科目、プラン全体ごとに、画像、練習問題、解答付きのPDFで。
+- **進捗**：科目ごとの進み具合と、実際に学習した時間。
+
+## 模擬試験
+
+要項の形式どおりの試験を、時間を計って解きます。**要項から読み取る**で、科目ごとの問題数、
+試験時間、選択式か正誤式か、誤答の減点、作文の有無を探します。数字は要項の本文と照合され、
+どれも手で調整できます。**模擬試験を作成**すると、出題機関のスタイルで科目ごとに新しい問題を
+プランのトピック全体から作ります（追加した過去問がスタイルの手本になります）。記述式試験が
+ある要項なら作文の課題も付きます。
+
+**画面で**解く（時計は右上）か、**印刷**します。PDFには2段組みの問題冊子、行番号付きの作文用紙、
+四隅にマーカーのある解答用紙が入ります。紙で解いたら、マークをアプリの解答用紙に写して提出
+します。画面を離れてもアプリを閉じても時間は進み、同時に進められる試験は1つだけです。採点は
+保存された正答と要項の配点による単純な計算で、科目ごとに正解・不正解・空欄、所要時間、時間超過
+を表示します。間違えた問題は間違いノートへ、作文は記述・小論文へ送って撮影・採点し、解答と解説は
+その下で開けます。新しいチャレンジも10個あります。
+
+<table>
+  <tr>
+    <td><img src="docs/images/ja/mock.png" alt="模擬試験：要項から読み取った形式、作成ボタン、これまでの結果"></td>
+    <td><img src="docs/images/ja/mock-sitting.png" alt="試験中：右上の時計、画面上の問題と解答用紙"></td>
+    <td><img src="docs/images/ja/mock-result.png" alt="結果：科目ごとの得点、正解・不正解・空欄、所要時間"></td>
+  </tr>
+</table>
+
+## チャレンジと実績
+
+**実績**画面には36ファミリー・**164個のチャレンジ**があり、各レベルでオリジナルの実績
+（翡翠色、三日月、アプリのマークと同じ版画風）がもらえます。プランごと：レッスン、クイズ、正解と
+全問正解、取り返した間違い、学習したトピックと試験要項の範囲、順調な週、習得したトピックと科目、
+復習、過去問、テキストとハイライト、試験要項にあれば記述。すべてのプラン合計：学習時間と学習日、
+作成したプラン、コレクションそのもの。はじめの一歩・巻き返し・動き出したプラン・順調な一週間には
+固有の名前があります。
+
+各ファミリーは1行で、次のレベル、進み具合（2/3）、「レベル 3/11」、レッスン・クイズ・復習への
+ボタンを表示します。「今日」画面には次のチャレンジが控えめに表示されます。ショーケースには
+すべての実績があり、獲得済み・未獲得で絞り込め、マウスを重ねると詳細が出ます。レベルは
+縁の色と1〜3個の点で示します。実績は保存された学習記録からコードのルールだけで与えられ、
+AIが決めることはありません。進捗はプランごとに分かれます。この機能より前の学習も数えられ、
+日付がわからない場合はカードにそう表示されます。通知はレッスンやクイズが終わったあとに一度だけ。
+ポイントもランキングも、途切れる連続記録もありません。
+
+<table>
+  <tr>
+    <td><img src="docs/images/ja/challenges.png" alt="実績：ファミリーごとの1行に、レベル、進捗、次のレッスンやクイズへのボタン"></td>
+    <td><img src="docs/images/ja/showcase.png" alt="実績のショーケース：獲得済みはカラーで日付、未獲得はグレーで進捗"></td>
+  </tr>
+</table>
+
+## 記述・小論文
+
+試験要項に小論文や記述式の試験がある場合、**記述・小論文**の画面が現れます。
+
+- **プランから課題を作る**：小論文、専門の記述式問題、事例問題。評価基準と配点は書く前に表示されます（要項にあるもの、あなたが決めたもの、Know Giver の汎用基準のいずれか）。
+- **手書きで書いて写真を送る**：JPEG または PNG。暗い・ぼやけた・切れた写真は撮り直しを求めます。
+- **読み取りを確認**：写真と書き起こしを並べて表示。あなたの書き間違いはそのまま残り、不確かな語で減点されることはありません。
+- **形成的な採点**：基準ごとの目安の点数、本文から確認された引用、よい点、課題と改善案、優先すべき3点。
+
+既定では PaddleOCR-VL 1.5（0.9B）が写真をローカルで読み取ります。[🦙 llama.cpp](https://github.com/ggml-org/llama.cpp) の `llama-server` v0.8.0 を使用し、初回に Hugging Face からモデル約1.82 GBをダウンロードします。設定 → AI で外部の画像対応APIを明示的に選ぶと、写真はその提供元に送信されます。Copilot はテキスト専用のため、常にローカルOCRを使います。**画像読み取りをテスト**で選択中の方法を確認できます。最低ハードウェア要件と手書きの認識精度は未検証です。採点前に必ず書き起こしを確認してください。Windows/Linux では 🔺 [Vulkan](https://www.vulkan.org/) ランタイムを同梱し、対応 GPU が検出されると使用します。デバイスがない場合や GPU の起動に失敗した場合は CPU にフォールバックします。macOS は CPU を使用します。字数で評価する日本の小論文では、課題の指示に字数が示されます。
+Windows インストーラーには必要な C++ ランタイムと Vulkan ローダーが含まれます。Vulkan を使うには、対応する GPU ドライバーが別途必要です。
+
+<table>
+  <tr>
+    <td><img src="docs/images/ja/writing-check.png" alt="読み取りの確認：写真と、編集できる書き起こし、不確かな語の一覧"></td>
+    <td><img src="docs/images/ja/writing.png" alt="採点済みの小論文：要項の評価基準、基準ごとの目安の点数と引用、課題と改善案"></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td><img src="docs/images/ja/today.png" alt="今日：連続日数、今日の復習、次のステップ"></td>
+    <td><img src="docs/images/ja/board.png" alt="過去問：プランに対応づけた問題と、範囲外として除いた問題"></td>
+  </tr>
+</table>
+
+## 初回設定
+
+最初に5つの短いステップがあります：言語、名前、先生、AIとAPIキーまたはアカウントログイン、国・地域と規約への同意。22のAI提供元から選べ（**Z.ai** はコスパ、**Claude** は正確さでおすすめ）、キーの作成ページへのリンクがあります。その後、画面を案内する短いツアーがあります。
+
+GitHub Copilot は公式 Copilot CLI を通じて GitHub アカウントで接続でき、APIキーは不要です。CLI は通常、認証情報を OS のキーチェーンに保存します。利用できない場合は平文の設定ファイル（`~/.copilot/config.json`）に保存することがあります。Know Giver のデータベースには保存しません。この連携はテキストのみで、画像には対応しません。
+
+**お持ちのアカウントでサインイン。** AIのステップは「アカウントでサインイン」から始まります。チャットのプランを契約していて、APIキーを作ったことがない方向けです。**ChatGPT**（OpenAI 公式の「Sign in with ChatGPT」。レッスンは ChatGPT のプランの上限に含まれます）、**Claude**（Anthropic 公式のプログラム Claude Code を通じて、Claude Pro または Max のアカウントで。Know Giver がインストールすることもできます）、**GitHub Copilot** に対応しています。サインインはそれぞれの提供元のページで行い、Know Giver がパスワードを見ることはありません。Know Giver は OpenAI、Anthropic、GitHub と提携していません。
+
+<p align="center">
+  <img src="docs/images/ja/setup-ai-account.png" alt="AIのステップの「アカウントでサインイン」タブ：ChatGPT、Claude、GitHub Copilot とそれぞれのサインインボタン" width="60%">
+</p>
+
+**無料と有料。** 「アカウントでサインイン」のほかに、AIのステップには2つのタブがあります。「有料」はおすすめのサービス（コスパの Z.ai、正確さの Claude）、「無料」は無料プランのあるサービス（Gemini、Mistral、OpenRouter、Groq、NVIDIA、GitHub Models、お使いのコンピューターで動く Ollama や LM Studio）です。それぞれ対象のモデル、送った内容の扱い（学習に使う無料プランもあります）、上限と規約へのリンクを表示します。
+
+**地域の勉強のしかた。** レッスン、クイズ、テキスト、記述・小論文は、お住まいの地域の試験の勉強のしかたに合わせます。日本では五肢択一と字数で書く小論文、中国大陸では行测と申论、台湾と香港ではそれぞれの公務員試験の形式、ブラジルでは Cebraspe の正誤問題と5択、米国と英国では標準テスト、司法試験、採点基準（mark scheme）です。試験要項と過去問が常に優先されます。
+
+<p align="center">
+  <img src="docs/images/ja/setup-ai-free.png" alt="AIのステップの「無料」タブ：無料プランのあるサービス、対象のモデル、データの扱い" width="60%">
+</p>
+
+<table>
+  <tr>
+    <td><img src="docs/images/ja/setup-ai.png" alt="初回設定のAIのステップ"></td>
+    <td><img src="docs/images/ja/setup-terms.png" alt="初回設定の規約のステップ"></td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/images/ja/tour.png" alt="ツアー：サイドバーのレッスンに印がつき、画面を説明するカード" width="80%">
+</p>
+
+## プライバシー
+
+- 音声認識と読み上げはお使いのコンピューターで動作し、録音は外に出ません。
+- データ（SQLiteのデータベース、モデル、ログ）は `%LOCALAPPDATA%\KnowGiver` に保存されます。
+- 手書き写真は既定ではローカルで読み取られ、このコンピューターから出ません。設定 → AI で外部の画像対応APIを明示的に選んだ場合のみ、写真が提供元に送られます。Copilot では常にローカルOCRを使います。送信前にアプリが送信先を表示します。写真はデータフォルダーに保存され、答案を削除すると一緒に削除されます。スキャンPDFのページは、OCRを依頼した場合に設定済みの画像対応モデルへ送信されます。ローカルOCRの初回インストールでは Hugging Face から約1.82 GBをダウンロードします。
+- 起動時に、最新のバージョンを GitHub に問い合わせます。送られるのはこの問い合わせだけで、設定 → アプリについて・アップデート でオフにできます。
+- アカウント、テレメトリー、広告はありません。[利用規約](docs/legal/terms-of-use.ja.md)と[プライバシーポリシー](docs/legal/privacy-policy.ja.md)（日本法）をお読みください。アプリ内でも表示されます。
+
+Know Giver は日本、ブラジル、アメリカ合衆国、欧州連合、イギリス、台湾、香港、シンガポールで一般に提供しています。その他の国・地域では、書面で認めたパートナーだけが[パートナーアクセス規約](docs/legal/partner-access.ja.md)に基づいて利用できます。
+
+## ブランド版（ホワイトラベル）
+
+このリポジトリは Know Giver の**ホワイトラベル版のベース**です。同じアプリを別の会社の名前・色・画像でビルドでき、**期間限定の体験版**にもできます。ここでは一般向けのリリースは行わず、ビルドは顧客ごとに作ります。
+
+1. `branding/example` を `branding/<顧客>` にコピーし、`brand.toml` を編集します（製品名、会社名とサイト、色、アイコンとマーク、アップデートの取得元、体験版の期間）。
+2. ブランドはコンパイル時に `KG_BRAND_DIR`（既定は Know Giver 自身の `branding/default`）から読み込まれます：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\package.ps1 -Brand branding\<顧客>
+```
+
+`dist\<data_dir>-<バージョン>-windows-x64.zip` と、[Inno Setup 6](https://jrsoftware.org/isinfo.php) があればインストーラーが作られます。
+
+**体験版**：`[demo] enabled = true` にすると、初回起動から `days` 日、または `expires` の日まで（早いほう）使えます。サイドバーに残り日数が表示され、期間が終わると「体験期間が終了しました」の画面だけが開き、顧客の連絡先へのボタンが表示されます。学習計画と進捗はコンピューターに残ります。
+
+**まだブランド化されていないもの**は [ROADMAP](ROADMAP.md) を参照してください（`docs/legal/` の規約、先生の肖像、実績バッジ、macOS/Linux パッケージ）。販売前にライセンスを確認してください。Dii の音声は非商用に限られます。
+
+## はじめかた
+
+```bash
+cargo run --release
+```
+
+初回起動時に初回設定が開きます。Rust 1.95 以上が必要です。Windows 用のパッケージ：
+
+ウィンドウを閉じるとアプリはシステムトレイに残ります。アイコンをダブルクリックすると再表示し、1回クリックするとメニュー（開く・終了）が出ます。起動中にもう一度Know Giverを開くと同じウィンドウが表示され、コピーとトレイアイコンは常に1つだけです。インストール時に、システム起動時の自動起動と学習リマインダー（初期設定は3時間ごと、設定で30分〜8時間）を選べます（どちらも初期状態ではオフ）。リマインダーは画面の隅に出る小さなKnow Giverのウィンドウで、遅れている科目と学習を始めるボタンを表示します。リマインダーはアプリから離れている間（トレイ、最小化、他のウィンドウの背後）に、レッスン・クイズ・復習中を除き、現在のプランに未完了の科目がある場合だけ表示されます。
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\package.ps1
+```
+
+開発については [English README](README.md#development) をご覧ください（技術文書は英語です）。
+
+## ライセンス
+
+[MIT](LICENSE-MIT) または [Apache License 2.0](LICENSE-APACHE) のいずれかを選んで利用できます（`MIT OR Apache-2.0`）。第三者のフォント、肖像、音声、ロゴはそれぞれのライセンスに従います（[English README の Credits](README.md#credits)）。脆弱性の報告は [SECURITY.md](SECURITY.md) をご覧ください。

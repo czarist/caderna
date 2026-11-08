@@ -1,0 +1,85 @@
+# Kokoro evaluation
+
+Status in v0.15.2: backend, model management and preview are implemented. On Windows
+the app launches a sibling copy of the pinned executable whose manifest sets the
+active code page to UTF-8, so accented Portuguese reaches the runtime. Piper remains
+the default until a listening comparison. See [validation notes](validation-v0.15.md).
+
+## Reproducible candidate
+
+Use the **sherpa-onnx v1.12.20** prebuilt CPU executable and the unquantized
+**kokoro-multi-lang-v1_0** bundle (53 speakers). Keep the executable with its bundled
+runtime files. Do not substitute v1.1: speaker IDs differ between bundles.
+
+- [Runtime release](https://github.com/k2-fsa/sherpa-onnx/releases/tag/v1.12.20)
+- [Model bundle and speaker mapping](https://k2-fsa.github.io/sherpa/onnx/tts/pretrained_models/kokoro.html)
+- [Pinned language and model options](https://github.com/k2-fsa/sherpa-onnx/blob/v1.12.20/sherpa-onnx/csrc/offline-tts-kokoro-model-config.cc)
+- [Pinned executable interface](https://github.com/k2-fsa/sherpa-onnx/blob/v1.12.20/sherpa-onnx/csrc/sherpa-onnx-offline-tts.cc)
+
+The model directory must contain `model.onnx`, `voices.bin`, `tokens.txt` and
+`espeak-ng-data/`. The harness uses `pt-br`, two CPU threads, speech rate 0.95,
+and speakers 42 (Dora), 43 (Alex), 44 (Santa). It uses the app's Portuguese text
+normalizer. Files are supplied locally; the harness does not download or install them.
+
+```powershell
+cargo run --release -p kg-audio --example kokoro_check -- C:\tts\bin\sherpa-onnx-offline-tts.exe C:\tts\kokoro-multi-lang-v1_0 C:\tts\listening-results
+```
+
+The output directory must not exist and its parent must exist. Each sample produces
+WAV, normalized text and process logs. Console timings include process/model startup;
+the executable's stderr includes synthesis timing and real-time factor. A successful
+exit and nonempty file do not establish audio quality. Inspect and listen to the WAVs.
+
+## Acceptance before app integration
+
+1. Record runtime archive name, model archive name, CPU, sample rate, timings and RAM.
+2. Listen to all nine samples: legal abbreviations, pauses, accents, currency and
+   questions must remain understandable; reject silence, clipping or broken phonemes.
+3. Compare the first legal sentence against `voice_check` with Piper Faber. Compare
+   further real tutor replies before choosing a default; record subjective preferences.
+4. Check cold startup latency per sentence, interruption and cleanup on Windows.
+5. Only then add atomic model installation, installed-voice selection, preview and
+   matching avatar. Keep Piper available and preserve old saved settings.
+
+## Latency in lessons (2026-10-28)
+
+Measured on the owner's Windows machine, one sentence of 85 characters (about 4.8 s
+of audio), sherpa-onnx v1.12.20 and the installed models:
+
+| Voice | Time per sentence | Notes |
+|---|---|---|
+| Piper Faber, Cadu (new process) | 0.8 s | the app keeps Piper running: about 0.1–0.4 s |
+| Piper Dii (new process) | 1.2 s | kept running: about 0.5 s |
+| Kokoro fp32, 2 threads | 4.8 s wall | 2.8 s synthesis (RTF 0.59) + about 2 s start and load |
+| Kokoro fp32, 4 threads | about 4 s wall | 2.0 s synthesis (RTF 0.42) |
+| Kokoro int8, 2 / 4 threads | 8.9 / 8.2 s wall | RTF 1.43 / 1.27: slower, rejected |
+
+Findings:
+- Only Kokoro is slow. Captions used to appear when the AI wrote a sentence, so
+  with Kokoro they ran seconds ahead of the voice; with Piper the gap was hidden.
+  Captions now appear when a sentence starts playing.
+- The app now gives Kokoro up to four threads (half the logical cores, 2–4).
+- Each sentence started the runtime and loaded the 325 MB model again. Since v0.28.0
+  the app loads `sherpa-onnx-c-api.dll` (shipped with the runtime, v1.12.20
+  `SherpaOnnxOfflineTts*` functions) once and keeps the model in memory.
+
+## Kokoro kept loaded (2026-10-29)
+
+Same machine, Dora, release build (`cargo run --release -p kg-audio --example
+kokoro_speed`):
+
+| Step | Time |
+|---|---|
+| Load the model once (at lesson start) | 2.0 s |
+| "Olá! Hoje vamos estudar a crase." (2.9 s of audio) | 2.3 s |
+| A 58-character sentence (3.7 s of audio) | 1.5 s |
+| A 45-character sentence (3.1 s of audio) | 1.3 s |
+
+Parakeet transcribed the output word for word. English passages (Heart, Michael,
+Emma, George; `--kokoro-lang=en-us` with `lexicon-us-en.txt`, or `en` with
+`lexicon-gb-en.txt`; `en-gb` is refused by this runtime) still run the program,
+because the language is fixed when the model loads.
+
+The upstream overview focuses on English/Chinese examples; the pinned source exposes
+`pt-br`. That supports testing the candidate, not a claim that Portuguese quality is
+already verified. Newer runtime releases need a fresh compatibility check.

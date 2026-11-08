@@ -1,0 +1,254 @@
+<p align="center">
+  <img src="crates/ui/assets/icon.png" width="128" height="128" alt="Know Giver 图标：新月下的狒狒形象托特神版画，翡翠色方块">
+</p>
+
+<h1 align="center">Know Giver</h1>
+
+<p align="center"><b>白标版本基础</b></p>
+
+<h3 align="center">你的考试。你的计划。一位会和你对话的老师。</h3>
+
+<p align="center">
+  <a href="README.md">English</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.ja.md">日本語</a> · <a href="README.zh-Hans.md">简体中文</a> · <a href="README.zh-Hant.md">繁體中文</a>
+</p>
+
+<p align="center">
+  <b>为考试制定学习计划的桌面应用，完全用 Rust 编写。</b><br>
+  放入考试公告或大纲的 PDF，得到按周安排的计划，并和一位会倾听、讲解、出题的老师一起学习。
+</p>
+
+<p align="center">
+  <a href="https://www.rust-lang.org"><img alt="Pure Rust, 2024 edition" src="https://img.shields.io/badge/pure%20Rust-2024-3f8f7c?style=flat-square&logo=rust&logoColor=white"></a>
+  <a href="https://github.com/emilk/egui"><img alt="UI: egui" src="https://img.shields.io/badge/UI-egui%200.36-2c6b5c?style=flat-square"></a>
+  <a href="https://www.sqlite.org"><img alt="Storage: SQLite" src="https://img.shields.io/badge/storage-SQLite-2c6b5c?style=flat-square&logo=sqlite&logoColor=white"></a>
+  <a href="https://typst.app"><img alt="Handouts: Typst" src="https://img.shields.io/badge/handouts-Typst-2c6b5c?style=flat-square&logo=typst&logoColor=white"></a>
+  <img alt="Speech to text: Whisper and Parakeet" src="https://img.shields.io/badge/speech-Whisper%20%C2%B7%20Parakeet-2c6b5c?style=flat-square&logo=huggingface&logoColor=white">
+  <a href="https://github.com/rhasspy/piper"><img alt="Voices: Piper and Kokoro" src="https://img.shields.io/badge/voices-Piper%20%C2%B7%20Kokoro-2c6b5c?style=flat-square"></a>
+  <img alt="AI: OpenAI-compatible APIs and GitHub Copilot" src="https://img.shields.io/badge/AI-OpenAI--compatible-2c6b5c?style=flat-square&logo=ollama&logoColor=white">
+  <img alt="Sign in: ChatGPT, Claude Code, GitHub Copilot" src="https://img.shields.io/badge/Sign%20in-ChatGPT%20%C2%B7%20Claude%20Code%20%C2%B7%20Copilot-2c6b5c?style=flat-square&logo=openid&logoColor=white">
+  <a href="https://github.com/ggml-org/llama.cpp"><img alt="OCR runtime: llama.cpp" src="https://img.shields.io/badge/OCR-llama.cpp-2c6b5c?style=flat-square"></a>
+  <a href="https://www.vulkan.org/"><img alt="GPU acceleration: Vulkan" src="https://img.shields.io/badge/GPU-Vulkan-2c6b5c?style=flat-square&logo=vulkan&logoColor=white"></a>
+  <img alt="Windows" src="https://img.shields.io/badge/-Windows-2c6b5c?style=flat-square&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0wIDBoMTEuNHYxMS40SDB6TTEyLjYgMEgyNHYxMS40SDEyLjZ6TTAgMTIuNmgxMS40VjI0SDB6TTEyLjYgMTIuNkgyNFYyNEgxMi42eiIvPjwvc3ZnPg%3D%3D&logoColor=white&labelColor=111111">
+  <img alt="macOS" src="https://img.shields.io/badge/-macOS-2c6b5c?style=flat-square&logo=apple&logoColor=white&labelColor=111111">
+  <img alt="Linux" src="https://img.shields.io/badge/-Linux-2c6b5c?style=flat-square&logo=linux&logoColor=white&labelColor=111111">
+  <a href="#license"><img alt="License: MIT OR Apache-2.0" src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-2c6b5c?style=flat-square&logo=opensourceinitiative&logoColor=white"></a>
+  <img alt="Languages: Portuguese, English, Japanese, Simplified and Traditional Chinese" src="https://img.shields.io/badge/languages-pt--BR%20%C2%B7%20en%20%C2%B7%20ja%20%C2%B7%20zh--Hans%20%C2%B7%20zh--Hant-2c6b5c?style=flat-square">
+  <img alt="Local-first voice" src="https://img.shields.io/badge/voice-local--first-2c6b5c?style=flat-square">
+</p>
+
+<br>
+
+<p align="center">
+  <img src="docs/images/zh-Hans/lesson.png" alt="课堂画面：老师的肖像和字幕、写有要点的板书、学生的麦克风" width="100%">
+</p>
+
+<p align="center">
+  <a href="#从考试公告到学习计划">公告 → 计划</a> ·
+  <a href="#课堂">课堂</a> ·
+  <a href="#板书">板书</a> ·
+  <a href="#阅读并标记讲义">讲义</a> ·
+  <a href="#练习复习讲义">练习</a> ·
+  <a href="#主观题与作文">主观题与作文</a> ·
+  <a href="#首次设置">首次设置</a> ·
+  <a href="#隐私">隐私</a> ·
+  <a href="#开始使用">开始使用</a>
+</p>
+
+<br>
+
+## 从考试公告到学习计划
+
+考试公告在你的电脑上读取，只有考试大纲会发送给 AI。
+
+- **选择职位。** 有些考试招考多个职位。Know Giver 会找出这些职位，问你报考哪一个，计划只包含公共科目和*你的*职位的专业科目。
+- **按你的时间安排。** 根据距离考试的周数和每周学习时长，按周、科目和知识点制定计划。可以同时管理多个考试。
+- **扫描版 PDF。** 没有文字的页面可以由你设置的图片模型转写。
+
+<p align="center">
+  <img src="docs/images/zh-Hans/edital-roles.png" alt="从包含多个职位的考试公告中选择职位" width="80%">
+</p>
+
+## 课堂
+
+老师按照课程安排一步步讲解知识点：每一步讲到讲义的要点，确认你理解后再继续，并覆盖测验会考的所有内容。最后有总结和测验提示。可选择「快速」「标准」「完整」三种长度。
+
+**中文课堂目前通过文字进行。** 语音（本地语音识别和朗读）目前支持葡萄牙语和英语，中文语音将在之后支持。也可以在设置中使用云端语音服务。
+
+AI 可以使用任何兼容 OpenAI 的模型（Z.ai、DeepSeek、Qwen、Kimi、Anthropic、OpenAI、Gemini、Ollama 等），给老师的指令（提示词）会跟随应用语言使用中文。
+
+## 板书
+
+除了要点，老师还会写**公式**、**流程图**、**对比表**、**时间线**、**思维导图**、**考试提示**和**例子**，并展示 Wikipedia 的**图片**（只有搜索词会离开你的电脑）。
+
+<p align="center">
+  <img src="docs/images/zh-Hans/whiteboard.png" alt="板书项目：公式、流程图、表格、时间线、思维导图和考试提示" width="80%">
+</p>
+
+四位老师：**何静**、**李悦**、**任浩**、**欧阳文**。会呼吸、眨眼、点头的水墨肖像。
+
+<p align="center">
+  <img src="docs/images/teachers.png" alt="四位老师的状态：休息、倾听、思考、讲话" width="70%">
+</p>
+
+## 阅读并标记讲义
+
+生成的讲义在应用内打开，页面与 PDF 完全相同。拖动文字即可标记，点击标记可写笔记，侧边列表可跳到每处标记。应用会记住读到哪里，也可以保存带标记的 PDF。
+
+<p align="center">
+  <img src="docs/images/zh-Hans/reader.png" alt="阅读讲义：标记的段落、笔记和阅读进度" width="100%">
+</p>
+
+## 练习、复习、讲义
+
+- **测验**：考试风格的题目和解析；上传历年真题后会有真题。
+- **错题本**：答错的题会一直保留到答对为止，并出现在下一次测验的开头。
+- **间隔复习（SM-2）**：知识点会在你快要忘记之前回来。
+- **真题与资料**：历年真题（附答案）和资料会按公告范围筛选，并说明搁置的原因。
+- **讲义**：按知识点、科目或整个计划生成，含图片、练习和答案的 PDF。
+- **进度**：各科目的进展和实际学习时间。
+
+## 模拟考试
+
+按公告格式的一整场考试，限时作答。**从公告读取**会找出每科题量、考试时长、选择题还是判断题、
+答错是否倒扣、有没有作文；应用会把这些数字与公告原文核对，每一项你都可以调整。**生成模拟考试**
+会按出题机构的风格为每个科目出新题，分布在计划的各个主题上（你添加的历年真题会作为风格参考），
+公告有主观题考试时还会附上作文题。
+
+可以**在屏幕上**作答（时钟在右上角），也可以**打印**：PDF 包含双栏试题册、带行号的作文纸，以及
+四角有定位标记的答题卡。在纸上作答后，把涂卡结果填入应用的答题卡再交卷。离开画面或关闭应用时
+计时不会停，同一时间只能进行一场考试。评分就是根据保存的答案和公告分值做的简单计算，按科目显示
+答对、答错、未答、用时以及是否超时。答错的题进入错题本，作文送到“主观题与作文”拍照评分，
+答案与解析在下方展开。还新增了 10 个挑战。
+
+<table>
+  <tr>
+    <td><img src="docs/images/zh-Hans/mock.png" alt="模拟考试：从公告读取的形式、生成按钮和以往成绩"></td>
+    <td><img src="docs/images/zh-Hans/mock-sitting.png" alt="考试进行中：右上角的时钟、屏幕上的题目和答题卡"></td>
+    <td><img src="docs/images/zh-Hans/mock-result.png" alt="成绩：各科得分，答对、答错、未答，以及用时"></td>
+  </tr>
+</table>
+
+## 挑战与成就
+
+**成就**页面共有 36 个系列、**164 个挑战**，每个等级都能获得一项原创成就（翡翠色、新月，与应用
+标志相同的版画风格）。每个计划中：课堂、测验、答对与满分、反败为胜的错题、已学主题与考试公告的
+覆盖、达标的周、已掌握的主题与科目、复习、历年真题、讲义与标注，以及考试公告包含时的主观题。
+所有计划合计：学习时长与天数、创建的计划，以及成就收藏本身。第一步、反败为胜、计划启动和一周达标
+保留各自的名字。
+
+每个系列占一行：下一级、进度（2/3）、"第 3 级，共 11 级"，以及前往课堂、测验或复习的按钮。
+"今天"页面低调地显示下一个挑战。展示柜包含所有成就，可按已获得或未解锁筛选，鼠标悬停可查看
+详情；等级以边框颜色和一到三个圆点表示。成就只由代码中的规则根据已保存的学习记录发放，绝不由
+AI 决定；每个计划的进度各自独立。此功能推出前的学习同样计入；如果历史记录无法确定日期，卡片会
+注明。提示只在课堂或测验结束后出现一次。没有积分，没有排行榜，也没有会中断的连续记录。
+
+<table>
+  <tr>
+    <td><img src="docs/images/zh-Hans/challenges.png" alt="成就：每个系列一行，显示等级、进度和前往下一节课堂或测验的按钮"></td>
+    <td><img src="docs/images/zh-Hans/showcase.png" alt="成就展示柜：已获得的为彩色并附日期，未解锁的为灰色并附进度"></td>
+  </tr>
+</table>
+
+## 主观题与作文
+
+考试公告中有作文或主观题考试时，会出现**主观题与作文**区域。
+
+- **根据计划出题**：议论文、专业主观题或案例分析。动笔前会显示评分标准和分值（来自公告、你自己设定，或 Know Giver 的通用标准）。
+- **手写作答并上传照片**：JPEG 或 PNG。太暗、模糊或拍不全的照片会要求重拍。
+- **核对读取结果**：照片和转写并排显示。你的书写错误会保留，不确定的字词不会扣分。
+- **形成性评分**：按标准估计的分数、经过核对的原文引用、优点、问题和建议、三个优先事项。
+
+默认情况下，PaddleOCR-VL 1.5（0.9B）通过随应用提供的 [🦙 llama.cpp](https://github.com/ggml-org/llama.cpp) `llama-server` v0.8.0 在本地读取照片；首次需从 Hugging Face 下载约 1.82 GB 的模型。在设置 → AI 中明确选择外部图片 API 后，照片才会发送给该服务商。Copilot 只接受文本，因此始终使用本地 OCR。可通过**测试图片读取**检查所选方式。最低硬件要求和手写识别准确率尚未测试；评分前请务必核对转写。Windows/Linux 包含 🔺 [Vulkan](https://www.vulkan.org/) 运行时，检测到兼容 GPU 时会优先使用；没有设备或 GPU 启动失败时回退到 CPU。macOS 使用 CPU。按字数要求的中文作文，字数要求会写在题目说明中。
+Windows 安装包包含所需的 C++ 运行库和 Vulkan 加载器；使用 Vulkan 仍需安装兼容的显卡驱动。
+
+<table>
+  <tr>
+    <td><img src="docs/images/zh-Hans/writing-check.png" alt="核对转写：照片旁边是可编辑的文字，并列出不确定的词"></td>
+    <td><img src="docs/images/zh-Hans/writing.png" alt="已评分的作文：公告中的评分标准、每项的估计分数和引文、问题与建议"></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td><img src="docs/images/zh-Hans/today.png" alt="今天：连续天数、待复习和下一步"></td>
+    <td><img src="docs/images/zh-Hans/board.png" alt="历年真题：与计划对应的题目，超纲的题目单独列出"></td>
+  </tr>
+</table>
+
+## 首次设置
+
+首先有五个简短步骤：语言、名字、老师、AI 服务及 API 密钥或账户登录、国家或地区及同意条款。可以从 22 个 AI 服务商中选择（**Z.ai** 性价比高，**Claude** 准确度高），并附有创建密钥的链接。之后有一段简短的界面导览。
+
+GitHub Copilot 可通过官方 Copilot CLI 使用 GitHub 账户登录，无需 API 密钥。CLI 通常将登录凭据保存在操作系统密钥链中；如果密钥链不可用，可能会改用明文配置文件（`~/.copilot/config.json`）。Know Giver 不会将凭据保存在应用数据库中。此集成仅支持文本，不支持图像。
+
+**使用你已有的账号登录。** AI 步骤首先显示“使用账号登录”，适合已订阅聊天套餐但从未创建过 API 密钥的人：**ChatGPT**（OpenAI 官方的“Sign in with ChatGPT”，课堂计入你的 ChatGPT 套餐上限）、**Claude**（通过 Anthropic 官方程序 Claude Code，使用你的 Claude Pro 或 Max 账号；Know Giver 可以帮你安装）以及 **GitHub Copilot**。每项都在其所属公司的页面上登录，Know Giver 不会看到你的密码。在中国大陆不提供这些账号服务。Know Giver 与 OpenAI、Anthropic 和 GitHub 无关联。
+
+<p align="center">
+  <img src="docs/images/zh-Hans/setup-ai-account.png" alt="AI 步骤的“使用账号登录”标签页：ChatGPT、Claude 和 GitHub Copilot，各有登录按钮" width="60%">
+</p>
+
+**免费或付费。** 除了“使用账号登录”，AI 步骤还有两个标签页。“付费”显示推荐的服务（性价比的 Z.ai、准确度的 Claude）；“免费”列出有免费套餐的服务（Gemini、Mistral、OpenRouter、Groq、NVIDIA、GitHub Models，以及在你电脑上运行的 Ollama 或 LM Studio；在中国大陆为智谱、硅基流动等），每项显示套餐包含的模型、如何使用你发送的内容（有些免费套餐会用于训练）以及限额与规则的链接。
+
+**你所在地区的备考方式。** 课堂、测验、讲义和主观题会按照你所在地区的备考方式进行：中国大陆是行测和申论；新加坡是 PSLE、O/A-Level 的题型；台湾和香港是各自的公务员考试形式；日本是五选一和按字数写的小论文；巴西、美国和英国也各有其题型。考试公告和历年真题始终优先。
+
+<p align="center">
+  <img src="docs/images/zh-Hans/setup-ai-free.png" alt="AI 步骤的“免费”标签页：有免费套餐的服务、包含的模型和数据使用方式" width="60%">
+</p>
+
+<table>
+  <tr>
+    <td><img src="docs/images/zh-Hans/setup-ai.png" alt="首次设置的 AI 步骤"></td>
+    <td><img src="docs/images/zh-Hans/setup-terms.png" alt="首次设置的条款步骤"></td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/images/zh-Hans/tour.png" alt="引导：侧边栏标出“课堂”，旁边有说明该页面的卡片" width="80%">
+</p>
+
+## 隐私
+
+- 语音识别和朗读在你的电脑上运行，录音不会离开电脑。
+- 数据（SQLite 数据库、模型、日志）保存在 `%LOCALAPPDATA%\KnowGiver`。
+- 默认情况下，手写照片在本地识别，不会离开这台电脑。只有在设置 → AI 中明确选择外部图片 API 时，照片才会发送给相应服务商；Copilot 始终使用本地 OCR。发送前应用会显示目标。照片保存在本地数据文件夹中，删除作答时一并删除。扫描版 PDF 页面仅在你请求 OCR 时发送给已配置的图片模型。首次安装本地 OCR 会从 Hugging Face 下载约 1.82 GB。
+- 打开时，应用会向 GitHub 查询最新版本；只发送这个请求，可在 设置 → 关于与更新 中关闭。
+- 没有账户、遥测或广告。
+
+Know Giver 在新加坡、巴西、美国、欧盟、英国、日本、台湾和香港向公众提供；新加坡的条款见[使用条款](docs/legal/terms-of-use.zh-Hans.md)和[隐私政策](docs/legal/privacy-policy.zh-Hans.md)（以英文版为准），也会在应用中显示。在其他国家和地区（包括中国大陆），仅限经书面授权的合作伙伴按[合作伙伴访问条款](docs/legal/partner-access.zh-Hans.md)使用；选择中国大陆时，只列出在中国大陆提供服务的 AI 服务商（如智谱、阿里云百炼、DeepSeek、Kimi）。
+
+## 品牌版（白标）
+
+本仓库是 Know Giver 的**白标版本基础**：同一个应用，可以用另一家公司的名称、颜色和图片构建，也可以做成**限时试用版**。这里不发布公开版本，每个构建都为一个客户制作。
+
+1. 将 `branding/example` 复制为 `branding/<客户>`，编辑 `brand.toml`（产品名称、公司名称和网站、颜色、图标和标志、更新来源、试用期限）。
+2. 品牌在编译时从 `KG_BRAND_DIR` 读取（默认为 Know Giver 本身的 `branding/default`）：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\package.ps1 -Brand branding\<客户>
+```
+
+会生成 `dist\<data_dir>-<版本>-windows-x64.zip`，安装了 [Inno Setup 6](https://jrsoftware.org/isinfo.php) 时还会生成安装程序。
+
+**试用版**：设置 `[demo] enabled = true` 后，应用从首次启动起可用 `days` 天，或用到 `expires` 当天（以先到者为准）。侧边栏显示剩余天数；到期后只会打开"试用期已结束"页面，并提供联系客户的按钮。学习计划和进度仍保存在电脑上。
+
+**尚未品牌化的部分**见 [ROADMAP](ROADMAP.md)（`docs/legal/` 中的条款、老师肖像、成就徽章、macOS/Linux 安装包）。出售前请检查许可证：Dii 语音仅限非商业用途。
+
+## 开始使用
+
+```bash
+cargo run --release
+```
+
+首次启动时会打开首次设置。需要 Rust 1.95 或更新版本。Windows 安装包：
+
+关闭窗口后，应用会继续留在系统托盘中：双击图标可重新打开窗口，单击则显示菜单（打开或退出）。应用运行时再次打开 Know Giver，会回到同一个窗口；始终只有一个实例和一个托盘图标。安装时可以选择是否随系统启动，以及是否接收学习提醒（默认每 3 小时一次，可在设置中改为 30 分钟到 8 小时；两项默认均关闭）。提醒是屏幕角落的一个 Know Giver 小窗口，列出进度最慢的科目，并提供开始学习的按钮。当你离开应用时（在托盘中、最小化或位于其他窗口之后）才会提醒，课堂、测验或复习进行中不会提醒，并且仅在当前计划还有未完成科目时显示。
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\package.ps1
+```
+
+开发相关内容请参阅 [English README](README.md#development)（技术文档为英文）。
+
+## 许可证
+
+可选择依 [MIT](LICENSE-MIT) 或 [Apache License 2.0](LICENSE-APACHE) 使用（`MIT OR Apache-2.0`）。第三方字体、肖像、语音和标志各有其许可（见 [English README 的 Credits](README.md#credits)）。报告安全漏洞请参阅 [SECURITY.md](SECURITY.md)。

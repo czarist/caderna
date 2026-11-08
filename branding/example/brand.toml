@@ -1,0 +1,46 @@
+# Template for a client brand. Copy this folder (e.g. to branding/acme),
+# replace the pictures and values, then build with:
+#
+#   PowerShell:  $env:KG_BRAND_DIR = "branding/acme"; cargo build --release -p know-giver
+#   or:          scripts\package.ps1 -Brand branding\acme
+#
+# Paths below are relative to this file. This example still points at the
+# Know Giver pictures so it builds as is; ship the client's own.
+
+[app]
+name = "Exemplo Estudos"          # product name shown to students
+slug = "exemplo-estudos"          # a-z, 0-9 and - only
+data_dir = "ExemploEstudos"       # data folder and install folder
+# A new GUID per client: PowerShell [guid]::NewGuid()
+installer_guid = "0B7E4C2A-5D1F-4E8B-9A3C-7F2D6E1B4A90"
+
+[company]
+name = "Exemplo Educação"
+url = "https://example.com"       # opened by the credits; "" for none
+url_label = "example.com"         # printed on handouts
+show_credit = true                # "Made by …" in the app and on handouts
+mark_license = ""                 # licence of the mark if not the client's own
+
+[colors]                          # #RRGGBB
+accent_light = "#1F4E8C"
+accent_dark = "#8FB4E3"
+highlight_light = "#B05A1F"
+highlight_dark = "#E3A06A"
+company = "#123A6B"               # handout credit and watermark text
+
+[assets]
+icon_png = "../../crates/ui/assets/icon.png"                  # 512x512, transparent corners
+cover_png = "../../crates/ui/assets/icon-square.png"          # square, corners filled
+engraving_png = "../../crates/ui/assets/thoth-engraving.png"  # reminder pop-up art
+icon_ico = "../../crates/app/assets/know-giver.ico"           # Windows icon
+mark_svg = "../../crates/ui/assets/brand/trentin-dragon.svg"  # white, one colour
+watermark_svg = "../../crates/handout/assets/trentin-dragon.svg"  # faint, in the company colour
+
+[updates]
+repository = ""                   # https://github.com/<owner>/<name> with releases, or ""
+
+[demo]
+enabled = true
+days = 14                         # days from the first start; 0 = no day limit
+expires = "2027-03-31"            # last day of use, whatever the first start; "" = none
+contact_url = "https://example.com/contato"   # https:// or mailto:

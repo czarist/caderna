@@ -1,0 +1,757 @@
+# Roadmap — Know Giver White-Label
+
+## Current Status
+
+Version 0.1.0 of the white-label base, forked from Know Giver 0.39.3 on 2026-11-08.
+Everything Know Giver does is here (edital → plan, voice lessons with whiteboard,
+handouts and reader, quizzes and reviews, mock exams, written answers with local OCR,
+challenges, five UI languages, account sign-ins, tray and reminders). Know Giver's own
+phase history (Phases 1–7, all done) stays in the upstream repository; this file keeps
+the white-label work and the phases still open.
+
+A build carries one brand, read at compile time from `branding/<name>/brand.toml`
+(`KG_BRAND_DIR`; default `branding/default`, Know Giver itself). See
+[branding/README.md](branding/README.md).
+
+**Before building:** full builds keep every core busy and have powered the owner's PC
+off before. Build and test with `-j 2` to `-j 4` (`cargo test --workspace -j 2`).
+
+## Phase W1 — Brand and demonstration builds (done in 0.1.0)
+
+- [x] `kg-brand` crate: `brand.toml` read and checked at compile time
+      (`crates/brand/config.rs`), exposed as constants; a bad value stops the build with
+      the key's name.
+- [x] Name everywhere: window, tray, sidebar, every text through `%{app}` /
+      `%{company}` / `%{license}` in `locales/*.yml` (the UI's `t!` fills them in), the
+      ChatGPT sign-in name, HTTP user agents.
+- [x] Accent and highlight colours (light and dark), app icon, cover and reminder art,
+      company mark; "Made by …" credit can be turned off.
+- [x] Handouts: watermark, footer credit and its colour from the brand; the reader still
+      leaves them out of selectable text.
+- [x] Data folder, database and log named by the brand, so two brands on one computer
+      never share data.
+- [x] Windows exe icon and version info (company, product) from the brand.
+- [x] Installer: name, publisher, folder, GUID, icon and file names from the brand
+      (`scripts\package.ps1 -Brand branding\<client>`).
+- [x] Updates only from the brand's own repository; none, and no source link, when empty.
+- [x] Demonstration builds: days from the first start and/or a last date; days left in
+      the sidebar; afterwards only the "demonstration ended" screen with the client's
+      contact link; study data kept. Clock kept in the database and in the settings
+      folder; earliest start and latest day win, so a clock turned back does not help.
+- [x] `branding/default` (Know Giver) and `branding/example` (template with a demo).
+
+## Phase W2 — Per-client legal texts (next)
+
+The terms and privacy policy (`docs/legal/`) still name Know Giver and Trentin Software
+as the provider. Selling to a company needs:
+
+- [ ] Decide the roles per client: who is the data controller and who supplies the
+      software (Trentin as licensor, the client as the provider to its students?).
+- [ ] Legal texts from the brand: either placeholders (`{app}`, `{company}`, contact) in
+      `docs/legal/` filled at build time, or a `legal/` folder inside each brand that
+      replaces them. Keep the rules from CLAUDE.md: both languages per region, date and
+      `TERMS_VERSION` bumped, and the texts still say the AI can be wrong.
+- [ ] A licence agreement template between Trentin and the client (outside the app).
+- [ ] Lawyer review before the first sale.
+
+## Phase W3 — Remaining art and names
+
+- [ ] Teacher portraits, achievement badges and Thoth illustrations
+      (`crates/ui/assets`) optionally replaced per brand.
+- [ ] Settings → About: the client's support contact and version, besides the credit.
+- [ ] Screenshots per brand for the client's material (`KG_SNAPSHOT_DIR` with
+      `KG_BRAND_DIR`).
+- [ ] Prompts: the tutor never names itself; check that no prompt says "Know Giver".
+
+## Phase W4 — Packaging and releases per client
+
+- [ ] macOS and Linux packages from the brand (`scripts/package-unix.sh`: bundle name,
+      `.desktop` file, icon, archive names).
+- [ ] One-line installs (`scripts/install.ps1`, `scripts/install.sh`) and the macOS/Linux
+      updater script that `update.rs` embeds take the repository from the brand.
+- [ ] Release workflow per brand: a `brand` input to `.github/workflows/packages.yml`
+      that builds from `branding/<client>` and publishes to the client's repository.
+- [ ] Code signing (Windows and macOS) under the right publisher name.
+- [ ] Keep client brand folders (pictures, contact data) out of this public base: a
+      private repository or CI secret per client.
+
+## Phase W5 — Stronger demonstrations and licences
+
+The current demo stops casual use, not someone who deletes both clock copies or edits
+the binary.
+
+- [ ] Signed licence keys (Ed25519, public key in the brand): a full build unlocks with a
+      key for one company, number of seats and end date; a demo is a key with a short
+      end date. No server needed.
+- [ ] Optional online check when the client wants it (seats in use), off by default and
+      stated in the privacy policy.
+- [ ] Demo watermark on handouts ("Demonstração") so printed material from a demo is
+      recognisable.
+- [ ] Convert a demo to the full version in place: same `slug` and `data_dir`, the
+      student's plans and progress carried over (works today when only `[demo]` changes;
+      add a test).
+
+## Licences to check before selling
+
+- [ ] Dii voice (OpenVoiceOS/pipertts_pt-BR_dii): CC BY-NC-ND 4.0, non-commercial. A sold
+      build must not download or offer it, or needs another pt-BR voice.
+- [ ] Other voices, models and art under the README's Credits: confirm each allows
+      commercial redistribution.
+- [ ] Account sign-ins (ChatGPT, Claude Code, Copilot): their terms were accepted for
+      Know Giver by Trentin; confirm they cover a product sold under another name.
+
+## Know Giver phases still open
+
+Carried over from Know Giver; they apply to every brand.
+
+## Phase 8 — Managed local AI (planned, not started)
+
+**Goal:** the student picks "run the AI on this computer" and gets a working setup without
+starting servers, downloading model files or typing an API key. The app checks the machine,
+recommends a model, installs it after consent and runs the needed processes in the
+background. When no supported setup meets the minimum, local mode stays off and the app
+says why and what could change that.
+
+**Status:** planning only. None of the components below ship today. What exists: the
+student can point Settings → AI at any OpenAI-compatible endpoint, including a local
+Ollama (`AiConfig` default `http://localhost:11434/v1`), with one model per task
+(`ModelSet`) and a separate vision model. That manual path stays as it is.
+
+### Target architecture
+
+```text
+Know Giver (Rust) ──HTTP, loopback──> LiteLLM (proxy) ──> llama.cpp server ──> model files (GGUF)
+                                                        ▲
+gpu-unlock (optional, boot time, Linux or Windows) ── prepares the GPU, never in the request path
+```
+
+- **Know Giver** keeps all orchestration in Rust: diagnosis, catalog, downloads, process
+  supervision, health checks and settings live in `kg-engine` workers and report through
+  `Event`s, like model downloads and the Parakeet server today. The AI client keeps
+  talking OpenAI-compatible HTTP; local mode only changes the base URL, the key and the
+  model aliases.
+- **LiteLLM** is the gateway: one stable endpoint, per-task model aliases, a key, request
+  limits and timeouts. It does not load or run models.
+- **llama.cpp** (`llama-server`) loads the model and runs it on CPU or GPU (8.3).
+- **gpu-unlock** belongs to hardware preparation. Local AI must work with it absent,
+  unsupported or failed.
+
+### Exceptions to the pure-Rust preference
+
+The owner authorized these external projects. Each is integrated as published, not
+rewritten in Rust, and runs outside the app process; orchestration stays in Rust. This is
+not a general permission for dependencies in other languages: any further one needs its own
+recorded decision.
+
+- **LiteLLM** — <https://github.com/BerriAI/litellm>. Python, embedded in the installer
+  and run as a managed child process bound to loopback. Use only the open-source part;
+  features under the LiteLLM commercial license stay off. Confirm the license of the
+  pinned version before shipping.
+- **llama.cpp** — <https://github.com/ggml-org/llama.cpp>. C/C++ (MIT), the inference
+  engine: its `llama-server` binary runs as a child process, like the sherpa-onnx runtime
+  today. Not linked into the app.
+- **gpu-unlock** — <https://github.com/Zagitta/gpu-unlock> on Linux (kernel module, C,
+  GPL-2.0-only) and its Windows port **Windows-GPU-UNLOCK** —
+  <https://github.com/impacifist/Windows-GPU-UNLOCK> (UEFI pre-boot tool, GPL-2.0-only).
+  Optional, only on an explicit user action through the system's administrator prompt.
+  Not bundled in the installer; NVIDIA firmware is never redistributed.
+
+### Dependencies
+
+- Existing: the model download code (`kg_audio::models::ModelStore`/`Fetcher`, which has
+  no checksum or resume today), engine workers and events, `Settings`/`AiConfig`, the rule
+  that images go only to a vision model, the vision probe (`check_vision`), the i18n
+  system, and the packaging scripts (`scripts/package.ps1`, `scripts/package-unix.sh`).
+- Order inside the phase: 8.1 → 8.2 and 8.3 in parallel → 8.4 → 8.5 → 8.6 → 8.8.
+  8.7 depends only on 8.2 and 8.8's benchmark and can come last or never.
+- Related items elsewhere: the optional CUDA build of candle (Whisper on the GPU shares
+  VRAM with the model), "CUDA execution … unverified" under Not yet verified, and the idea
+  of a local model as `MODEL_VERIFIER` (Next up #8), which a managed install would make
+  easy to try.
+
+### 8.1 Investigation
+- [ ] Measure what the app already uses while a lesson runs: RAM and VRAM for Whisper or
+      Parakeet, Kokoro or Piper, the reader and the UI, on Windows and Linux. These are
+      the reserve the model must leave free.
+- [ ] Write per-task needs from the current prompts: context length (edital excerpts,
+      handouts with board material), output length (study plan, handout), JSON reliability
+      (quiz, correction, written-answer grades), streaming latency (tutor first sentence)
+      and vision (scanned editais, handwritten pages).
+- [ ] Shortlist Portuguese-capable open models per task and size class, with license,
+      quantizations and vision support; record sources and dates.
+- [ ] Measure the installer with LiteLLM and llama.cpp embedded: size, start time,
+      memory, and Windows antivirus behaviour with the embedded Python.
+
+### 8.2 Hardware diagnosis
+- [ ] Detect OS and architecture; CPU model, cores and instruction sets (AVX2, AVX-512,
+      NEON); total and available RAM.
+- [ ] Detect GPUs: vendor, device ID, VRAM total and free, driver version. NVIDIA, AMD,
+      Intel and Apple, with a source per platform (to investigate: NVML, DXGI, Metal, sysfs,
+      or llama.cpp's own device listing).
+- [ ] Detect which inference backends really work (CUDA, Vulkan, ROCm/HIP, SYCL, Metal,
+      CPU) by asking the chosen engine to list and initialize devices, not by guessing from
+      the GPU name.
+- [x] For local manuscript OCR, probe llama.cpp's Vulkan device list on Windows/Linux,
+      select supported hardware devices and retry with the CPU runtime if GPU startup fails.
+      Physical-device compatibility and performance still need validation on each vendor.
+- [ ] Check free disk space for download, unpacking and running (download and installed
+      size counted separately).
+- [ ] Subtract the app's own use (8.1) and a safety margin from available memory.
+- [ ] Keep a fingerprint of hardware, driver, engine and model; when it changes, run the
+      diagnosis again before starting local mode.
+- [ ] Keep a versioned compatibility matrix in the repo (OS, hardware, driver, backend,
+      engine version, model, quantization), each row marked **verified**, **experimental**
+      or **incompatible**, with who tested it and when.
+- [ ] Evaluate NVIDIA without unlock, AMD, Intel, Apple Silicon and CPU-only on their own
+      backends. A missing gpu-unlock never blocks local mode by itself.
+
+### 8.3 Inference engine: llama.cpp
+Chosen 2026-10-29 for its hardware coverage (CUDA, Vulkan, ROCm/HIP, SYCL, Metal, CPU),
+prebuilt Windows/Linux/macOS binaries, GGUF models, an OpenAI-compatible server, vision
+models and grammar-constrained JSON. Alternatives considered: `mistral.rs` (Rust, narrower
+hardware), Ollama (its own model store overlaps an app-managed catalog), candle in process
+(serving and vision would be ours to build), vLLM-style server stacks (not for a desktop).
+- [ ] Pin one `llama.cpp` release; list which of its builds the app uses per platform
+      and backend, with SHA-256 in the manifest (see Decisions).
+- [ ] Use the engine's device listing for the backend check in 8.2.
+- [ ] Check vision models (multimodal projector files), JSON grammar and streaming through
+      LiteLLM with the app's real prompts.
+- [ ] Settings per model: context size, GPU layers, threads (leave cores for STT/TTS),
+      batch size; from the catalog, not typed by the student.
+
+### 8.4 LiteLLM integration
+- [ ] Generate the LiteLLM config from the app: only local engine backends, one alias per
+      task (`kg-study-plan`, `kg-tutor`, `kg-vision`, …) mapped to installed models, no
+      external providers in local mode.
+- [ ] Bind LiteLLM and the engine to `127.0.0.1` on free ports; protect LiteLLM with a
+      random master key kept in the app's settings and the engine with its own key or a
+      loopback-only socket; turn off the admin UI, telemetry, callbacks and spend
+      database.
+- [ ] Start, health-check (LiteLLM and engine), stop and restart from a supervisor worker in
+      `kg-engine`; restart with a limit and backoff; stop both processes on app exit and
+      clean up leftovers on the next start, as the Parakeet server does.
+- [ ] Pin LiteLLM and llama.cpp in the manifest; updates only through an app release,
+      with the same checks as a first install.
+- [ ] Map errors (engine not ready, out of memory, model missing, timeout) to `AiError`
+      kinds the UI already translates, with new keys where needed.
+
+### 8.5 Model catalog and installation
+- [ ] The model part of the `local-ai.toml` manifest (see Decisions): source and revision, license,
+      SHA-256, download and installed size, quantization, context, memory needed at that
+      context (weights + KV cache + engine overhead), and capabilities per task (text,
+      structured JSON, tools if ever needed, vision).
+- [ ] Recommend from the diagnosis: Portuguese quality on the app's tasks, latency,
+      context and running memory with room for STT/TTS. Fitting the file into VRAM is not
+      enough.
+- [ ] After the student accepts the size: download with progress, cancel, resume
+      (HTTP ranges) and SHA-256 check, staged so an interrupted install never looks
+      installed; remove frees the space. Extend the existing downloader rather than add a
+      second one, so speech models gain checksums and resume too.
+- [ ] Per-feature availability: a text-only setup enables lessons, plans, quizzes and
+      handouts, and marks image features (scanned editais, written answers) unavailable
+      with the reason. A text model never receives images.
+- [ ] Optional vision model as a separate install, checked with the existing vision probe.
+
+### 8.6 Setup experience
+- [ ] A clear choice in Settings → AI and onboarding: external API or on this computer.
+      The external settings are kept, so switching back needs no retyping.
+- [ ] Diagnosis and recommendation before anything is installed: what was found, the
+      recommended model, download and disk size, expected speed, what will not work
+      (for example, no vision).
+- [ ] Local mode sends no AI request outside the machine. Downloads of components and
+      models come only from pinned sources. Wikipedia pictures and update checks stay on;
+      Settings lists the services the app still reaches.
+- [ ] No automatic fallback to an external API; if the local service fails, the app says
+      so and offers retry, a smaller model, or switching mode on purpose.
+- [ ] Status in the app: starting, ready, busy, stopped, failed, with the reason.
+- [ ] All new UI text through `locales/*.yml` in every locale.
+- [ ] Heavy work (diagnosis, downloads, test runs, process start) in workers; the UI
+      stays responsive.
+
+### 8.7 Optional gpu-unlock
+Upstream, checked 2026-10-29:
+- **Linux, gpu-unlock 2.0.0:** kernel module loaded at boot with a kernel command-line
+  parameter. Ampere (RTX 30) stable, Ada (RTX 40) and Turing (RTX 20) experimental,
+  Blackwell (RTX 50) unsupported, laptops mixed.
+- **Windows, Windows-GPU-UNLOCK 0.3.1 (source-only pre-release):** a UEFI tool picked from
+  a boot entry before Windows starts. It needs Secure Boot off, BitLocker off, a separate
+  FAT32 EFI partition, Python and clang, and firmware files the user obtains. Success is
+  reported per card and system (RTX 3060–3090 Ti), not per model.
+- Both remove a cap on FP16/BF16/TF32 tensor math. Upstream's own reports show little gain
+  for quantized llama.cpp models (0–15%) and none for token decoding, which dominates
+  tutor replies.
+
+Tasks:
+- [ ] Check exact compatibility against the pinned upstream versions: PCI device IDs,
+      OS, kernel and headers or UEFI and boot setup, driver, Secure Boot and disk
+      encryption. Never assume every CUDA card qualifies.
+- [ ] Explain before enabling: administrator rights, boot changes, a reboot, what changes
+      and how to undo it; then run the allowed steps through the administrator prompt
+      after consent.
+- [ ] Enable only on an explicit request, never silently.
+- [ ] Verify after reboot (Linux kernel log; the Windows tool's own check). Offer disable
+      (Linux: remove the boot parameter; Windows: boot the normal Windows entry and the
+      port's restore script), uninstall, and recovery steps.
+- [ ] Benchmark the app's real workload with and without it on llama.cpp and the chosen
+      model; recommend it only with a measured gain. Never promise a speedup.
+- [ ] If it is unavailable or fails, local mode runs normally when it is otherwise viable.
+
+### 8.8 Validation
+- [ ] Minimum profile per feature (tutor, study plan, quiz/correction, handout, vision),
+      set from measurements on real machines, not universal RAM/VRAM numbers.
+- [ ] A short trial run after install and after any fingerprint change: model loads, peak
+      memory with STT/TTS loaded, time to first token, tokens per second, one valid JSON
+      answer, and the vision probe when a vision model is installed.
+- [ ] Out-of-memory and start failures: detect them, stop cleanly, explain, and offer a
+      smaller model or shorter context.
+- [ ] Tests for the supervisor, catalog checks, config generation (loopback only, no
+      external providers) and availability rules with simulated processes.
+- [ ] Fill the compatibility matrix with at least one verified row per supported backend.
+- [ ] Measure LiteLLM's overhead against calling `llama-server` directly (latency to first
+      token, memory) and record it.
+
+### Decisions (2026-10-29, owner)
+- **Inference engine:** `llama.cpp` server, with an exception like LiteLLM's.
+- **LiteLLM packaging:** embedded in the installer (pinned Python runtime and hashed
+  wheels, no Docker, nothing installed system-wide).
+- **LiteLLM stays** as the proxy even with a single local engine; its overhead is
+  measured and recorded (8.8), not a reason to drop it.
+- **gpu-unlock on Linux and Windows:** the Windows port is included in the exception.
+- **Privileged steps:** the app asks for consent, then calls the system's administrator
+  prompt (UAC on Windows, `pkexec`/polkit on Linux). Steps the app must not do for the
+  student, such as turning off Secure Boot or BitLocker or changing firmware settings, are
+  explained with instructions and checked afterwards, never done silently.
+- **Network features stay on in local mode:** Wikipedia pictures in handouts and update
+  checks keep working. The local-mode promise covers AI requests; Settings says which
+  other services the app still reaches.
+- **Catalog and matrix: one manifest, used like a lockfile** (recommended by the agent;
+  the owner wants components installed like package dependencies):
+  - A versioned `local-ai.toml` in the repo lists every pinned component (LiteLLM,
+    llama.cpp builds per platform/backend, models) with source, revision, license,
+    SHA-256 and sizes, plus the compatibility matrix rows.
+  - The packaging scripts read it to fetch and verify what the installer embeds: LiteLLM
+    and the llama.cpp CPU and Vulkan builds.
+  - The app embeds the same file at build time (`include_str!`). After diagnosis it
+    fetches what is too large or too specific for the installer the same way, with
+    consent: models, and the CUDA or ROCm build of llama.cpp when such a GPU is found.
+  - Changes only through a release, so each version ships the set that was tested with it.
+    A generated `docs/local-ai-compatibility.md` shows the matrix for people.
+
+### Still open
+- Installer size with LiteLLM and llama.cpp embedded, and Windows antivirus behaviour with
+  the embedded Python; measure in 8.1.
+- How far Windows-GPU-UNLOCK can be guided: it needs Secure Boot off, BitLocker off, a
+  separate FAT32 EFI partition and firmware files the user obtains; decide whether the
+  app offers it on Windows or only links to its instructions after the benchmark.
+
+### Acceptance criteria
+- **Compatible hardware:** diagnosis recommends a catalog model; after consent it downloads,
+  verifies, starts LiteLLM and the engine on loopback, passes the trial run, and a lesson,
+  a quiz and a study plan work with nothing sent outside the machine.
+- **GPU without gpu-unlock support:** the GPU is used through its normal backend, or CPU if
+  none works; gpu-unlock is shown as unavailable with the reason and nothing else is
+  blocked.
+- **Insufficient computer:** local mode stays disabled with the measured reason (for example
+  "4 GB free, the smallest supported setup needs 6 GB with voice loaded") and the
+  possible action (free memory, use an external API); no partial install is left.
+- **Interrupted download:** resumes from where it stopped or restarts cleanly; a corrupt or
+  partial file never counts as installed; cancel removes the temporary files.
+- **Service failure:** a crash or failed start of LiteLLM or the engine shows a clear
+  status, restarts within the limit, then stops with an explanation and actions; no
+  silent switch to an external API; no orphan processes after exit.
+- **No vision model:** text features work; scanned-edital OCR and written-answer reading show
+  "needs a vision model" with the option to install one; no image ever reaches a text
+  model.
+
+## Phase 9 — Proxy mode: several keys and models with fallback (planned, not started)
+
+**Goal:** the student registers several AI services, keys and models, including many free
+plans, and puts them in an order. The app sends each request to the first one and, when
+it fails or hits its limit, moves to the next, so lessons keep going without the student
+changing settings. Free plans have low daily limits; stacked together they can cover a
+study day without paying.
+
+**Status:** planning only. Today the app has one provider, one key and one model per task
+(`AiConfig`, `ModelSet`). Proxy mode builds on Phase 8: the same LiteLLM proxy on
+loopback, supervised by `kg-engine`, with llama.cpp running the local model, so the local
+model can be the first or the last link of the chain.
+
+```text
+Know Giver ──loopback──> LiteLLM (proxy mode)
+                           ├─ 1. Groq free (key A)
+                           ├─ 2. Gemini free (key B)
+                           ├─ 3. OpenRouter :free model (key C)
+                           └─ 4. llama.cpp on this computer (always available, slower)
+```
+
+### 9.1 Settings
+- [ ] A "Proxy mode" option in Settings → AI and in the first run's AI step, next to a
+      single service and "on this computer".
+- [ ] A list of entries, each with provider (from `PROVIDERS`), key, model and an
+      optional name; add, edit, remove, reorder by dragging, turn an entry off without
+      deleting it. Free plans from the Free tab can be added in one click with their
+      suggested model.
+- [ ] A connection check per entry (the existing test) and for the whole chain.
+- [ ] Separate chains per task where it matters: text tasks, structured JSON (study plan,
+      quizzes, grading) and vision. A vision chain holds only models that see images; a
+      text model never receives an image, even as a fallback.
+- [ ] Keys stored like today's key, then in the system keychain (see Next ideas); never
+      shown in full after saving, never in logs.
+
+### 9.2 Fallback rules
+- [ ] Move to the next entry on rate limit (429), quota exhausted, timeout, server error
+      or a model the account cannot use; never on a bad request the next one would also
+      reject.
+- [ ] Remember an exhausted entry until its limit resets (the `Retry-After` header or
+      the plan's daily reset) and skip it meanwhile, so each request does not wait on it.
+- [ ] A reply that fails the app's checks (invalid JSON, wrong scores or quotes) can be
+      retried on the next entry, with a limit.
+- [ ] A streamed lesson reply that fails midway restarts from the next entry without the
+      student hearing the half sentence twice.
+- [ ] When every entry fails: a clear message with each entry's reason, as errors are
+      shown today.
+
+### 9.3 Proxy configuration
+- [ ] Generate the LiteLLM config (`model_list`, `router_settings`, `fallbacks`,
+      cooldowns, retries and timeouts) from the app's settings; loopback only, random
+      master key, admin UI, telemetry and spend database off, as in 8.4. Keys go to
+      the process through environment variables (`os.environ/…` in the config), never
+      written into the config file.
+- [ ] Without Phase 8 installed (no local model), proxy mode still works with external
+      entries only; LiteLLM ships with the installer either way (see Decisions in Phase 8).
+- [ ] Map LiteLLM errors to the `AiError` kinds the UI translates.
+
+### 9.4 Transparency and rules
+- [ ] Show which entry answered each request (a small label in lessons and a log in
+      Settings) and how much of each free plan was used today, when the service reports
+      it.
+- [ ] Show each entry's data note (free plans that may train on what is sent, from
+      `Provider::free_tier`); the order the student sets is the order data goes out.
+- [ ] Do not offer several keys of the same service to get around its limits: several
+      accounts on one free plan usually break its terms. The chain mixes services; more
+      than one key per service is for the student's own separate accounts (for example
+      work and personal) and the UI says so.
+- [ ] Mainland China: only services offered there (`Provider::offered`).
+- [ ] Update `docs/legal` (all languages and regions) to say requests may go to several
+      services in the student's order, and bump `TERMS_VERSION`.
+
+### Acceptance criteria
+- With three free entries and the first at its limit, a lesson, a quiz and a study plan
+  complete on the second without the student doing anything, and the label shows which
+  one answered.
+- A vision request never reaches a text-only entry.
+- With every external entry failing and a local model installed, the request completes
+  on this computer; without one, the message lists each entry's reason.
+- No key appears in logs, in the LiteLLM config left on disk after exit, or in error
+  messages.
+
+## Phase 10 — Lesson types: straight to the point, balanced, in depth (planned, not started)
+
+**Goal:** the student chooses how deep each lesson goes, at the moment they start it:
+- **Straight to the point (summary):** what the exam asks about the topic, the rules
+  and the usual traps, one example, short checks. For reviewing, for the days before the
+  exam, or for a topic already known.
+- **Balanced:** today's normal lesson; every point of the handout, one example and one
+  check each.
+- **In depth:** the reasoning behind each rule, exceptions, several examples, how the
+  board has asked it in past exams, links to related topics, more checks and a longer
+  written question at the end. For a new or weak topic.
+
+**Status:** a global "Lesson length" exists in Settings (`LessonLength`: Quick, Normal,
+Full) and only changes the number of steps and checks (`max_steps`, `teaching`). It
+applies to every lesson until changed.
+
+- [ ] Pick the type when starting a lesson (three options on the lesson start, the
+      Settings value as default), not only in Settings.
+- [ ] Rename the levels in every locale to the three types, keeping the saved values
+      (`quick`, `normal`, `full`) so settings and old lessons still load.
+- [ ] The type changes the content, not only the length: what each prompt asks for in
+      every `crates/ai/prompts/<lang>/` and in `LessonLength::teaching`, following the
+      region's exam culture (`culture.rs`).
+- [ ] Suggest a type from the student's data: a topic never studied or with low quiz
+      scores suggests in depth; a topic mastered or an exam date close suggests straight
+      to the point. The student always decides.
+- [ ] Change during the lesson: "go deeper" and "make it shorter" buttons (and the same
+      by voice) adjust the remaining steps without restarting.
+- [ ] Remember the last type per topic and show it in the topic's history.
+- [ ] Handouts and quizzes follow the type: a summary handout (one page of rules and
+      traps) for straight to the point, the full handout for in depth; quiz size and
+      difficulty to match.
+- [ ] Every UI text in the five locales; README sections and screenshots updated in each
+      language.
+
+**Acceptance criteria:** the same topic in the three types gives visibly different
+lessons (length, number of examples, past-exam questions, final check), and switching
+mid-lesson keeps what was already covered.
+
+## Phase 11 — Goals and achievements (started)
+
+**Goal:** reward steady study the way Steam rewards play, with achievements, goals and a
+profile of progress, without turning the app into a game. It stays calm: no countdowns,
+no loss messages, no comparison with other students unless they choose it.
+
+**Status:** challenges and stickers shipped in 0.38.0, with levels; 0.39.0 added the mock
+exam families: 164 in 36 families.
+Goals the student sets, hidden achievements, the profile and streak rules below are still
+to do.
+
+- [x] Challenges with an original sticker each, computed in code from saved study
+      (`kg_study::challenge`, a table of families and targets), never by the AI. Per plan:
+      lessons and lesson days, quizzes, right answers, perfect (5+ questions, all right) and
+      high (80 %+) quizzes, missed questions won back, a clean mistakes notebook, topics
+      studied and the share of the notice, every subject started, plan weeks complete (the
+      plan's check-mark rule) and the whole plan, topics, subjects and the whole notice
+      mastered, spoken reviews, past exams, handouts read, highlights, handouts made,
+      written answers and their estimated scores, mock exams handed in and their scores
+      (70 %+ and 90 %+, since 0.39). Overall, once: study hours, study days, a
+      long day, plans made, totals of lessons, quizzes, right answers and mastered topics,
+      and stickers collected. Keys are stable; First Step, Comeback, Plan in Motion and Week
+      on Track keep their names.
+- [x] Levels inside a family with growing targets and Steam-like progress on locked
+      ones ("12 / 30"): the rim's colour (bronze, silver, gold, jade) and one to three dots.
+- [x] Achievements screen: one line per family with the next level, progress and a
+      button to the lesson, quiz, review, board, handouts or written answers; targets a
+      plan is too small for are said so; the next one on Today; a showcase of every sticker
+      grouped and filtered, with details on hover. Unlocks are kept per plan (unique per
+      challenge and plan, kept when the plan is deleted) or once overall, recomputed on
+      start, so study saved before a grant or before this version is recognised; a day the
+      history cannot tell is shown as such. The notice waits until no lesson, quiz question
+      or review is open, is shown once, and many at once become one line.
+  - Gap: right answers to old mistakes were not recorded before this version (the
+    mistakes notebook deleted them), so won-back questions count only from now on; the
+    screen says so. Reviews are dated from now on (`review_log`); an older review counts
+    with an unknown day. Handouts read and topics mastered have no day on record, so a
+    grant found on start says the day is unknown.
+
+- [ ] Achievements (medals) computed in code from saved data, never by the AI:
+  - consistency: first lesson, 7 and 30 days in a row, study hours per week;
+  - performance: quiz above 80 % on a topic, a whole subject mastered, a written answer
+    with a high score, improvement on a weak topic;
+  - coverage: every topic of the edital studied once, the full plan reviewed before the
+    exam date;
+  - voice and writing: first voice lesson, first handwritten answer corrected.
+  Each has an icon, a name, a description, the unlock date and its rarity among the
+  student's own achievements (Steam shows the share of players; here there is no
+  server, so no global share).
+- [ ] Hidden achievements shown as "secret" until unlocked, a few only.
+- [ ] Goals the student sets: hours per week, topics per week, a target quiz score by a
+      date; the study plan suggests realistic values from the exam date and the
+      student's pace. Progress on the home screen, a gentle note when a week is missed.
+- [ ] Profile screen: level and experience from study time and results (not from clicks),
+      showcase of chosen medals, calendar heat map of study days, history per subject.
+- [ ] Quiet unlock notice (a small toast with the medal and a sound that can be turned
+      off), never in the middle of a lesson; collected at the end.
+- [ ] Streaks forgive: one rest day per week keeps the streak, and travel or illness can
+      be marked so it does not break.
+- [ ] Everything local in SQLite, kept per plan and in total; export with the rest of
+      the data. Optional sharing later (an image of the profile), never an online
+      ranking by default.
+- [ ] Achievement names and descriptions in the five locales; icons in the app's visual
+      identity, not stock trophies; README sections and screenshots in each language.
+
+**Acceptance criteria:** a student who studies a week sees achievements unlocked from
+real data, progress on locked ones and on their own goals, and nothing interrupts a
+lesson.
+
+## Phase 12 — Mock exams (simulados) (started)
+
+**Goal:** a whole exam in the notice's format, against the clock, on screen or on paper,
+graded in code, so the student rehearses the real sitting.
+
+**Status:** stage 1 shipped in 0.39.0. Stage 2 (reading a photo of the printed answer card)
+is next, in 0.40.
+
+- [x] The exam's format per plan (`kg_study::mock::ExamFormat`): time, sections per plan
+      subject with questions and points each, multiple choice (2 to 5 options) or
+      true/false, wrong cancels right, essay. Read from the notice's rules (the text before
+      the syllabus) by the AI (`exam_format` prompt, five languages) and kept only when its
+      counts are written in the notice; otherwise estimated from the plan's subjects. The
+      student can change every number; the source is shown (notice, estimate, student).
+- [x] Questions written per subject in batches of ten, three at a time
+      (`exam_questions` prompt), spread over the plan's topics, starting further down each
+      subject on every new exam; past exams on the board guide the style. Checked in code:
+      option count, answer index, empty and repeated prompts; options shuffled; a short
+      batch asked once more. Essay proposal from the written-answer pipeline when the
+      notice has a written test.
+- [x] Printable PDF (Typst, `crates/handout/templates/exam.typ`): booklet in two columns,
+      numbered essay sheet, answer card with fixed geometry (`CardLayout`, millimetres) and
+      four corner markers; the exam's code on every page.
+- [x] Timed sitting: deadline from the saved start time, so closing the app does not stop
+      it; answers saved as marked; one sitting at a time; sticker notices wait. On screen
+      or answer card only (for paper). Handing in after the time is allowed and shown.
+- [x] Grade in code against the saved key, per subject with points and the
+      wrong-cancels-right rule; missed questions to the mistakes notebook; essay to Written
+      answers; answer key with explanations. Ten challenges (`mocks`, `mocks_high`,
+      `mock_top`).
+- [ ] Stage 2 (0.40): photograph the printed answer card; find the four markers, correct
+      the perspective and read each bubble's darkness at the `CardLayout` positions, in
+      pure Rust, no AI; the student checks the grid read on screen before it is graded.
+      The exam code on the card picks the exam.
+- [ ] Average and trend across mock exams per subject on Progress; a suggested topic
+      list from the subjects that lost the most points.
+- [ ] Cut-off score from the notice, when it has one, shown beside the result.
+
+**Acceptance criteria:** with a real notice, the format read matches the notice (or the
+student fixes it in a minute); a generated exam prints cleanly; a sitting survives closing
+the app; the grade matches a hand count.
+
+## Not yet verified
+- Mock exams (0.39.0): checked by unit tests (format bounds, the notice's numbers,
+  batches, question checks, grade with and without wrong-cancels-right), engine tests (a
+  sitting graded with mistakes to the notebook, a sitting kept across a restart, the PDF
+  written), PNG renders of the PDF and GPU screenshots in the five languages
+  (`mock_snapshots`). Not yet run against a real model and a real notice (reading the
+  format, writing 60+ questions, the essay proposal), not yet printed on paper.
+- Challenges and stickers (0.38.0): checked by engine tests on a database file
+  closed and reopened (partial progress, completion, two plans, the same study checked
+  twice, a grant missed before closing, overall stickers won once, a 0.37 database
+  migrated), by rendering every sticker in colour and grey, by GPU
+  screenshots in the five languages (`challenges_snapshots`), and with the release
+  build on a copy of a real 0.37 database. Not yet clicked through by hand on an
+  installed build; F11 and the hover not checked on macOS and Linux.
+- Account sign-ins (0.37.0):
+  - Checked live on Windows on 2026-11-03 (`cargo run -p kg-engine --example
+    accounts_live -- page.jpg`): ChatGPT sign-in, model list, lessons and a handwritten
+    page read as JSON; Claude Code lessons and the same page; Copilot lessons.
+  - ChatGPT: a token refresh after an hour, and sign-out with revocation.
+  - Claude Code: `claude auth login` started from the app on a computer that never signed
+    in, and the in-app install with the official installer on Windows, macOS and Linux.
+  - Copilot: the bundled CLI returns an empty model list (and auth info the SDK cannot
+    read) although lessons work, so Settings only offers the suggested models. Recheck
+    after the next `github-copilot-sdk` update.
+  - The Inno Setup task that installs Claude Code (compiled in CI, not run).
+- Exam culture by region (v0.34.0): someone who studied for exams in each region should
+  review its note (`crates/ai/src/culture.rs`): boards, question formats, written-test
+  conventions and grading scales. Notes are in Portuguese and English only; Japanese and
+  Chinese prompts get the English note.
+- Free plans (v0.34.0): checked on 2026-10-30 from public pages and third-party summaries.
+  Confirm each with a real free key: Gemini, Mistral Experiment, Groq, NVIDIA, GitHub
+  Models (`models.github.ai/inference`), OpenRouter `:free` models, Zhipu GLM-4.7-Flash and
+  SiliconFlow. Cerebras ended its free plan in July 2026 and is not listed as free.
+- Updates and one-line installs (v0.33.0): need the first published release.
+  - The release job, its asset names and `SHA256SUMS.txt` on a real tag.
+  - `scripts/install.sh` on macOS (Apple silicon) and Linux, and `scripts/install.ps1` on
+    Windows, from the README commands.
+  - In-app update end to end: the bar, download, checksum, silent installer on Windows (it
+    closes the app and opens the new version) and the install script on macOS and Linux.
+  - No Intel macOS or ARM Linux package yet: those systems get the release page.
+  - Desktop shortcut question and uninstallers (v0.33.1): the Inno uninstaller's study-data
+    question on Windows, and `uninstall.sh` on macOS and Linux.
+- Chinese and Japanese (v0.32.0): a native speaker should review each language.
+  - Japanese, Simplified and Traditional UI texts and prompts. Traditional was converted
+    from Simplified with OpenCC (Taiwan phrasing) and corrected by hand; Hong Kong usage
+    differs in places.
+  - Lessons, quizzes, handouts and grades with a real model in each language.
+  - Fonts on macOS and Linux (the font paths there are not tested).
+- Mainland China AI services (v0.32.0): endpoints, key pages and model names of Zhipu
+  BigModel, Alibaba Bailian, Moonshot (mainland), Baidu Qianfan, Tencent Hunyuan and
+  Volcano Engine Ark were written from memory; confirm each with a real key.
+- Legal texts for Japan, Taiwan, Hong Kong, Singapore and the Partner Access Terms
+  (v0.32.0): drafts that need review by a local lawyer in each place before a public
+  launch there.
+- First run with real keys (v0.31.0):
+  - **Load my models** on each provider: which `/models` lists answer, and Anthropic's
+    with a Bearer key;
+  - the suggested model names, which change often (checked 2026-10-29);
+  - Claude through Anthropic's OpenAI-compatible endpoint, with `temperature` left out;
+  - GPT-5 with `max_completion_tokens`;
+  - an existing install going through the setup and keeping its plans.
+- Written answers with real handwriting and the owner's vision model (v0.29.0–v0.30.1):
+  transcript faithfulness, photo warning thresholds, grades against a human correction;
+  see [docs/validation-discursive.md](docs/validation-discursive.md).
+- English prompts with the real model (v0.30.0): markers kept, lessons, handouts and
+  quizzes in English.
+- Vision requests with short reasoning (v0.30.1): a dense page read on the first try.
+- Lesson depth with the real model (v0.27.0): does the tutor cover every key point and
+  every quiz subject before `ETAPA:`, and how long do Normal and Full lessons take?
+- Reader autoscroll and dragging with a real mouse (v0.27.0).
+- Long spoken answers with the owner's microphone after the turn changes (v0.26.2):
+  no cut-offs mid-sentence, and fewer wrong verbs.
+- Captions in step with the voice in a live lesson, for Piper and Kokoro teachers,
+  including interruptions and a voice failure mid-reply (v0.26.1).
+- Lesson plan with the real model: `ROTEIRO:` / `ETAPA:` / `FIM` lines (v0.26.0).
+- Reader with a long whole-plan handout: memory, scrolling and render times.
+- Handout pictures chosen by the live writer, and how often Wikipedia has one.
+- Microphone changes of v0.25.0 with the user's microphone (quiet speech, echo).
+- Kokoro Portuguese listening comparison against Piper on real tutor answers. Accented
+  text now reaches the Windows runtime; subjective quality is still open.
+- Handout factual correctness: the review pass reduces errors (see Phase 5) but does not
+  eliminate them.
+- Tutor answers in lessons are not fact-checked.
+- Voice loop with a real microphone and speakers.
+- Installer build/run; Inno Setup 6 compiler was prepared locally but the final release
+  installer was not built before the user requested closing work.
+- CUDA execution and native Linux/macOS packages (tooling is implemented).
+
+## Next ideas
+- [ ] Voices in Chinese and Japanese:
+  - speech recognition with SenseVoice (zh, yue, ja) on the sherpa-onnx runtime;
+  - Kokoro's Mandarin voices; check whether its Japanese voices run on sherpa-onnx;
+  - Cantonese through a cloud voice;
+  - turn end on `。？！`; per-language fillers (「えーと」, 「嗯」);
+  - Traditional to Simplified before a Mandarin voice.
+- [ ] Count characters instead of words for Chinese and Japanese written answers (字数,
+      原稿用紙): unreadable threshold, rewrite detection, line limits.
+- [ ] Whiteboard pictures from the Wikipedia of the app's language (today Portuguese).
+- [ ] Code-side prompt snippets (`PromptLanguage::pick`) in Chinese and Japanese; today
+      they fall back to English inside prompts that are otherwise translated.
+- [ ] Native Anthropic Messages API client for Claude: Anthropic calls its
+      OpenAI-compatible endpoint a testing aid, not a production path (`response_format`
+      and `reasoning_effort` are ignored there; no prompt caching).
+- [x] Connect GitHub Copilot through the official Copilot SDK and its supported CLI
+      account sign-in. Do not reuse private CLI tokens or reverse-engineer endpoints;
+      sign-in credentials remain managed by the CLI and the computer's credential store.
+- [x] ChatGPT sign-in through OpenAI's *Sign in with ChatGPT* for open-source and local
+      apps (dynamic registration as "Know Giver", not the Codex CLI's client), requests on
+      the Responses API with the student's plan.
+- [x] Claude through the unmodified Claude Code binary, signed in with the student's own
+      Claude account (Anthropic allows this; using Claude.ai credentials directly in a
+      third-party app is not allowed). The owner accepted Anthropic's Commercial Terms for
+      running Claude Code in the product and chose to show the Claude logo on its sign-in.
+- [ ] Faster Claude Code answers: each request starts `claude -p` (about 3 s to the first
+      word in a live check); a long-lived `--input-format stream-json` session per lesson
+      would save the start-up.
+- [ ] Periodic checks that the account sign-ins still work; today only offline tests run
+      in CI, and the three breaks found on 2026-11-03 (host ID format, Copilot SDK's
+      sign-in folder, `GITHUB_TOKEN` overriding the sign-in) were caught by hand:
+  - weekly GitHub Actions job without credentials: the ChatGPT authorize URL with our
+    real parameters does not answer `invalid_authorize_request`, OpenAI's keys and
+    sign-in metadata load, every flag we pass still appears in the latest `claude
+    --help`, and the workspace builds and tests against the latest `github-copilot-sdk`;
+    a failure opens an issue;
+  - optional weekly run on a signed-in computer (scheduled task) of `cargo run -p
+    kg-engine --example accounts_live -- page.jpg`, with a short lesson per account and a
+    handwritten page through each vision service and the local OCR, saving a report. It
+    uses a little of each plan; credentials never go to CI.
+- [ ] DeepSeek account sign-in in the *Sign in with an account* tab, like ChatGPT, Claude
+      and Copilot, so a student with a DeepSeek account needs no API key. First check that
+      DeepSeek documents a sign-in flow third-party apps may use, and its terms for it;
+      never reuse the web app's private tokens. Until then DeepSeek stays an API-key
+      provider.
+- [ ] Store the API key in the system keychain instead of the local database.
+- [ ] Have a lawyer review `docs/legal` (LGPD; GDPR/UK GDPR; US state laws) before a
+      public release.
+- [ ] Security audit before a public release:
+  - updater (engine `update.rs`): releases are checked by SHA-256 from the same release,
+    not signed; consider signing (minisign or code signing on Windows and macOS) and
+    check that a download cannot write or run anything outside its temporary folder;
+  - one-line installs (`scripts/install.ps1`, `scripts/install.sh`): what they run, from
+    where, with which rights; the uninstaller only removes its own files;
+  - API keys: stored in the local database today (see the keychain item above); never in
+    logs, crash messages or exported files;
+  - untrusted input: editais, past exams and photos of written answers can carry prompt
+    injection; check that the model's answers cannot trigger file, network or process
+    actions, and that links opened from the UI are only `https`;
+  - child processes (Piper, later llama.cpp and LiteLLM): fixed paths, no shell, arguments
+    never built from user or model text;
+  - local data: SQLite file and model folders in `%LOCALAPPDATA%` or the platform
+    equivalent, with the user's permissions only;
+  - dependencies: `cargo audit` and `cargo deny` (advisories, licenses, sources) in CI;
+  - CI and releases: workflow token permissions, pinned actions, who can push tags.
+- [x] Streaming AI client with silent whiteboard metadata and sentence callbacks.
+- [x] Stream sentences into lesson playback before the full reply arrives (v0.17.0:
+      first sentence at 2.7 s instead of 10.8 s in a live check).
+- [x] Optional GPU (CUDA) build of candle; benchmark on supported hardware remains pending.
+      With managed local AI (Phase 8), Whisper on the GPU shares VRAM with the model.
+- [x] OCR fallback for scanned editais (vision model).
+- [x] Linux/macOS native packaging scripts and CI; native execution remains unverified.

@@ -1,0 +1,37 @@
+# Know Giver's own brand: what a build carries when KG_BRAND_DIR is not set.
+# To build for another company, copy branding/example and point KG_BRAND_DIR
+# at the copy (see branding/README.md). Paths are relative to this file.
+
+[app]
+name = "Know Giver"
+slug = "know-giver"
+data_dir = "KnowGiver"
+installer_guid = "6C1F3F7E-8E0B-4C55-9B7A-3B1E8A4D2F10"
+
+[company]
+name = "Trentin Software"
+url = "https://trentin.software"
+url_label = "trentin.software"
+show_credit = true
+mark_license = "Font Awesome Free icon (CC BY 4.0)"
+
+[colors]
+accent_light = "#2F6F68"
+accent_dark = "#8CC2B8"
+highlight_light = "#B0771F"
+highlight_dark = "#E2B15E"
+company = "#006241"
+
+[assets]
+icon_png = "../../crates/ui/assets/icon.png"
+cover_png = "../../crates/ui/assets/icon-square.png"
+engraving_png = "../../crates/ui/assets/thoth-engraving.png"
+icon_ico = "../../crates/app/assets/know-giver.ico"
+mark_svg = "../../crates/ui/assets/brand/trentin-dragon.svg"
+watermark_svg = "../../crates/handout/assets/trentin-dragon.svg"
+
+[updates]
+repository = ""
+
+[demo]
+enabled = false

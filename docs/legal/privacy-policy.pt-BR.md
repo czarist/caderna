@@ -1,0 +1,143 @@
+# Política de Privacidade do Know Giver
+
+Versão de 3 de novembro de 2026 (2026-11-03.4), de acordo com a Lei Geral de Proteção de
+Dados (Lei nº 13.709/2018, LGPD). Esta é a versão para quem usa o aplicativo no Brasil.
+
+## 1. Resumo
+
+- O Know Giver roda no seu computador. A Trentin não tem servidores para o aplicativo e
+  **não recebe, não guarda e não acessa os seus dados**.
+- Não há cadastro na Trentin, telemetria, estatísticas de uso, anúncios ou venda de dados.
+- O conteúdo necessário para cada tarefa vai para o **fornecedor de IA que você escolheu**,
+  com o método de autenticação exigido por ele (chave ou login oficial). Esse fornecedor
+  trata os dados conforme as regras dele.
+
+## 2. Quem é responsável
+
+O aplicativo é desenvolvido por TRENTIN SOLUÇÕES EM SOFTWARE LTDA – ME, CNPJ
+36.154.590/0001-54, contato em https://trentin.software. Como a Trentin não trata dados
+pessoais por meio do aplicativo, ela não atua como controladora nem operadora dos dados que
+você usa nele.
+
+- **Seus dados no seu computador:** o uso é seu, pessoal e para estudo.
+- **Dados enviados a um fornecedor de IA ou a outros serviços que você ativar:** cada
+  serviço é responsável pelo tratamento, conforme o contrato que você tem com ele.
+
+## 3. O que fica no seu computador
+
+Ficam na pasta de dados do aplicativo (`%LOCALAPPDATA%\KnowGiver` no Windows, ou na pasta
+definida em `KG_DATA_DIR`):
+
+- seu nome (como o tutor chama você), idioma, professor e demais preferências;
+- a chave de API, guardada sem criptografia no banco de dados local quando digitada no
+  aplicativo;
+- no GitHub Copilot, o Copilot CLI oficial gerencia as credenciais de login. Ele costuma
+  usar o chaveiro do sistema operacional; se ele não estiver disponível, pode guardar as
+  credenciais em um arquivo de configuração sem criptografia (`~/.copilot/config.json`).
+  O Know Giver não as guarda no banco;
+- no ChatGPT, os tokens do login "Sign in with ChatGPT" (acesso e renovação), o e-mail da
+  conta, o registro do aplicativo na OpenAI e um identificador aleatório deste computador,
+  que é enviado à OpenAI a cada login para separar os seus computadores e não identifica
+  você. Ficam sem criptografia no banco de dados local, como a chave de API. Sair da conta
+  pede à OpenAI que revogue a renovação;
+- no Claude, o Claude Code oficial da Anthropic gerencia o login da sua conta Claude, na
+  pasta dele (`~/.claude`) ou no chaveiro do sistema. O Know Giver não vê nem guarda essas
+  credenciais;
+- editais, provas, gabaritos e materiais enviados, além dos planos, do progresso, dos
+  quizzes, das revisões, das apostilas, dos destaques e das notas;
+- conversas das aulas e o caderno de erros;
+- fotos das respostas discursivas, suas transcrições e avaliações;
+- arquivos do modelo PaddleOCR-VL, baixados para a pasta local de modelos se você instalar o OCR local;
+- a data e a hora do seu aceite destes documentos;
+- um arquivo de registro técnico (log), que não guarda imagens, respostas nem chaves.
+
+O áudio do microfone é transcrito no próprio computador e não é enviado a ninguém. As
+gravações temporárias de diagnóstico ficam só na pasta de dados.
+
+## 4. O que sai do seu computador, e para quem
+
+| Para onde | O quê | Quando |
+|---|---|---|
+| Fornecedor de IA escolhido por você | Trechos do edital e dos materiais, tópicos, suas mensagens e respostas transcritas, seu nome (para o tutor chamar você), textos das apostilas | Em cada tarefa de IA |
+| PaddleOCR-VL rodando localmente pelo `llama-server` v0.8.0 do llama.cpp | Fotos das respostas discursivas | Por padrão; processadas no computador, não enviadas a um fornecedor |
+| Modelo de visão do fornecedor | Fotos das respostas discursivas e páginas de PDFs escaneados | Fotos de respostas só se você escolher explicitamente o OCR externo; páginas de PDFs escaneados só quando você pedir a leitura e tiver configurado um modelo de visão |
+| Wikipédia | O termo de busca de uma imagem do quadro | Se a opção de imagens estiver ligada |
+| Hugging Face, GitHub e sites das vozes | Pedidos de download, que mostram o seu endereço IP | Quando você baixa modelos de voz, fala ou OCR |
+| GitHub | Um pedido da versão mais recente, que mostra o seu endereço IP e a versão do app; o pacote da nova versão, se você escolher atualizar | Cada vez que o app abre, se a busca de atualizações estiver ligada (Configurações → Sobre e atualizações) |
+| Serviço de voz na nuvem | O texto que o tutor vai falar | Só se você ativar a voz na nuvem |
+
+Os pacotes para Windows e Linux incluem um runtime do llama.cpp com Vulkan. Quando há uma
+GPU compatível, o app usa o driver Vulkan já instalado no computador; se não encontrar
+dispositivo ou a inicialização da GPU falhar, o OCR volta para CPU. No macOS, usa CPU. O
+runtime e o driver processam o OCR localmente: o backend Vulkan não é um destinatário e
+não transmite as fotos à Trentin ou a fornecedores.
+
+Ao escolher o GitHub Copilot, o conteúdo descrito na linha do fornecedor de IA é enviado
+ao GitHub. O login é feito pelo Copilot CLI, que normalmente guarda as credenciais no
+chaveiro do sistema operacional. Se ele não estiver disponível, o CLI pode recorrer a um
+arquivo de configuração sem criptografia (`~/.copilot/config.json`). O Know Giver não
+guarda essas credenciais no banco.
+
+Ao escolher o ChatGPT, o mesmo conteúdo vai para a OpenAI, pela API Responses, e usa o
+limite do seu plano do ChatGPT; o Know Giver se registra na OpenAI com o próprio nome e
+não recebe as suas conversas do ChatGPT. Ao escolher o Claude, o conteúdo vai para a
+Anthropic pelo Claude Code instalado no seu computador, que o Know Giver executa sem
+ferramentas, sem servidores MCP e sem as suas configurações; o uso entra no limite da sua
+assinatura Claude. Se você pedir a instalação do Claude Code, o instalador oficial é
+baixado de claude.ai, o que mostra o seu endereço IP.
+
+Muitos fornecedores de IA ficam fora do Brasil. Ao escolher um deles, os dados enviados
+podem ser transferidos para outro país (art. 33 da LGPD), conforme as garantias que esse
+fornecedor oferece. Leia a política de privacidade dele antes de escolher.
+
+## 5. Finalidade
+
+Os dados são usados apenas para o funcionamento do aplicativo: montar o plano, dar aulas,
+gerar questões e apostilas, avaliar respostas e mostrar o seu progresso.
+
+## 6. Segurança
+
+Os dados ficam no seu computador, protegidos pelo acesso à sua conta de usuário. Proteja o
+computador com senha. Chaves de API digitadas ficam sem criptografia no banco local; as
+credenciais do GitHub Copilot são gerenciadas pelo CLI, normalmente no chaveiro do sistema
+operacional, com possível fallback para arquivo sem criptografia se ele não estiver
+disponível. Elas não são salvas no banco do Know Giver. Os tokens do ChatGPT ficam sem criptografia no banco local, como as chaves; as
+credenciais do Claude ficam com o Claude Code. Problemas de segurança podem ser
+relatados conforme o arquivo SECURITY.md do projeto.
+
+## 7. Por quanto tempo
+
+Os dados ficam no seu computador até você apagá-los. Excluir uma tentativa discursiva apaga
+as fotos dela. Apagar a pasta de dados remove tudo. Os dados enviados a fornecedores seguem
+as regras de retenção de cada um.
+
+## 8. Seus direitos
+
+A LGPD garante, entre outros, os direitos de acesso, correção, eliminação, portabilidade e
+informação sobre compartilhamento (art. 18).
+
+- **No aplicativo:** você vê, corrige e apaga os seus dados diretamente; o progresso pode
+  ser exportado.
+- **Nos fornecedores:** para os dados enviados a um fornecedor, exerça os direitos com ele.
+- **Reclamação:** você também pode recorrer à Autoridade Nacional de Proteção de Dados
+  (ANPD).
+
+## 9. Crianças e adolescentes
+
+Menores de 18 anos devem usar o aplicativo com o conhecimento e o consentimento dos pais ou
+responsáveis, que escolhem o fornecedor de IA e respondem pela chave usada (art. 14 da
+LGPD).
+
+## 10. Inteligência artificial
+
+As respostas geradas pela IA podem conter erros, e a qualidade depende dos limites do
+modelo que você escolheu. Veja os Termos de Uso, item 6.
+
+## 11. Alterações
+
+Quando esta Política mudar, a nova versão terá uma nova data, e o aplicativo pedirá um novo
+aceite.
+
+## 12. Contato
+
+Dúvidas sobre privacidade: https://trentin.software.
