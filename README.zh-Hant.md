@@ -231,7 +231,7 @@ powershell -ExecutionPolicy Bypass -File scripts\package.ps1 -Brand branding\<�
 
 **試用版**：設定 `[demo] enabled = true` 後，應用程式從首次啟動起可用 `days` 天，或用到 `expires` 當天（以先到者為準）。側邊欄顯示剩餘天數；到期後只會開啟「試用期已結束」頁面，並提供聯絡客戶的按鈕。學習計畫和進度仍保存在電腦上。
 
-**尚未品牌化的部分**見 [ROADMAP](ROADMAP.md)（`docs/legal/` 中的條款、老師肖像、成就徽章、macOS/Linux 安裝包）。出售前請檢查授權：Dii 語音僅限非商業用途。
+**依品牌的授權與法律文本：** 品牌可以包含 Ed25519 公鑰；客戶的學生隨後可在設定或「示範已結束」畫面啟用授權金鑰（離線驗證，綁定品牌、客戶、席位和日期，不會動到學習資料）。品牌也可以自帶使用條款和隱私權政策、支援連結、老師肖像和貼紙。在品牌的法律和商業審查標記設定之前，銷售用打包不會執行。詳見 [branding/README.md](branding/README.md)，未完成的部分見 [ROADMAP](ROADMAP.md)。出售前請檢查致謝中的授權。
 
 ## 開始使用
 

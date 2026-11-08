@@ -364,11 +364,14 @@ start and the latest day used are kept in the database and in the system setting
 so deleting one of them or turning the clock back does not restart the demonstration.
 It is a commercial deterrent, not copy protection.
 
-**Not branded yet** (see [ROADMAP](ROADMAP.md)): the terms of use and privacy policy in
-`docs/legal/` still name Know Giver and Trentin Software; teacher portraits, achievement
-badges and the macOS/Linux packages keep Know Giver's art and names. Check the licences
-under [Credits](#credits) before selling a build: the Dii voice is for non-commercial use
-only.
+**Licences and legal texts per brand:** a brand can carry an Ed25519 public key; the
+client's students then activate a licence key (offline, bound to the brand, customer,
+seats and dates) in Settings or on the "demonstration ended" screen, and study data is
+never touched. The brand can also bring its own terms and privacy policy, support link,
+teacher portraits and stickers. Packaging for sale refuses to run until the brand's
+legal and commercial review flags are set. See [branding/README.md](branding/README.md);
+what is still open is in the [ROADMAP](ROADMAP.md). Check the licences under
+[Credits](#credits) before selling a build.
 
 ## Quick start
 
@@ -446,8 +449,6 @@ More: [native/CUDA builds](docs/builds.md), [Kokoro evaluation](docs/kokoro-eval
 - Teacher portraits (`crates/ui/assets/teachers`): "Lorelei" by Lisa Wischofsky,
   CC0 1.0, through [DiceBear](https://www.dicebear.com/styles/lorelei/); rebuilt with
   `python tools/teachers.py`.
-- Dii voice (downloaded on demand): [OpenVoiceOS/pipertts_pt-BR_dii](https://huggingface.co/OpenVoiceOS/pipertts_pt-BR_dii),
-  CC BY-NC-ND 4.0, personal non-commercial use.
 - Whiteboard pictures are shown from [Wikipedia](https://pt.wikipedia.org); the
   caption names the article, where each picture's author and license are listed.
 - Icons: [Lucide](https://lucide.dev), ISC license (`crates/ui/assets/icons`).

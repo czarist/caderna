@@ -7,6 +7,10 @@ carries exactly one brand, chosen at compile time:
 | --- | --- |
 | `default/` | Know Giver itself. Used when `KG_BRAND_DIR` is not set. |
 | `example/` | Template for a client, with a 14-day demonstration. Builds as is. |
+| `caderna/` | Sample client brand (paper, graphite, olive) with its own art and draft legal texts. |
+
+Real client brands (contact data, keys) belong in a private repository checked out
+under `branding/private/<client>`, which git ignores.
 
 ## New client
 
@@ -23,7 +27,7 @@ carries exactly one brand, chosen at compile time:
    | `watermark_svg` | company mark already **faint and coloured**, for the handout watermark |
 
 3. Fill in `[app]` (name, `slug`, `data_dir`, a new `installer_guid` from
-   `[guid]::NewGuid()`), `[company]`, `[colors]`, `[updates]` and `[demo]`.
+   `[guid]::NewGuid()`), `[company]`, `[colors]`, `[updates]`, `[demo]`, `[legal]` and `[licensing]`.
    `colors.company` must differ from the handout's own colours; the build says so if not.
 4. Build: `scripts\package.ps1 -Brand branding\<client>`, or for a quick look
    `$env:KG_BRAND_DIR = "branding/<client>"; cargo run --release`.
@@ -55,11 +59,44 @@ The first start and the latest day used are kept in the database and in
 or turning the clock back does not restart the demo. Someone who deletes both, or edits
 the binary, can get around it: it is a commercial limit, not copy protection.
 
-## Not branded yet
+## Support, art and legal texts
 
-- `docs/legal/` (terms and privacy policy) still name Know Giver and Trentin Software.
-  A client build needs texts reviewed for that client, with `TERMS_VERSION` bumped.
-- Teacher portraits, achievement badges and other art in `crates/ui/assets`.
-- macOS and Linux packages (`scripts/package-unix.sh`, `scripts/install.sh`).
-- Licences: the Dii voice is CC BY-NC-ND (non-commercial). Check every item under the
-  README's Credits before selling a build.
+- `[company] support_url` (`https://` or `mailto:`): the support link in Settings → About.
+- `[company] teachers_dir` / `stickers_dir`: optional folders with the same file names as
+  the bundled teacher portraits and stickers; any file found there replaces the default.
+- `[legal] directory`: a folder with all fifteen documents of `docs/legal/`
+  (`terms-of-use`, `privacy-policy`, `partner-access` × five languages). It needs
+  `version` (becomes the consent version: change it and every student agrees again),
+  `provider` (the client, who serves the students), `licensor` and `contact`. Keep the
+  rules of the root `CLAUDE.md`: every language, and the texts still say the AI can be
+  wrong.
+- `[legal] reviewed` and `commercial_reviewed` stay `false` until a lawyer reviewed the
+  client's texts and the third-party licences. Packaging for sale refuses to run while
+  either is `false`; a passing build is not a review.
+
+## Licences
+
+`[licensing] public_key` holds the base64 Ed25519 **public** key; the private key never
+goes into a brand, the repository or CI artifacts. With a key set, Settings and the
+"demonstration ended" screen accept a licence pasted by the student. A licence names the
+brand (`slug`), the customer, the seats and its first and last day; a wrong brand, a
+changed byte or a date outside the period is refused, and a refused licence never
+replaces an accepted one or touches study data. `required = true` makes the build stop
+without a valid licence, like an ended demo.
+
+```sh
+# once per brand, on the licensor's machine (keep private.pk8 offline and backed up)
+cargo run -p kg-engine --example license_issue -- keygen private.pk8 public.txt
+# claims.json: {"version":1,"id":"acme-2027-01","brand":"acme","customer":"Acme",
+#               "seats":50,"not_before":"2027-01-01","expires":"2027-12-31"}
+cargo run -p kg-engine --example license_issue -- sign private.pk8 claims.json license.txt
+```
+
+Seats are a contractual limit: the check is offline, so the app cannot count computers.
+
+## Still open
+
+- Lawyer review of each client's legal texts, and the licence agreement with the client.
+- Signing certificates under the client's publisher name.
+- Licences: check every item under the README's Credits before selling a build (the Dii
+  voice, non-commercial, is no longer offered).

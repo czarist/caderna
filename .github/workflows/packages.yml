@@ -28,7 +28,6 @@ concurrency:
   cancel-in-progress: false
 env:
   KG_BRAND_DIR: ${{ inputs.brand || 'branding/default' }}
-  CARGO_BUILD_JOBS: 2
   KG_COMMERCIAL: ${{ inputs.publish && '1' || '0' }}
 jobs:
   package:
@@ -61,7 +60,7 @@ jobs:
           RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           [[ "$KG_BRAND_DIR" =~ ^branding/[a-zA-Z0-9_/-]+$ ]] || exit 1
-          cargo build -p kg-brand --example metadata -j 2
+          cargo build -p kg-brand --example metadata
           meta=target/debug/examples/metadata
           [[ -f "$meta.exe" ]] && meta="$meta.exe"
           echo "data_dir=$("$meta" data_dir)" >> "$GITHUB_OUTPUT"
@@ -83,9 +82,9 @@ jobs:
         run: |
           rustup component add rustfmt clippy
           cargo fmt --all -- --check
-          cargo clippy --locked --workspace --all-targets -j 2 -- -D warnings
+          cargo clippy --locked --workspace --all-targets -- -D warnings
       - name: Verify
-        run: cargo test --locked --workspace -j 2
+        run: cargo test --locked --workspace
       - name: Inno Setup
         if: runner.os == 'Windows'
         shell: pwsh

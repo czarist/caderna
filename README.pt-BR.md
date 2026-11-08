@@ -370,11 +370,15 @@ uso e o último dia usado ficam no banco e na pasta de configurações do sistem
 apagar um deles ou atrasar o relógio não reinicia a demonstração. É uma barreira
 comercial, não uma proteção contra cópia.
 
-**Ainda sem marca** (veja o [ROADMAP](ROADMAP.md)): os termos de uso e a política de
-privacidade em `docs/legal/` ainda citam o Know Giver e a Trentin Software; retratos dos
-professores, figurinhas de conquistas e os pacotes de macOS/Linux mantêm a arte e o nome
-do Know Giver. Confira as licenças em [Créditos](#créditos) antes de vender um build: a
-voz Dii é só para uso não comercial.
+**Licenças e textos legais por marca:** a marca pode trazer uma chave pública Ed25519;
+os alunos do cliente ativam então uma chave de licença (offline, presa à marca, ao
+cliente, às vagas e às datas) nas Configurações ou na tela de "demonstração encerrada",
+sem tocar nos dados de estudo. A marca também pode trazer seus próprios termos e
+política de privacidade, link de suporte, retratos dos professores e figurinhas. O
+empacotamento para venda não roda até a marca marcar a revisão jurídica e comercial.
+Veja [branding/README.md](branding/README.md); o que falta está no
+[ROADMAP](ROADMAP.md). Confira as licenças em [Créditos](#créditos) antes de vender um
+build.
 
 ## Começo rápido
 
@@ -452,8 +456,6 @@ Mais: [builds nativos/CUDA](docs/builds.md), [avaliação do Kokoro](docs/kokoro
 - Retratos dos professores (`crates/ui/assets/teachers`): "Lorelei", de Lisa Wischofsky,
   CC0 1.0, via [DiceBear](https://www.dicebear.com/styles/lorelei/); refeitos com
   `python tools/teachers.py`.
-- Voz Dii (baixada sob demanda): [OpenVoiceOS/pipertts_pt-BR_dii](https://huggingface.co/OpenVoiceOS/pipertts_pt-BR_dii),
-  CC BY-NC-ND 4.0, uso pessoal não comercial.
 - As imagens do quadro vêm da [Wikipédia](https://pt.wikipedia.org); a legenda indica o
   artigo, onde estão o autor e a licença de cada imagem.
 - Ícones: [Lucide](https://lucide.dev), licença ISC (`crates/ui/assets/icons`).
