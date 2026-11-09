@@ -402,7 +402,8 @@ cargo run -p kg-engine --example license_issue -- sign private.pk8 claims.json l
 lá os clientes são validados, as cores, imagens e textos de cada cliente são definidos, e
 tokens de avaliação e licenças são emitidos no mesmo formato que o app verifica offline.
 Ele também tem um gateway de IA compatível com a OpenAI, com as chaves dos provedores só
-no servidor. O app ainda não se conecta a ele: ativação online, download da marca e IA
+no servidor, e roda em Docker ou numa instalação PHP local
+([czarist/caderna-dashboard](https://github.com/czarist/caderna-dashboard)). O app ainda não se conecta a ele: ativação online, download da marca e IA
 pelo painel estão planejados ([ROADMAP](ROADMAP.md), Fase W6) e serão descritos na
 política de privacidade antes de saírem.
 

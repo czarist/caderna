@@ -242,7 +242,7 @@ cargo run -p kg-engine --example license_issue -- keygen private.pk8 public.txt
 cargo run -p kg-engine --example license_issue -- sign private.pk8 claims.json license.txt
 ```
 
-**CADERNA-DASHBOARD**：一個獨立的 Laravel 和 Filament 專案是 Caderna 的管理面板：在那裡審核客戶，設定每個客戶的顏色、圖片和文字，並以應用程式離線驗證的同一格式簽發試用權杖和授權。它還提供相容 OpenAI 的 AI 閘道，服務商金鑰只保存在伺服器上。應用程式目前尚未連線面板：線上啟用、下載品牌和透過面板使用 AI 仍在規劃中（[ROADMAP](ROADMAP.md) 階段 W6），上線前會寫入隱私權政策。
+**CADERNA-DASHBOARD**：一個獨立的 Laravel 和 Filament 專案是 Caderna 的管理面板：在那裡審核客戶，設定每個客戶的顏色、圖片和文字，並以應用程式離線驗證的同一格式簽發試用權杖和授權。它還提供相容 OpenAI 的 AI 閘道，服務商金鑰只保存在伺服器上；可透過 Docker 或本機 PHP 環境執行（[czarist/caderna-dashboard](https://github.com/czarist/caderna-dashboard)）。應用程式目前尚未連線面板：線上啟用、下載品牌和透過面板使用 AI 仍在規劃中（[ROADMAP](ROADMAP.md) 階段 W6），上線前會寫入隱私權政策。
 
 ## 開始使用
 
