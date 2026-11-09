@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="crates/ui/assets/icon.png" width="128" height="128" alt="Ícone do Know Giver: Thoth como babuíno sob a lua crescente, em gravura, num ladrilho de jade">
+  <img src="branding/caderna/icon.png" width="128" height="128" alt="Ícone do Caderna: um caderno aberto em traço claro sobre um ladrilho oliva">
 </p>
 
-<h1 align="center">Know Giver</h1>
+<h1 align="center">Caderna</h1>
 
-<p align="center"><b>Base white-label</b></p>
+<p align="center"><b>Feito sobre a base white-label do Know Giver</b></p>
 
 <h3 align="center">Sua prova. Seu plano. Um professor que conversa com você.</h3>
 
@@ -18,22 +18,22 @@
 </p>
 
 <p align="center">
-  <a href="https://www.rust-lang.org"><img alt="Pure Rust, 2024 edition" src="https://img.shields.io/badge/pure%20Rust-2024-3f8f7c?style=flat-square&logo=rust&logoColor=white"></a>
-  <a href="https://github.com/emilk/egui"><img alt="UI: egui" src="https://img.shields.io/badge/UI-egui%200.36-2c6b5c?style=flat-square"></a>
-  <a href="https://www.sqlite.org"><img alt="Storage: SQLite" src="https://img.shields.io/badge/storage-SQLite-2c6b5c?style=flat-square&logo=sqlite&logoColor=white"></a>
-  <a href="https://typst.app"><img alt="Handouts: Typst" src="https://img.shields.io/badge/handouts-Typst-2c6b5c?style=flat-square&logo=typst&logoColor=white"></a>
-  <img alt="Speech to text: Whisper and Parakeet" src="https://img.shields.io/badge/speech-Whisper%20%C2%B7%20Parakeet-2c6b5c?style=flat-square&logo=huggingface&logoColor=white">
-  <a href="https://github.com/rhasspy/piper"><img alt="Voices: Piper and Kokoro" src="https://img.shields.io/badge/voices-Piper%20%C2%B7%20Kokoro-2c6b5c?style=flat-square"></a>
-  <img alt="AI: OpenAI-compatible APIs and GitHub Copilot" src="https://img.shields.io/badge/AI-OpenAI--compatible-2c6b5c?style=flat-square&logo=ollama&logoColor=white">
-  <img alt="Sign in: ChatGPT, Claude Code, GitHub Copilot" src="https://img.shields.io/badge/Sign%20in-ChatGPT%20%C2%B7%20Claude%20Code%20%C2%B7%20Copilot-2c6b5c?style=flat-square&logo=openid&logoColor=white">
-  <a href="https://github.com/ggml-org/llama.cpp"><img alt="OCR runtime: llama.cpp" src="https://img.shields.io/badge/OCR-llama.cpp-2c6b5c?style=flat-square"></a>
-  <a href="https://www.vulkan.org/"><img alt="GPU acceleration: Vulkan" src="https://img.shields.io/badge/GPU-Vulkan-2c6b5c?style=flat-square&logo=vulkan&logoColor=white"></a>
-  <img alt="Windows" src="https://img.shields.io/badge/-Windows-2c6b5c?style=flat-square&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0wIDBoMTEuNHYxMS40SDB6TTEyLjYgMEgyNHYxMS40SDEyLjZ6TTAgMTIuNmgxMS40VjI0SDB6TTEyLjYgMTIuNkgyNFYyNEgxMi42eiIvPjwvc3ZnPg%3D%3D&logoColor=white&labelColor=111111">
-  <img alt="macOS" src="https://img.shields.io/badge/-macOS-2c6b5c?style=flat-square&logo=apple&logoColor=white&labelColor=111111">
-  <img alt="Linux" src="https://img.shields.io/badge/-Linux-2c6b5c?style=flat-square&logo=linux&logoColor=white&labelColor=111111">
-  <a href="#license"><img alt="License: MIT OR Apache-2.0" src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-2c6b5c?style=flat-square&logo=opensourceinitiative&logoColor=white"></a>
-  <img alt="Languages: Portuguese, English, Japanese, Simplified and Traditional Chinese" src="https://img.shields.io/badge/languages-pt--BR%20%C2%B7%20en%20%C2%B7%20ja%20%C2%B7%20zh--Hans%20%C2%B7%20zh--Hant-2c6b5c?style=flat-square">
-  <img alt="Local-first voice" src="https://img.shields.io/badge/voice-local--first-2c6b5c?style=flat-square">
+  <a href="https://www.rust-lang.org"><img alt="Pure Rust, 2024 edition" src="https://img.shields.io/badge/pure%20Rust-2024-52613c?style=flat-square&logo=rust&logoColor=white"></a>
+  <a href="https://github.com/emilk/egui"><img alt="UI: egui" src="https://img.shields.io/badge/UI-egui%200.36-52613c?style=flat-square"></a>
+  <a href="https://www.sqlite.org"><img alt="Storage: SQLite" src="https://img.shields.io/badge/storage-SQLite-52613c?style=flat-square&logo=sqlite&logoColor=white"></a>
+  <a href="https://typst.app"><img alt="Handouts: Typst" src="https://img.shields.io/badge/handouts-Typst-52613c?style=flat-square&logo=typst&logoColor=white"></a>
+  <img alt="Speech to text: Whisper and Parakeet" src="https://img.shields.io/badge/speech-Whisper%20%C2%B7%20Parakeet-52613c?style=flat-square&logo=huggingface&logoColor=white">
+  <a href="https://github.com/rhasspy/piper"><img alt="Voices: Piper and Kokoro" src="https://img.shields.io/badge/voices-Piper%20%C2%B7%20Kokoro-52613c?style=flat-square"></a>
+  <img alt="AI: OpenAI-compatible APIs and GitHub Copilot" src="https://img.shields.io/badge/AI-OpenAI--compatible-52613c?style=flat-square&logo=ollama&logoColor=white">
+  <img alt="Sign in: ChatGPT, Claude Code, GitHub Copilot" src="https://img.shields.io/badge/Sign%20in-ChatGPT%20%C2%B7%20Claude%20Code%20%C2%B7%20Copilot-52613c?style=flat-square&logo=openid&logoColor=white">
+  <a href="https://github.com/ggml-org/llama.cpp"><img alt="OCR runtime: llama.cpp" src="https://img.shields.io/badge/OCR-llama.cpp-52613c?style=flat-square"></a>
+  <a href="https://www.vulkan.org/"><img alt="GPU acceleration: Vulkan" src="https://img.shields.io/badge/GPU-Vulkan-52613c?style=flat-square&logo=vulkan&logoColor=white"></a>
+  <img alt="Windows" src="https://img.shields.io/badge/-Windows-52613c?style=flat-square&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0wIDBoMTEuNHYxMS40SDB6TTEyLjYgMEgyNHYxMS40SDEyLjZ6TTAgMTIuNmgxMS40VjI0SDB6TTEyLjYgMTIuNkgyNFYyNEgxMi42eiIvPjwvc3ZnPg%3D%3D&logoColor=white&labelColor=111111">
+  <img alt="macOS" src="https://img.shields.io/badge/-macOS-52613c?style=flat-square&logo=apple&logoColor=white&labelColor=111111">
+  <img alt="Linux" src="https://img.shields.io/badge/-Linux-52613c?style=flat-square&logo=linux&logoColor=white&labelColor=111111">
+  <a href="#license"><img alt="License: MIT OR Apache-2.0" src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-52613c?style=flat-square&logo=opensourceinitiative&logoColor=white"></a>
+  <img alt="Languages: Portuguese, English, Japanese, Simplified and Traditional Chinese" src="https://img.shields.io/badge/languages-pt--BR%20%C2%B7%20en%20%C2%B7%20ja%20%C2%B7%20zh--Hans%20%C2%B7%20zh--Hant-52613c?style=flat-square">
+  <img alt="Local-first voice" src="https://img.shields.io/badge/voice-local--first-52613c?style=flat-square">
 </p>
 
 <br>
@@ -62,7 +62,7 @@
 
 O edital é lido no seu computador; só o conteúdo programático vai para a IA.
 
-- **Escolha o cargo.** Alguns editais têm vários cargos. O Know Giver encontra todos e
+- **Escolha o cargo.** Alguns editais têm vários cargos. O Caderna encontra todos e
   pergunta para qual você vai concorrer, então o plano traz as matérias comuns e só as
   específicas do *seu* cargo.
 - **Sua rotina.** O número de semanas e de horas por semana define um plano por semana,
@@ -137,7 +137,7 @@ britânico).
 As apostilas geradas abrem dentro do app, página por página, exatamente como o PDF.
 Arraste sobre um trecho para destacar, clique nele para escrever uma nota e encontre todos
 os destaques na lista lateral. Navegue pelo sumário, digite uma página, arraste a página
-para movê-la ou clique com a rodinha do mouse para rolar sozinho. O Know Giver lembra onde
+para movê-la ou clique com a rodinha do mouse para rolar sozinho. O Caderna lembra onde
 você parou e quanto já leu de cada apostila, e salva um PDF com os seus destaques quando
 você quiser.
 
@@ -221,7 +221,7 @@ aparece para um edital sem essa prova. Um plano criado antes pode ter o edital l
 - **Propostas a partir do seu plano**: redação dissertativa, questão discursiva técnica ou
   estudo de caso, sobre tópicos que você escolhe ou sobre o que você estudou e errou. Os
   critérios e a pontuação aparecem antes de você escrever: os do edital (com o trecho
-  citado), os seus ou os genéricos do Know Giver, sempre identificados. O padrão de
+  citado), os seus ou os genéricos do Caderna, sempre identificados. O padrão de
   resposta fica escondido até a entrega.
 - **Escreva à mão e envie fotos**: páginas em JPEG ou PNG, que podem ser giradas,
   reordenadas, trocadas ou removidas antes do envio. Fotos escuras, borradas ou cortadas são
@@ -274,10 +274,10 @@ nome de modelo. Depois vem um tour rápido pelas telas. Planos já criados são 
 O GitHub Copilot pode ser conectado com sua conta GitHub pelo Copilot CLI oficial, sem
 chave de API. O CLI normalmente guarda as credenciais no chaveiro do sistema operacional;
 se ele estiver indisponível, pode recorrer a um arquivo de configuração sem criptografia
-(`~/.copilot/config.json`). O Know Giver não guarda as credenciais no banco. Esta
+(`~/.copilot/config.json`). O Caderna não guarda as credenciais no banco. Esta
 integração aceita texto, não imagens.
 
-**Entre com uma conta que você já tem.** O passo da IA abre em *Entrar com conta*, para quem paga um plano de chat e nunca criou uma chave de API: **ChatGPT** (o *Sign in with ChatGPT* oficial da OpenAI: as aulas entram no limite do seu plano), **Claude** (pelo Claude Code, o programa oficial da Anthropic, com a sua conta Claude Pro ou Max; o Know Giver pode instalá-lo para você) e **GitHub Copilot**. Cada um faz o login na página do próprio dono; o Know Giver nunca vê a sua senha. O Know Giver não é afiliado à OpenAI, à Anthropic nem ao GitHub.
+**Entre com uma conta que você já tem.** O passo da IA abre em *Entrar com conta*, para quem paga um plano de chat e nunca criou uma chave de API: **ChatGPT** (o *Sign in with ChatGPT* oficial da OpenAI: as aulas entram no limite do seu plano), **Claude** (pelo Claude Code, o programa oficial da Anthropic, com a sua conta Claude Pro ou Max; o Caderna pode instalá-lo para você) e **GitHub Copilot**. Cada um faz o login na página do próprio dono; o Caderna nunca vê a sua senha. O Caderna não é afiliado à OpenAI, à Anthropic nem ao GitHub.
 
 <p align="center">
   <img src="docs/images/pt-BR/setup-ai-account.png" alt="Aba Entrar com conta do passo da IA: ChatGPT, Claude e GitHub Copilot, cada um com o seu botão de login" width="60%">
@@ -349,6 +349,9 @@ Aqui não há releases públicos; cada build é feito para um cliente.
 | `[assets]` | ícone do app (PNG e ICO), arte de capa, arte do lembrete, marca (SVG) e marca d'água das apostilas (SVG) |
 | `[updates]` | repositório GitHub com os releases do cliente, ou vazio para não buscar atualizações |
 | `[demo]` | `enabled`, `days` desde o primeiro uso, `expires` (último dia), link de contato |
+| extras de `[company]` | `support_url` (Configurações → Sobre), `teachers_dir` e `stickers_dir` para trocar a arte embutida |
+| `[legal]` | pasta com os 15 textos legais da marca, `version` do aceite, prestadora, licenciadora, contato, marcas de revisão |
+| `[licensing]` | chave **pública** Ed25519 das licenças, e `required` para parar sem uma |
 
 **2. Gere o build.** A marca é lida na compilação a partir de `KG_BRAND_DIR` (padrão
 `branding/default`, que é o próprio Know Giver):
@@ -380,6 +383,29 @@ Veja [branding/README.md](branding/README.md); o que falta está no
 [ROADMAP](ROADMAP.md). Confira as licenças em [Créditos](#créditos) antes de vender um
 build.
 
+**Caderna.** `branding/caderna` é a primeira marca de cliente: papel, grafite e oliva,
+ícone, capa e marcas próprios, demonstração de 14 dias e chave pública Ed25519. Os
+textos legais são rascunhos (`[legal] reviewed = false`), então o empacotamento para
+venda continua bloqueado até a revisão. Para rodar:
+`$env:KG_BRAND_DIR = "branding/caderna"; cargo run --release`; cada marca tem a sua pasta
+de dados, então nunca se mistura com um Know Giver instalado.
+
+**Emitir licenças.** As chaves são criadas uma vez por marca, e a chave privada nunca
+entra no repositório:
+
+```sh
+cargo run -p kg-engine --example license_issue -- keygen private.pk8 public.txt
+cargo run -p kg-engine --example license_issue -- sign private.pk8 claims.json license.txt
+```
+
+**CADERNA-DASHBOARD.** Um projeto separado, em Laravel e Filament, é o painel da Caderna:
+lá os clientes são validados, as cores, imagens e textos de cada cliente são definidos, e
+tokens de avaliação e licenças são emitidos no mesmo formato que o app verifica offline.
+Ele também tem um gateway de IA compatível com a OpenAI, com as chaves dos provedores só
+no servidor. O app ainda não se conecta a ele: ativação online, download da marca e IA
+pelo painel estão planejados ([ROADMAP](ROADMAP.md), Fase W6) e serão descritos na
+política de privacidade antes de saírem.
+
 ## Começo rápido
 
 ```bash
@@ -392,7 +418,7 @@ modelo na lista (**Z.ai** é a recomendação de custo-benefício, **Claude** a 
 acerto, cada um com o link para criar a chave) ou carregue os modelos que a sua chave pode
 usar. Depois vem um tour rápido pelas telas. Planos já criados são mantidos.
 
-Fechar a janela mantém o app na bandeja do sistema: dois cliques no ícone reabrem a janela, e um clique abre o menu (abrir ou sair). Abrir o Know Giver de novo com ele já aberto traz de volta a mesma janela; nunca há duas cópias nem dois ícones na bandeja. Na instalação, você escolhe se ele inicia com o sistema e se quer receber lembretes de estudo (a cada 3 horas por padrão, de 30 minutos a 8 horas em Configurações); as duas opções começam desativadas. O lembrete é uma janelinha do Know Giver no canto da tela, com as matérias mais atrasadas e um botão para começar a estudar. Os lembretes aparecem quando você está longe do app (na bandeja, minimizado ou atrás de outras janelas), nunca durante aula, quiz ou revisão, e só enquanto houver matérias pendentes no plano ativo.
+Fechar a janela mantém o app na bandeja do sistema: dois cliques no ícone reabrem a janela, e um clique abre o menu (abrir ou sair). Abrir o Caderna de novo com ele já aberto traz de volta a mesma janela; nunca há duas cópias nem dois ícones na bandeja. Na instalação, você escolhe se ele inicia com o sistema e se quer receber lembretes de estudo (a cada 3 horas por padrão, de 30 minutos a 8 horas em Configurações); as duas opções começam desativadas. O lembrete é uma janelinha do Caderna no canto da tela, com as matérias mais atrasadas e um botão para começar a estudar. Os lembretes aparecem quando você está longe do app (na bandeja, minimizado ou atrás de outras janelas), nunca durante aula, quiz ou revisão, e só enquanto houver matérias pendentes no plano ativo.
 
 Para desenvolvimento, o `.env` (copie o `.env.example`) ainda pode definir o endereço e os
 modelos; ele tem prioridade sobre variáveis globais com o mesmo nome. Baixe os modelos de
@@ -415,7 +441,7 @@ crates/
   pdf/      # extração do texto do edital, cargos
   handout/  # apostilas renderizadas em PDF com Typst
 locales/    # traduções da interface (pt-BR, en, ja, zh-Hans, zh-Hant)
-branding/   # pastas de marca: default (Know Giver), example (modelo com demonstração)
+branding/   # pastas de marca: default (Know Giver), example (modelo), caderna (cliente)
 tools/      # geradores de arte (ícone, retratos dos professores)
 ```
 
@@ -429,9 +455,9 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 ```
 
-Compilar o workspace inteiro ocupa todos os núcleos da CPU por minutos. Numa máquina que
-esquenta demais ou tem fonte fraca, limite os jobs: `cargo test -j 2 --workspace --
---test-threads=2` (ou `jobs = 2` em `[build]` no `.cargo/config.toml`).
+Os builds usam todos os núcleos da CPU (padrão do Cargo). Para limitar uma execução,
+passe `-j N`. Um `.cargo/config.toml` local, ignorado pelo git, escolhe a marca do
+`cargo run` simples: `[env] KG_BRAND_DIR = { value = "branding/caderna", relative = true }`.
 
 Verificações manuais com os serviços reais (precisam do `.env` e de rede):
 
@@ -451,6 +477,8 @@ Mais: [builds nativos/CUDA](docs/builds.md), [avaliação do Kokoro](docs/kokoro
 - Ícone do app e arte da capa: Thoth como babuíno sob a lua crescente, num ladrilho de
   jade, por [Cezar Trentin](https://cezartrentin.dev) (`crates/ui/assets/art/thoth-tile.png`);
   `python tools/icon.py` gera os ícones do app e do Windows a partir dela.
+- Ícone, capa, arte do lembrete e marcas da Caderna (`branding/caderna`): arte original
+  feita para a marca Caderna, sob a licença do projeto.
 - Fontes: [Inter](https://rsms.me/inter/) e [IBM Plex Mono](https://github.com/IBM/plex),
   SIL Open Font License (`crates/ui/assets/fonts`).
 - Retratos dos professores (`crates/ui/assets/teachers`): "Lorelei", de Lisa Wischofsky,
