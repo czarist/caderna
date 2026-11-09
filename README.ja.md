@@ -247,7 +247,7 @@ cargo run -p kg-engine --example license_issue -- keygen private.pk8 public.txt
 cargo run -p kg-engine --example license_issue -- sign private.pk8 claims.json license.txt
 ```
 
-**CADERNA-DASHBOARD**：Laravel と Filament による別プロジェクトが Caderna の管理パネルです。顧客の承認、顧客ごとの色・画像・テキストの設定、アプリがオフラインで検証するのと同じ形式の体験用トークンとライセンスの発行を行います。プロバイダーの鍵をサーバーにだけ置く OpenAI 互換の AI ゲートウェイもあります。アプリはまだ接続しません。オンラインでの有効化、ブランドのダウンロード、パネル経由の AI は計画中で（[ROADMAP](ROADMAP.md) フェーズ W6）、提供前にプライバシーポリシーに記載します。
+**CADERNA-DASHBOARD**：Laravel と Filament による別プロジェクトが Caderna の管理パネルです。顧客の承認、顧客ごとの色・画像・テキストの設定、アプリがオフラインで検証するのと同じ形式の体験用トークンとライセンスの発行を行います。プロバイダーの鍵をサーバーにだけ置く OpenAI 互換の AI ゲートウェイもあり、Docker またはローカルの PHP 環境で動きます（[czarist/caderna-dashboard](https://github.com/czarist/caderna-dashboard)）。アプリはまだ接続しません。オンラインでの有効化、ブランドのダウンロード、パネル経由の AI は計画中で（[ROADMAP](ROADMAP.md) フェーズ W6）、提供前にプライバシーポリシーに記載します。
 
 ## はじめかた
 

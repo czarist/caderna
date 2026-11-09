@@ -102,6 +102,9 @@ A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
 - [x] OpenAI-compatible AI gateway (`/api/v1/ai`): provider keys and models only in the
       panel's `.env`, aliases for the app, streaming, monthly quota, images only to the
       vision model.
+- [x] Runs with Docker (PHP 8.3 + Apache and MySQL 8.4) or a local PHP install; the
+      root page is a Caderna "coming soon" site, the panel lives at `/admin`.
+      Repository: <https://github.com/czarist/caderna-dashboard>.
 - [ ] App: after the offline check, activate online (`POST /api/v1/activations`) and keep
       the device token; sign out frees the seat.
 - [ ] App: download the client's brand at start (`GET /api/v1/brand`, ETag) and cache it,
