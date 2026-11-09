@@ -8,3 +8,4 @@
 *.pfx
 *.p12
 *.key
+/.cargo/config.toml

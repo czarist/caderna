@@ -58,4 +58,4 @@ commercial_reviewed = false
 
 [licensing]
 required = false
-public_key = "" # Public Ed25519 key only. Never put a private key here.
+public_key = "MhuEw6S6kUFP+duSB6pBXfOt778LM0lS/j6w65yFizs=" # Public Ed25519 key only. Never put a private key here.

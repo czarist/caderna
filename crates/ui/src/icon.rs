@@ -36,19 +36,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn icon_is_a_rounded_jade_tile() {
+    fn the_brand_icon_decodes_with_transparent_corners() {
         let size = 64;
         let px = render(size).unwrap();
         assert_eq!(px.len(), (size * size * 4) as usize);
-        // The corner is cut away by the rounding.
-        assert_eq!(px[3], 0);
-        // Near the top middle: the jade ground, opaque.
-        let i = ((4 * size + size / 2) * 4) as usize;
+        // brand.toml asks for transparent corners; resampling may leave a trace.
+        assert!(px[3] < 16, "corner alpha {}", px[3]);
+        // The middle of the tile is opaque.
+        let i = ((size / 2 * size + size / 2) * 4) as usize;
         assert_eq!(px[i + 3], 0xFF);
-        assert!(
-            px[i + 1] > px[i] && px[i + 1] > px[i + 2],
-            "{:?}",
-            &px[i..i + 4]
-        );
     }
 }
