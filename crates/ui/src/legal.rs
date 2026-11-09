@@ -249,7 +249,10 @@ mod tests {
                 text.contains(kg_engine::TERMS_VERSION),
                 "{at} has no version date"
             );
-            assert!(text.contains("trentin.software"), "{at}");
+            assert!(
+                text.contains(kg_brand::LEGAL_CONTACT),
+                "{at} has no contact"
+            );
         }
     }
 

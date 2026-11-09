@@ -53,6 +53,15 @@ fn main() -> Result<(), String> {
             &f.legal.version
         },
     );
+    // Contact every legal text names; docs/legal names Trentin's site.
+    text(
+        "LEGAL_CONTACT",
+        if f.legal.contact.is_empty() {
+            "trentin.software"
+        } else {
+            &f.legal.contact
+        },
+    );
     text("MARK_LICENSE", &f.company.mark_license);
     text("REPOSITORY", f.updates.repository.trim_end_matches('/'));
     text("DEMO_CONTACT_URL", &f.demo.contact_url);
