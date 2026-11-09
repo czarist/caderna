@@ -50,7 +50,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // The brand downloaded by the check-in applies from the next start.
     let reopened = Engine::new(AppPaths::new(dir.path()), AiConfig::default())?;
-    println!("brand at the next start: {:?}", reopened.panel_brand());
+    match reopened.panel_brand() {
+        Some(brand) => {
+            let pictures: Vec<String> = brand
+                .images
+                .iter()
+                .map(|(file, bytes)| format!("{file} ({} bytes)", bytes.len()))
+                .collect();
+            println!(
+                "brand at the next start: {:?} by {:?}, accent {:?}, pictures {pictures:?}, texts {:?}",
+                brand.app_name, brand.company_name, brand.accent_light, brand.texts
+            );
+        }
+        None => println!("brand at the next start: none"),
+    }
     drop(reopened);
 
     engine.handle(Command::TestConnection)?;

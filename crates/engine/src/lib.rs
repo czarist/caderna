@@ -19,6 +19,7 @@ pub mod license;
 mod mock;
 mod models;
 mod ocr;
+mod panel_brand;
 mod paths;
 mod plans;
 mod practice;
@@ -93,12 +94,13 @@ pub use lesson::{LessonPhase, LessonSession, LessonTurn, Speaker};
 pub use mock::{MockJob, MockPrint, mock_code};
 pub use models::ModelStatus;
 pub use ocr::{OcrError, OcrModelStatus};
+pub use panel_brand::{PanelBrand, load_panel_brand};
 pub use paths::AppPaths;
 pub use practice::{QuizSession, QuizStep, REVIEW_ROUNDS, ReviewSession, ReviewStep};
 pub use prepare::{PrepareJob, PrepareRequest, PrepareSummary, slug};
 pub use progress::Milestone;
 pub use reader::{ContentsEntry, ReaderState};
-pub use server::{OFFLINE_GRACE_DAYS, PanelBrand, PanelError, PanelStatus, Refusal};
+pub use server::{OFFLINE_GRACE_DAYS, PanelError, PanelStatus, Refusal};
 pub use settings::{
     DEFAULT_REMINDER_MINUTES, DEFAULT_TURN_PAUSE, ManuscriptOcr, Region, SETUP_VERSION, Settings,
     TERMS_VERSION, TURN_PAUSE_RANGE, TermsAcceptance,

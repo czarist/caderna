@@ -12,7 +12,10 @@ pub enum Art {
 impl Art {
     fn source(self) -> ImageSource<'static> {
         match self {
-            Self::Mark => brand_image("cover.png", kg_brand::COVER_PNG),
+            Self::Mark => brand_image(
+                "cover.png",
+                crate::brand::image("cover.png", kg_brand::COVER_PNG),
+            ),
         }
     }
 

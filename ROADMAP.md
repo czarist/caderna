@@ -115,7 +115,8 @@ A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
       `vision_model`); the AI choice is hidden in setup and Settings.
 - [x] Caderna privacy policy and terms (pt-BR only, Brazil only, `[locale]`): what goes to
       the panel, with the legal version bumped.
-- [ ] Apply the panel's images (icon, cover) and texts at runtime.
+- [x] Apply the panel's pictures (icon, cover, reminder art, mark, handout watermark) and
+      texts at runtime, from the next start, after checking them.
 - [ ] The panel's `https://` address in `branding/caderna/brand.toml` before a release
       (`http://localhost:8000` while developing).
 

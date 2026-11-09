@@ -117,7 +117,12 @@ count computers.
   are the panel's model aliases; the AI choice disappears from the setup and Settings.
 - **The brand is downloaded** from the panel (ETag cache): app and company names, accent
   and highlight colours, support and contact links. It applies from the next start, so
-  nothing changes mid-session. Images and texts sent by the panel are not applied yet.
+  nothing changes mid-session. Pictures (icon, cover, reminder art, mark, handout
+  watermark) are downloaded too and kept only when safe: square PNGs of 64–2048 px up to
+  2 MB, SVGs up to 512 KB without scripts or outside references, from `https://` or the
+  panel's own address. Texts replace the app's by locale key, in the brand's first
+  language only. Everything lives in `<data dir>/panel-brand/`, which the reminder pop-up
+  also reads; the handout uses the panel's company name, colour and watermark.
 - `[licensing] public_key` is required; set `required = true` and `[demo] enabled = false`
   so evaluations are licences issued by the panel.
 - The privacy policy must name the panel and what it receives; see
