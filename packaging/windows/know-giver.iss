@@ -18,6 +18,9 @@
 #ifndef AppDir
   #define AppDir "KnowGiver"
 #endif
+#ifndef AppExe
+  #define AppExe "know-giver"
+#endif
 #ifndef AppGuid
   #define AppGuid "6C1F3F7E-8E0B-4C55-9B7A-3B1E8A4D2F10"
 #endif
@@ -52,7 +55,7 @@ DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 OutputBaseFilename={#AppDir}-{#AppVersion}-setup
 SetupIconFile={#AppIcon}
-UninstallDisplayIcon={app}\know-giver.exe
+UninstallDisplayIcon={app}\{#AppExe}.exe
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -71,7 +74,7 @@ Name: "studyreminders"; Description: "{cm:StudyReminders}"; GroupDescription: "{
 Name: "claudecode"; Description: "{cm:InstallClaudeCode}"; GroupDescription: "{cm:AccountServices}"; Check: ClaudeCodeMissing
 
 [Files]
-Source: "{#SourceDir}\know-giver.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourceDir}\{#AppExe}.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\.env.example"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\vcruntime140.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\vcruntime140_1.dll"; DestDir: "{app}"; Flags: ignoreversion
@@ -84,12 +87,12 @@ Source: "{#SourceDir}\README.*.txt"; DestDir: "{app}"; Flags: ignoreversion
 Type: files; Name: "{app}\LEIA-ME.txt"
 
 [Icons]
-Name: "{group}\{#AppName}"; Filename: "{app}\know-giver.exe"
+Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExe}.exe"
 Name: "{group}\{cm:UninstallProgram,{#AppName}}"; Filename: "{uninstallexe}"
-Name: "{userdesktop}\{#AppName}"; Filename: "{app}\know-giver.exe"; Tasks: desktopicon
+Name: "{userdesktop}\{#AppName}"; Filename: "{app}\{#AppExe}.exe"; Tasks: desktopicon
 
 [Registry]
-Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "{#AppName}"; ValueData: """{app}\know-giver.exe"" --background"; Tasks: startup; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "{#AppName}"; ValueData: """{app}\{#AppExe}.exe"" --background"; Tasks: startup; Flags: uninsdeletevalue
 
 [UninstallDelete]
 ; The program folder goes entirely, including a .env with an API key. Study
@@ -117,9 +120,9 @@ en.ReminderPreferenceFailed=Could not save the study reminder preference.
 [Run]
 ; Anthropic's official installer, for this user only; a failure leaves {#AppName} installed.
 Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""irm https://claude.ai/install.ps1 | iex"""; StatusMsg: "{cm:InstallingClaudeCode}"; Tasks: claudecode; Flags: runhidden waituntilterminated
-Filename: "{app}\know-giver.exe"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#AppExe}.exe"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
 ; Silent installs (the one-line install and in-app updates) open the new version.
-Filename: "{app}\know-giver.exe"; Flags: nowait; Check: WizardSilent
+Filename: "{app}\{#AppExe}.exe"; Flags: nowait; Check: WizardSilent
 
 [Code]
 // Claude Code on the PATH, from its native installer, or from npm.

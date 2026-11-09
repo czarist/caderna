@@ -137,6 +137,14 @@ pub struct AppSection {
     pub data_dir: String,
     /// GUID that tells the Windows installer this product from others.
     pub installer_guid: String,
+    /// The program's file name without extension (`Caderna` → `Caderna.exe`).
+    /// Default `know-giver`, which existing installs and shortcuts use.
+    #[serde(default = "default_executable")]
+    pub executable: String,
+}
+
+fn default_executable() -> String {
+    "know-giver".into()
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -325,6 +333,15 @@ impl Brand {
                 .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
         {
             return fail("app.data_dir must use only letters, digits, - and _");
+        }
+        if f.app.executable.is_empty()
+            || !f
+                .app
+                .executable
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+        {
+            return fail("app.executable must use only letters, digits, - and _");
         }
         if !is_guid(&f.app.installer_guid) {
             return fail("app.installer_guid must look like 6C1F3F7E-8E0B-4C55-9B7A-3B1E8A4D2F10");

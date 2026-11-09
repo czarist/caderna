@@ -31,6 +31,7 @@ fn main() -> Result<(), String> {
     text("NAME", &f.app.name);
     text("SLUG", &f.app.slug);
     text("DATA_DIR", &f.app.data_dir);
+    text("EXECUTABLE", &f.app.executable);
     text("INSTALLER_GUID", &f.app.installer_guid);
     text(
         "ICON_PNG_PATH",

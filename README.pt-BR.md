@@ -343,7 +343,7 @@ Aqui não há releases públicos; cada build é feito para um cliente.
 
 | Seção | O que define |
 | --- | --- |
-| `[app]` | nome do produto, `slug` (id da janela, nome do banco), `data_dir` (pasta de dados e de instalação), GUID do instalador |
+| `[app]` | nome do produto, `slug` (id da janela, nome do banco), `data_dir` (pasta de dados e de instalação), `executable` (nome do arquivo do programa), GUID do instalador |
 | `[company]` | nome da empresa, site, crédito "Desenvolvido por …" ligado ou não, licença da marca |
 | `[colors]` | destaque e realce (temas claro e escuro), cor do crédito nas apostilas |
 | `[assets]` | ícone do app (PNG e ICO), arte de capa, arte do lembrete, marca (SVG) e marca d'água das apostilas (SVG) |
