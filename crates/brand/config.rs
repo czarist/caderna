@@ -18,6 +18,10 @@ pub struct BrandFile {
     pub updates: UpdateSection,
     #[serde(default)]
     pub demo: DemoSection,
+    #[serde(default)]
+    pub legal: LegalSection,
+    #[serde(default)]
+    pub licensing: LicensingSection,
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -37,6 +41,8 @@ pub struct AppSection {
 #[serde(deny_unknown_fields)]
 pub struct CompanySection {
     pub name: String,
+    #[serde(default)]
+    pub support_url: String,
     /// Site opened by the credits (`https://…`), or empty.
     #[serde(default)]
     pub url: String,
@@ -65,6 +71,11 @@ pub struct ColorSection {
 #[derive(Debug, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct AssetSection {
+    /// Optional folders with the same filenames as the bundled art.
+    #[serde(default)]
+    pub teachers_dir: String,
+    #[serde(default)]
+    pub stickers_dir: String,
     /// App icon, square PNG with transparent corners (512 × 512).
     pub icon_png: String,
     /// Square cover art, corners filled (welcome and empty screens).
@@ -106,6 +117,36 @@ pub struct DemoSection {
 
 fn yes() -> bool {
     true
+}
+
+#[derive(Debug, Default, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LegalSection {
+    /// All fifteen Markdown documents, relative to the brand folder.
+    #[serde(default)]
+    pub directory: String,
+    #[serde(default)]
+    pub version: String,
+    #[serde(default)]
+    pub provider: String,
+    #[serde(default)]
+    pub licensor: String,
+    #[serde(default)]
+    pub contact: String,
+    #[serde(default)]
+    pub reviewed: bool,
+    #[serde(default)]
+    pub commercial_reviewed: bool,
+}
+
+#[derive(Debug, Default, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LicensingSection {
+    /// Base64 Ed25519 public key. Private keys never belong in a brand.
+    #[serde(default)]
+    pub public_key: String,
+    #[serde(default)]
+    pub required: bool,
 }
 
 /// A loaded brand: its folder and its file.
@@ -199,6 +240,19 @@ impl Brand {
             return fail("updates.repository must be https://github.com/<owner>/<name> or empty");
         }
         let contact = &f.demo.contact_url;
+        let support = &f.company.support_url;
+        if !support.is_empty() && !support.starts_with("https://") && !support.starts_with("mailto:") {
+            return fail("company.support_url must start with https:// or mailto:");
+        }
+        if f.licensing.required && f.licensing.public_key.is_empty() {
+            return fail("licensing.required needs an Ed25519 public_key");
+        }
+        if !f.legal.directory.is_empty()
+            && [f.legal.version.as_str(), f.legal.provider.as_str(), f.legal.licensor.as_str(), f.legal.contact.as_str()]
+                .iter().any(|v| v.trim().is_empty())
+        {
+            return fail("legal overrides need version, provider, licensor and contact");
+        }
         if !contact.is_empty() && !contact.starts_with("https://") && !contact.starts_with("mailto:")
         {
             return fail("demo.contact_url must start with https:// or mailto: or be empty");

@@ -9,6 +9,24 @@ repository.
 
 ## [Unreleased]
 
+### Added
+- Signed offline licences (Ed25519, public key in the brand): activation in Settings and
+  on the "demonstration ended" screen, bound to brand, customer, seats and dates;
+  `license_issue` example to create keys and licences. `[licensing] required` builds stop
+  without a valid licence.
+- Brand options: support link, per-brand legal texts and consent version, teacher and
+  sticker art folders, review flags that gate commercial packaging.
+- Handouts from a demo or unlicensed build carry a "Demonstration" stamp.
+- Caderna sample brand.
+- Per-brand macOS/Linux packages, installers and release workflow; signing scripts that
+  read certificates from CI secrets.
+
+### Changed
+- The Dii voice (non-commercial licence) is no longer offered or downloaded.
+- READMEs in all five languages show the Caderna icon and screenshots rendered with the
+  Caderna brand, the full brand.toml sections, licence issuing and the CADERNA-DASHBOARD
+  panel (its integration in the app is ROADMAP Phase W6). Builds use every core again.
+
 ## [0.1.0] - 2026-11-08
 
 First version of the white-label base, forked from Know Giver 0.39.3 with all its

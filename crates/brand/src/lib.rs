@@ -47,9 +47,9 @@ mod tests {
         assert!(ENGRAVING_PNG.starts_with(b"\x89PNG"));
         assert!(std::str::from_utf8(MARK_SVG).is_ok_and(|s| s.contains("<svg")));
         assert!(std::str::from_utf8(WATERMARK_SVG).is_ok_and(|s| s.contains("<svg")));
-        if DEMO {
-            assert!(DEMO_DAYS != 0 || DEMO_EXPIRES.is_some());
-        }
+        // A demonstration needs a limit; the values differ per brand.
+        let limited = std::hint::black_box(DEMO_DAYS) != 0 || DEMO_EXPIRES.is_some();
+        assert!(!DEMO || limited);
         assert!(user_agent("test").starts_with(DATA_DIR));
     }
 }

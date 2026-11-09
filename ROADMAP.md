@@ -13,8 +13,8 @@ A build carries one brand, read at compile time from `branding/<name>/brand.toml
 (`KG_BRAND_DIR`; default `branding/default`, Know Giver itself). See
 [branding/README.md](branding/README.md).
 
-**Before building:** full builds keep every core busy and have powered the owner's PC
-off before. Build and test with `-j 2` to `-j 4` (`cargo test --workspace -j 2`).
+**Builds** use every core (Cargo's default), including the llama.cpp and shader builds.
+If a machine overheats, limit it for that run with `-j N` or `CARGO_BUILD_JOBS`.
 
 ## Phase W1 — Brand and demonstration builds (done in 0.1.0)
 
@@ -40,61 +40,83 @@ off before. Build and test with `-j 2` to `-j 4` (`cargo test --workspace -j 2`)
       folder; earliest start and latest day win, so a clock turned back does not help.
 - [x] `branding/default` (Know Giver) and `branding/example` (template with a demo).
 
-## Phase W2 — Per-client legal texts (next)
+## Phase W2 — Per-client legal texts
 
-The terms and privacy policy (`docs/legal/`) still name Know Giver and Trentin Software
-as the provider. Selling to a company needs:
-
-- [ ] Decide the roles per client: who is the data controller and who supplies the
-      software (Trentin as licensor, the client as the provider to its students?).
-- [ ] Legal texts from the brand: either placeholders (`{app}`, `{company}`, contact) in
-      `docs/legal/` filled at build time, or a `legal/` folder inside each brand that
-      replaces them. Keep the rules from CLAUDE.md: both languages per region, date and
-      `TERMS_VERSION` bumped, and the texts still say the AI can be wrong.
+- [x] Roles: the client is the provider to its students and the data controller;
+      Trentin licenses the software (`[legal] provider` / `licensor` in the brand).
+- [x] Legal texts from the brand: a `legal/` folder inside the brand replaces
+      `docs/legal/` (all fifteen files), with its own `[legal] version` used as
+      `TERMS_VERSION`, so each brand asks its students to agree on its own schedule.
+- [x] Release gate: `[legal] reviewed` and `commercial_reviewed` must be `true` before a
+      commercial package (`metadata release-ready` in the packaging scripts and CI).
 - [ ] A licence agreement template between Trentin and the client (outside the app).
-- [ ] Lawyer review before the first sale.
+- [ ] Lawyer review of each client's texts before its first sale (Caderna: drafts only).
 
 ## Phase W3 — Remaining art and names
 
-- [ ] Teacher portraits, achievement badges and Thoth illustrations
-      (`crates/ui/assets`) optionally replaced per brand.
-- [ ] Settings → About: the client's support contact and version, besides the credit.
+- [x] Teacher portraits and stickers optionally replaced per brand
+      (`[company] teachers_dir`, `stickers_dir`, same file names as the bundled art).
+- [x] Settings → About: the client's support contact (`[company] support_url`) and the
+      licence status.
+- [x] Prompts: no prompt names "Know Giver".
 - [ ] Screenshots per brand for the client's material (`KG_SNAPSHOT_DIR` with
-      `KG_BRAND_DIR`).
-- [ ] Prompts: the tutor never names itself; check that no prompt says "Know Giver".
+      `KG_BRAND_DIR`), including the licence activation in all five languages (needs a
+      brand with a public key and a GPU run of the snapshot tests).
 
 ## Phase W4 — Packaging and releases per client
 
-- [ ] macOS and Linux packages from the brand (`scripts/package-unix.sh`: bundle name,
+- [x] macOS and Linux packages from the brand (`scripts/package-unix.sh`: bundle name,
       `.desktop` file, icon, archive names).
-- [ ] One-line installs (`scripts/install.ps1`, `scripts/install.sh`) and the macOS/Linux
-      updater script that `update.rs` embeds take the repository from the brand.
-- [ ] Release workflow per brand: a `brand` input to `.github/workflows/packages.yml`
-      that builds from `branding/<client>` and publishes to the client's repository.
-- [ ] Code signing (Windows and macOS) under the right publisher name.
-- [ ] Keep client brand folders (pictures, contact data) out of this public base: a
-      private repository or CI secret per client.
+- [x] One-line installs and the macOS/Linux updater script take the repository and
+      folder from the brand.
+- [x] Release workflow per brand: `brand`, `private_brand_repository`,
+      `target_repository` inputs in `.github/workflows/packages.yml`; publishing is
+      explicit and refuses unreviewed brands.
+- [x] Code signing scripts (`scripts/sign-windows.ps1`, `ci-signing-*.{sh,ps1}`) that
+      read certificates only from CI secrets.
+- [x] Client brand folders can live in a private repository, checked out under
+      `branding/private/` (ignored by git).
+- [ ] Signing certificates under each client's publisher name (owner/client task).
 
 ## Phase W5 — Stronger demonstrations and licences
 
-The current demo stops casual use, not someone who deletes both clock copies or edits
-the binary.
-
-- [ ] Signed licence keys (Ed25519, public key in the brand): a full build unlocks with a
-      key for one company, number of seats and end date; a demo is a key with a short
-      end date. No server needed.
+- [x] Signed licence keys (Ed25519, public key in the brand, engine `license.rs`): bound
+      to brand, customer, seats and dates; verified offline; activation in Settings and
+      on the "demonstration ended" screen. Keys are issued with
+      `cargo run -p kg-engine --example license_issue` (private key never in the repo).
+- [x] `[licensing] required = true`: a build without a valid licence stops like an
+      ended demo; an expired licence stops it again, study data kept.
+- [x] Demo watermark on handouts while the app is not fully licensed.
+- [x] Convert a demo to the full version in place: activating a licence keeps plans and
+      progress (test in `license.rs`).
 - [ ] Optional online check when the client wants it (seats in use), off by default and
-      stated in the privacy policy.
-- [ ] Demo watermark on handouts ("Demonstração") so printed material from a demo is
-      recognisable.
-- [ ] Convert a demo to the full version in place: same `slug` and `data_dir`, the
-      student's plans and progress carried over (works today when only `[demo]` changes;
-      add a test).
+      stated in the privacy policy. Needs a real client service contract first.
+
+## Phase W6 — Caderna dashboard (CADERNA-DASHBOARD)
+
+A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
+
+- [x] Panel: clients with validation status, per-client brand (colours, images, texts,
+      versioned), licences and evaluation tokens signed byte-identically to
+      `license_issue`, devices and seats, AI usage per client.
+- [x] OpenAI-compatible AI gateway (`/api/v1/ai`): provider keys and models only in the
+      panel's `.env`, aliases for the app, streaming, monthly quota, images only to the
+      vision model.
+- [x] Runs with Docker (PHP 8.3 + Apache and MySQL 8.4) or a local PHP install; the
+      root page is a Caderna "coming soon" site, the panel lives at `/admin`.
+      Repository: <https://github.com/czarist/caderna-dashboard>.
+- [ ] App: after the offline check, activate online (`POST /api/v1/activations`) and keep
+      the device token; sign out frees the seat.
+- [ ] App: download the client's brand at start (`GET /api/v1/brand`, ETag) and cache it,
+      so one Caderna installer serves every client; built-in brand when offline.
+- [ ] App: a "Caderna" AI provider pointing at the panel with the device token.
+- [ ] Privacy policy and terms in every language and region: what goes to the panel
+      (licence key, device id hash, app version, AI requests), with `TERMS_VERSION` bumped.
 
 ## Licences to check before selling
 
-- [ ] Dii voice (OpenVoiceOS/pipertts_pt-BR_dii): CC BY-NC-ND 4.0, non-commercial. A sold
-      build must not download or offer it, or needs another pt-BR voice.
+- [x] Dii voice (OpenVoiceOS/pipertts_pt-BR_dii): CC BY-NC-ND 4.0, non-commercial. No
+      longer offered or downloaded; old settings that chose it still load.
 - [ ] Other voices, models and art under the README's Credits: confirm each allows
       commercial redistribution.
 - [ ] Account sign-ins (ChatGPT, Claude Code, Copilot): their terms were accepted for

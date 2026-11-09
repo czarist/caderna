@@ -23,7 +23,7 @@ pub enum LegalDoc {
 
 macro_rules! doc {
     ($name:literal) => {
-        include_str!(concat!("../../../docs/legal/", $name, ".md"))
+        kg_brand::legal_document($name)
     };
 }
 
@@ -249,7 +249,10 @@ mod tests {
                 text.contains(kg_engine::TERMS_VERSION),
                 "{at} has no version date"
             );
-            assert!(text.contains("trentin.software"), "{at}");
+            assert!(
+                text.contains(kg_brand::LEGAL_CONTACT),
+                "{at} has no contact"
+            );
         }
     }
 

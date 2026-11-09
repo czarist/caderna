@@ -889,6 +889,14 @@ impl eframe::App for KnowGiverApp {
                 // A finished demonstration shows only how to get the full version.
                 if demo_over {
                     screens::demo::expired(ui);
+                    let token = self
+                        .engine
+                        .as_ref()
+                        .ok()
+                        .and_then(|engine| screens::demo::activation(ui, engine));
+                    if let Some(token) = token {
+                        self.dispatch(Command::ActivateLicense(token));
+                    }
                     return;
                 }
                 // A short fade when the screen changes.
@@ -922,7 +930,7 @@ impl eframe::App for KnowGiverApp {
                     Screen::Settings => screens::settings::show(self, ui),
                 }
             });
-        if needs_tour {
+        if needs_tour && !demo_over {
             crate::tour::show(self, ui.ctx(), badges.writing);
         }
     }

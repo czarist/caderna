@@ -37,6 +37,9 @@ pub(crate) struct DemoClock {
 }
 
 impl DemoClock {
+    pub(crate) fn effective_day(self, today: NaiveDate) -> NaiveDate {
+        today.max(self.last_seen)
+    }
     /// Joins two records: the earliest start and the latest day seen.
     fn merge(self, other: Self) -> Self {
         Self {
@@ -44,6 +47,22 @@ impl DemoClock {
             last_seen: self.last_seen.max(other.last_seen),
         }
     }
+}
+
+/// A one-day demonstration that ended long ago, for tests.
+#[cfg(test)]
+pub(crate) fn ended() -> (DemoLimit, DemoClock) {
+    let day = NaiveDate::from_ymd_opt(2000, 1, 1).unwrap_or_default();
+    (
+        DemoLimit {
+            days: 1,
+            expires: None,
+        },
+        DemoClock {
+            started: day,
+            last_seen: day,
+        },
+    )
 }
 
 /// The limits a brand sets.

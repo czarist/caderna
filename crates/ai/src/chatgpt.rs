@@ -965,7 +965,11 @@ mod tests {
         let url = attempt("").authorize_url();
         assert!(url.starts_with(AUTHORIZE_URL));
         assert_eq!(param(&url, "client_id"), Some("dynamic_agent_client"));
-        assert_eq!(param(&url, "agent_name_hint"), Some("Know%20Giver"));
+        assert_eq!(
+            param(&url, "agent_name_hint"),
+            Some(encode(AGENT_NAME).as_str())
+        );
+        assert_eq!(decode(&encode(AGENT_NAME)), kg_brand::NAME);
         assert_eq!(param(&url, "ext_agent_host_id"), Some("host-1"));
         assert_eq!(param(&url, "code_challenge_method"), Some("S256"));
         assert_eq!(

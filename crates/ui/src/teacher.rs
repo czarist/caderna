@@ -32,19 +32,46 @@ struct Parts {
     mouths: [&'static str; MOUTHS],
 }
 
+fn teacher_art(name: &str, fallback: &'static str) -> &'static str {
+    kg_brand::artwork("teachers", name)
+        .and_then(|b| std::str::from_utf8(b).ok())
+        .unwrap_or(fallback)
+}
+
 macro_rules! parts {
     ($name:literal) => {
         Parts {
-            base: include_str!(concat!("../assets/teachers/", $name, "/base.svg")),
+            base: teacher_art(
+                concat!($name, "/base.svg"),
+                include_str!(concat!("../assets/teachers/", $name, "/base.svg")),
+            ),
             eyes: [
-                include_str!(concat!("../assets/teachers/", $name, "/eyes-open.svg")),
-                include_str!(concat!("../assets/teachers/", $name, "/eyes-closed.svg")),
+                teacher_art(
+                    concat!($name, "/eyes-open.svg"),
+                    include_str!(concat!("../assets/teachers/", $name, "/eyes-open.svg")),
+                ),
+                teacher_art(
+                    concat!($name, "/eyes-closed.svg"),
+                    include_str!(concat!("../assets/teachers/", $name, "/eyes-closed.svg")),
+                ),
             ],
             mouths: [
-                include_str!(concat!("../assets/teachers/", $name, "/mouth-0.svg")),
-                include_str!(concat!("../assets/teachers/", $name, "/mouth-1.svg")),
-                include_str!(concat!("../assets/teachers/", $name, "/mouth-2.svg")),
-                include_str!(concat!("../assets/teachers/", $name, "/mouth-3.svg")),
+                teacher_art(
+                    concat!($name, "/mouth-0.svg"),
+                    include_str!(concat!("../assets/teachers/", $name, "/mouth-0.svg")),
+                ),
+                teacher_art(
+                    concat!($name, "/mouth-1.svg"),
+                    include_str!(concat!("../assets/teachers/", $name, "/mouth-1.svg")),
+                ),
+                teacher_art(
+                    concat!($name, "/mouth-2.svg"),
+                    include_str!(concat!("../assets/teachers/", $name, "/mouth-2.svg")),
+                ),
+                teacher_art(
+                    concat!($name, "/mouth-3.svg"),
+                    include_str!(concat!("../assets/teachers/", $name, "/mouth-3.svg")),
+                ),
             ],
         }
     };

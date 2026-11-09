@@ -65,6 +65,9 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
         });
         ui.add_space(12.0);
         about_section(ui, draft);
+        if let Some(token) = super::demo::activation(ui, engine) {
+            actions.send(Command::ActivateLicense(token));
+        }
         ui.add_space(12.0);
         legal_section(ui, engine, &mut actions);
         ui.add_space(12.0);
@@ -959,6 +962,9 @@ fn provider_picker(ui: &mut egui::Ui, draft: &mut Settings) {
 fn about_section(ui: &mut egui::Ui, draft: &mut kg_engine::Settings) {
     section(ui, &t!("settings.about.title"), |ui| {
         widgets::hint(ui, &t!("app.version", version = env!("CARGO_PKG_VERSION")));
+        if !kg_brand::SUPPORT_URL.is_empty() {
+            widgets::link(ui, &t!("licensing.support"), kg_brand::SUPPORT_URL);
+        }
         if kg_brand::has_repository() {
             ui.checkbox(&mut draft.check_updates, t!("settings.about.check_updates"))
                 .on_hover_text(t!("settings.about.check_updates_hint"));

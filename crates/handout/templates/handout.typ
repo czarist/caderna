@@ -106,12 +106,15 @@
   numbering: "1",
   // The maker's mark, faint, in the middle of the page. Text in the brand
   // colour is left out of the reader's text (`pages.rs`).
-  background: if company.show { place(center + horizon, stack(
+  background: place(center + horizon, stack(
     spacing: 14pt,
-    align(center, image("/brand/watermark.svg", width: 52%)),
-    align(center, text(size: 34pt, weight: "bold", tracking: 3pt,
-      fill: brand.transparentize(93%), upper(company.name))),
-  )) },
+    if company.show { align(center, image("/brand/watermark.svg", width: 52%)) },
+    if company.show { align(center, text(size: 34pt, weight: "bold", tracking: 3pt,
+      fill: brand.transparentize(93%), upper(company.name))) },
+    if labels.at("demonstration", default: "") != "" {
+      align(center, rotate(-25deg, text(size: 38pt, weight: "bold", fill: brand.transparentize(75%), labels.demonstration)))
+    },
+  )),
   footer: context {
     set text(size: 7.5pt)
     grid(

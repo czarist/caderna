@@ -306,6 +306,7 @@ pub fn error_message(err: &EngineError) -> String {
         }
         EngineError::Store(StoreError::PlanNotFound(_)) => t!("error.store.not_found"),
         EngineError::Store(_) => t!("error.store.generic"),
+        EngineError::License(_) => t!("licensing.invalid"),
         EngineError::Ai(AiError::Connection { url, .. }) => t!("error.ai.connection", url = url),
         EngineError::Ai(AiError::Auth { .. }) => t!("error.ai.auth"),
         EngineError::Ai(AiError::Copilot(_)) => t!("error.ai.copilot"),

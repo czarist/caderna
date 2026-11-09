@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="crates/ui/assets/icon.png" width="128" height="128" alt="Know Giver 图标：新月下的狒狒形象托特神版画，翡翠色方块">
+  <img src="branding/caderna/icon.png" width="128" height="128" alt="Caderna 图标：橄榄色方块上以白色线条绘制的打开的笔记本">
 </p>
 
-<h1 align="center">Know Giver</h1>
+<h1 align="center">Caderna</h1>
 
-<p align="center"><b>白标版本基础</b></p>
+<p align="center"><b>基于 Know Giver 白标版本基础构建</b></p>
 
 <h3 align="center">你的考试。你的计划。一位会和你对话的老师。</h3>
 
@@ -18,22 +18,22 @@
 </p>
 
 <p align="center">
-  <a href="https://www.rust-lang.org"><img alt="Pure Rust, 2024 edition" src="https://img.shields.io/badge/pure%20Rust-2024-3f8f7c?style=flat-square&logo=rust&logoColor=white"></a>
-  <a href="https://github.com/emilk/egui"><img alt="UI: egui" src="https://img.shields.io/badge/UI-egui%200.36-2c6b5c?style=flat-square"></a>
-  <a href="https://www.sqlite.org"><img alt="Storage: SQLite" src="https://img.shields.io/badge/storage-SQLite-2c6b5c?style=flat-square&logo=sqlite&logoColor=white"></a>
-  <a href="https://typst.app"><img alt="Handouts: Typst" src="https://img.shields.io/badge/handouts-Typst-2c6b5c?style=flat-square&logo=typst&logoColor=white"></a>
-  <img alt="Speech to text: Whisper and Parakeet" src="https://img.shields.io/badge/speech-Whisper%20%C2%B7%20Parakeet-2c6b5c?style=flat-square&logo=huggingface&logoColor=white">
-  <a href="https://github.com/rhasspy/piper"><img alt="Voices: Piper and Kokoro" src="https://img.shields.io/badge/voices-Piper%20%C2%B7%20Kokoro-2c6b5c?style=flat-square"></a>
-  <img alt="AI: OpenAI-compatible APIs and GitHub Copilot" src="https://img.shields.io/badge/AI-OpenAI--compatible-2c6b5c?style=flat-square&logo=ollama&logoColor=white">
-  <img alt="Sign in: ChatGPT, Claude Code, GitHub Copilot" src="https://img.shields.io/badge/Sign%20in-ChatGPT%20%C2%B7%20Claude%20Code%20%C2%B7%20Copilot-2c6b5c?style=flat-square&logo=openid&logoColor=white">
-  <a href="https://github.com/ggml-org/llama.cpp"><img alt="OCR runtime: llama.cpp" src="https://img.shields.io/badge/OCR-llama.cpp-2c6b5c?style=flat-square"></a>
-  <a href="https://www.vulkan.org/"><img alt="GPU acceleration: Vulkan" src="https://img.shields.io/badge/GPU-Vulkan-2c6b5c?style=flat-square&logo=vulkan&logoColor=white"></a>
-  <img alt="Windows" src="https://img.shields.io/badge/-Windows-2c6b5c?style=flat-square&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0wIDBoMTEuNHYxMS40SDB6TTEyLjYgMEgyNHYxMS40SDEyLjZ6TTAgMTIuNmgxMS40VjI0SDB6TTEyLjYgMTIuNkgyNFYyNEgxMi42eiIvPjwvc3ZnPg%3D%3D&logoColor=white&labelColor=111111">
-  <img alt="macOS" src="https://img.shields.io/badge/-macOS-2c6b5c?style=flat-square&logo=apple&logoColor=white&labelColor=111111">
-  <img alt="Linux" src="https://img.shields.io/badge/-Linux-2c6b5c?style=flat-square&logo=linux&logoColor=white&labelColor=111111">
-  <a href="#license"><img alt="License: MIT OR Apache-2.0" src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-2c6b5c?style=flat-square&logo=opensourceinitiative&logoColor=white"></a>
-  <img alt="Languages: Portuguese, English, Japanese, Simplified and Traditional Chinese" src="https://img.shields.io/badge/languages-pt--BR%20%C2%B7%20en%20%C2%B7%20ja%20%C2%B7%20zh--Hans%20%C2%B7%20zh--Hant-2c6b5c?style=flat-square">
-  <img alt="Local-first voice" src="https://img.shields.io/badge/voice-local--first-2c6b5c?style=flat-square">
+  <a href="https://www.rust-lang.org"><img alt="Pure Rust, 2024 edition" src="https://img.shields.io/badge/pure%20Rust-2024-52613c?style=flat-square&logo=rust&logoColor=white"></a>
+  <a href="https://github.com/emilk/egui"><img alt="UI: egui" src="https://img.shields.io/badge/UI-egui%200.36-52613c?style=flat-square"></a>
+  <a href="https://www.sqlite.org"><img alt="Storage: SQLite" src="https://img.shields.io/badge/storage-SQLite-52613c?style=flat-square&logo=sqlite&logoColor=white"></a>
+  <a href="https://typst.app"><img alt="Handouts: Typst" src="https://img.shields.io/badge/handouts-Typst-52613c?style=flat-square&logo=typst&logoColor=white"></a>
+  <img alt="Speech to text: Whisper and Parakeet" src="https://img.shields.io/badge/speech-Whisper%20%C2%B7%20Parakeet-52613c?style=flat-square&logo=huggingface&logoColor=white">
+  <a href="https://github.com/rhasspy/piper"><img alt="Voices: Piper and Kokoro" src="https://img.shields.io/badge/voices-Piper%20%C2%B7%20Kokoro-52613c?style=flat-square"></a>
+  <img alt="AI: OpenAI-compatible APIs and GitHub Copilot" src="https://img.shields.io/badge/AI-OpenAI--compatible-52613c?style=flat-square&logo=ollama&logoColor=white">
+  <img alt="Sign in: ChatGPT, Claude Code, GitHub Copilot" src="https://img.shields.io/badge/Sign%20in-ChatGPT%20%C2%B7%20Claude%20Code%20%C2%B7%20Copilot-52613c?style=flat-square&logo=openid&logoColor=white">
+  <a href="https://github.com/ggml-org/llama.cpp"><img alt="OCR runtime: llama.cpp" src="https://img.shields.io/badge/OCR-llama.cpp-52613c?style=flat-square"></a>
+  <a href="https://www.vulkan.org/"><img alt="GPU acceleration: Vulkan" src="https://img.shields.io/badge/GPU-Vulkan-52613c?style=flat-square&logo=vulkan&logoColor=white"></a>
+  <img alt="Windows" src="https://img.shields.io/badge/-Windows-52613c?style=flat-square&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0wIDBoMTEuNHYxMS40SDB6TTEyLjYgMEgyNHYxMS40SDEyLjZ6TTAgMTIuNmgxMS40VjI0SDB6TTEyLjYgMTIuNkgyNFYyNEgxMi42eiIvPjwvc3ZnPg%3D%3D&logoColor=white&labelColor=111111">
+  <img alt="macOS" src="https://img.shields.io/badge/-macOS-52613c?style=flat-square&logo=apple&logoColor=white&labelColor=111111">
+  <img alt="Linux" src="https://img.shields.io/badge/-Linux-52613c?style=flat-square&logo=linux&logoColor=white&labelColor=111111">
+  <a href="#license"><img alt="License: MIT OR Apache-2.0" src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-52613c?style=flat-square&logo=opensourceinitiative&logoColor=white"></a>
+  <img alt="Languages: Portuguese, English, Japanese, Simplified and Traditional Chinese" src="https://img.shields.io/badge/languages-pt--BR%20%C2%B7%20en%20%C2%B7%20ja%20%C2%B7%20zh--Hans%20%C2%B7%20zh--Hant-52613c?style=flat-square">
+  <img alt="Local-first voice" src="https://img.shields.io/badge/voice-local--first-52613c?style=flat-square">
 </p>
 
 <br>
@@ -60,7 +60,7 @@
 
 考试公告在你的电脑上读取，只有考试大纲会发送给 AI。
 
-- **选择职位。** 有些考试招考多个职位。Know Giver 会找出这些职位，问你报考哪一个，计划只包含公共科目和*你的*职位的专业科目。
+- **选择职位。** 有些考试招考多个职位。Caderna 会找出这些职位，问你报考哪一个，计划只包含公共科目和*你的*职位的专业科目。
 - **按你的时间安排。** 根据距离考试的周数和每周学习时长，按周、科目和知识点制定计划。可以同时管理多个考试。
 - **扫描版 PDF。** 没有文字的页面可以由你设置的图片模型转写。
 
@@ -153,7 +153,7 @@ AI 决定；每个计划的进度各自独立。此功能推出前的学习同�
 
 考试公告中有作文或主观题考试时，会出现**主观题与作文**区域。
 
-- **根据计划出题**：议论文、专业主观题或案例分析。动笔前会显示评分标准和分值（来自公告、你自己设定，或 Know Giver 的通用标准）。
+- **根据计划出题**：议论文、专业主观题或案例分析。动笔前会显示评分标准和分值（来自公告、你自己设定，或 Caderna 的通用标准）。
 - **手写作答并上传照片**：JPEG 或 PNG。太暗、模糊或拍不全的照片会要求重拍。
 - **核对读取结果**：照片和转写并排显示。你的书写错误会保留，不确定的字词不会扣分。
 - **形成性评分**：按标准估计的分数、经过核对的原文引用、优点、问题和建议、三个优先事项。
@@ -179,9 +179,9 @@ Windows 安装包包含所需的 C++ 运行库和 Vulkan 加载器；使用 Vulk
 
 首先有五个简短步骤：语言、名字、老师、AI 服务及 API 密钥或账户登录、国家或地区及同意条款。可以从 22 个 AI 服务商中选择（**Z.ai** 性价比高，**Claude** 准确度高），并附有创建密钥的链接。之后有一段简短的界面导览。
 
-GitHub Copilot 可通过官方 Copilot CLI 使用 GitHub 账户登录，无需 API 密钥。CLI 通常将登录凭据保存在操作系统密钥链中；如果密钥链不可用，可能会改用明文配置文件（`~/.copilot/config.json`）。Know Giver 不会将凭据保存在应用数据库中。此集成仅支持文本，不支持图像。
+GitHub Copilot 可通过官方 Copilot CLI 使用 GitHub 账户登录，无需 API 密钥。CLI 通常将登录凭据保存在操作系统密钥链中；如果密钥链不可用，可能会改用明文配置文件（`~/.copilot/config.json`）。Caderna 不会将凭据保存在应用数据库中。此集成仅支持文本，不支持图像。
 
-**使用你已有的账号登录。** AI 步骤首先显示“使用账号登录”，适合已订阅聊天套餐但从未创建过 API 密钥的人：**ChatGPT**（OpenAI 官方的“Sign in with ChatGPT”，课堂计入你的 ChatGPT 套餐上限）、**Claude**（通过 Anthropic 官方程序 Claude Code，使用你的 Claude Pro 或 Max 账号；Know Giver 可以帮你安装）以及 **GitHub Copilot**。每项都在其所属公司的页面上登录，Know Giver 不会看到你的密码。在中国大陆不提供这些账号服务。Know Giver 与 OpenAI、Anthropic 和 GitHub 无关联。
+**使用你已有的账号登录。** AI 步骤首先显示“使用账号登录”，适合已订阅聊天套餐但从未创建过 API 密钥的人：**ChatGPT**（OpenAI 官方的“Sign in with ChatGPT”，课堂计入你的 ChatGPT 套餐上限）、**Claude**（通过 Anthropic 官方程序 Claude Code，使用你的 Claude Pro 或 Max 账号；Caderna 可以帮你安装）以及 **GitHub Copilot**。每项都在其所属公司的页面上登录，Caderna 不会看到你的密码。在中国大陆不提供这些账号服务。Caderna 与 OpenAI、Anthropic 和 GitHub 无关联。
 
 <p align="center">
   <img src="docs/images/zh-Hans/setup-ai-account.png" alt="AI 步骤的“使用账号登录”标签页：ChatGPT、Claude 和 GitHub Copilot，各有登录按钮" width="60%">
@@ -231,7 +231,18 @@ powershell -ExecutionPolicy Bypass -File scripts\package.ps1 -Brand branding\<�
 
 **试用版**：设置 `[demo] enabled = true` 后，应用从首次启动起可用 `days` 天，或用到 `expires` 当天（以先到者为准）。侧边栏显示剩余天数；到期后只会打开"试用期已结束"页面，并提供联系客户的按钮。学习计划和进度仍保存在电脑上。
 
-**尚未品牌化的部分**见 [ROADMAP](ROADMAP.md)（`docs/legal/` 中的条款、老师肖像、成就徽章、macOS/Linux 安装包）。出售前请检查许可证：Dii 语音仅限非商业用途。
+**按品牌的许可证与法律文本：** 品牌可以包含 Ed25519 公钥；客户的学生随后可在设置或“演示已结束”页面激活许可证密钥（离线验证，绑定品牌、客户、席位和日期，不会动到学习数据）。品牌也可以自带使用条款和隐私政策、支持链接、老师肖像和贴纸。在品牌的法律和商业审查标记设置之前，销售用打包不会运行。详见 [branding/README.md](branding/README.md)，未完成的部分见 [ROADMAP](ROADMAP.md)。出售前请检查致谢中的许可证。
+
+**Caderna**：`branding/caderna` 是第一个客户品牌：纸张、石墨和橄榄色，独立的图标、封面和标志，14 天试用版和 Ed25519 公钥。其法律文本仍是草稿（`[legal] reviewed = false`），审查完成前无法打包销售。运行：`$env:KG_BRAND_DIR = "branding/caderna"; cargo run --release`；每个品牌有自己的数据文件夹，不会与已安装的 Know Giver 混在一起。
+
+**签发许可证**：每个品牌只生成一次密钥，私钥绝不进入仓库：
+
+```sh
+cargo run -p kg-engine --example license_issue -- keygen private.pk8 public.txt
+cargo run -p kg-engine --example license_issue -- sign private.pk8 claims.json license.txt
+```
+
+**CADERNA-DASHBOARD**：一个独立的 Laravel 和 Filament 项目是 Caderna 的管理面板：在那里审核客户，设置每个客户的颜色、图片和文本，并以应用离线验证的同一格式签发试用令牌和许可证。它还提供兼容 OpenAI 的 AI 网关，服务商密钥只保存在服务器上；可通过 Docker 或本地 PHP 环境运行（[czarist/caderna-dashboard](https://github.com/czarist/caderna-dashboard)）。应用目前尚未连接面板：在线激活、下载品牌和通过面板使用 AI 仍在计划中（[ROADMAP](ROADMAP.md) 阶段 W6），上线前会写入隐私政策。
 
 ## 开始使用
 
@@ -241,7 +252,7 @@ cargo run --release
 
 首次启动时会打开首次设置。需要 Rust 1.95 或更新版本。Windows 安装包：
 
-关闭窗口后，应用会继续留在系统托盘中：双击图标可重新打开窗口，单击则显示菜单（打开或退出）。应用运行时再次打开 Know Giver，会回到同一个窗口；始终只有一个实例和一个托盘图标。安装时可以选择是否随系统启动，以及是否接收学习提醒（默认每 3 小时一次，可在设置中改为 30 分钟到 8 小时；两项默认均关闭）。提醒是屏幕角落的一个 Know Giver 小窗口，列出进度最慢的科目，并提供开始学习的按钮。当你离开应用时（在托盘中、最小化或位于其他窗口之后）才会提醒，课堂、测验或复习进行中不会提醒，并且仅在当前计划还有未完成科目时显示。
+关闭窗口后，应用会继续留在系统托盘中：双击图标可重新打开窗口，单击则显示菜单（打开或退出）。应用运行时再次打开 Caderna，会回到同一个窗口；始终只有一个实例和一个托盘图标。安装时可以选择是否随系统启动，以及是否接收学习提醒（默认每 3 小时一次，可在设置中改为 30 分钟到 8 小时；两项默认均关闭）。提醒是屏幕角落的一个 Caderna 小窗口，列出进度最慢的科目，并提供开始学习的按钮。当你离开应用时（在托盘中、最小化或位于其他窗口之后）才会提醒，课堂、测验或复习进行中不会提醒，并且仅在当前计划还有未完成科目时显示。
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\package.ps1

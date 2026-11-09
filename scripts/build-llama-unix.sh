@@ -66,7 +66,7 @@ cpu_build="$build/cpu"
 cmake -S "$source" -B "$cpu_build" \
   "${common_options[@]}" \
   -DGGML_VULKAN=OFF
-cmake --build "$cpu_build" --config Release --target llama-server --parallel 2
+cmake --build "$cpu_build" --config Release --target llama-server --parallel
 
 cpu_server="$cpu_build/bin/llama-server"
 if [[ ! -f "$cpu_server" ]]; then
@@ -81,7 +81,7 @@ if [[ "$platform" == Linux ]]; then
   cmake -S "$source" -B "$vulkan_build" \
     "${common_options[@]}" \
     -DGGML_VULKAN=ON
-  cmake --build "$vulkan_build" --config Release --target llama-server --parallel 2
+  cmake --build "$vulkan_build" --config Release --target llama-server --parallel
 
   vulkan_server="$vulkan_build/bin/llama-server"
   if [[ ! -f "$vulkan_server" ]]; then

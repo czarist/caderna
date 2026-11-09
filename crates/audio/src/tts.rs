@@ -94,6 +94,11 @@ impl Synthesizer {
         options: SpeechOptions,
     ) -> Result<Self, AudioError> {
         let (rate, pitch) = options.factors()?;
+        if voice == Voice::Piper(crate::PiperVoice::Dii) {
+            return Err(AudioError::Unsupported(
+                "non-commercial voice is disabled in white-label builds".into(),
+            ));
+        }
         if !store.is_installed(voice.model_id()) || !store.is_installed(voice.runtime_id()) {
             return Err(AudioError::ModelMissing(voice.id().into()));
         }

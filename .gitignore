@@ -3,3 +3,9 @@
 *.sqlite
 .env
 /dist
+/branding/private/
+*.pk8
+*.pfx
+*.p12
+*.key
+/.cargo/config.toml

@@ -82,7 +82,8 @@ pub enum PiperVoice {
 }
 
 impl PiperVoice {
-    pub const ALL: [Self; 4] = [Self::Faber, Self::Cadu, Self::Jeff, Self::Dii];
+    // Dii remains deserializable for old settings, but is not offered or downloaded.
+    pub const ALL: [Self; 3] = [Self::Faber, Self::Cadu, Self::Jeff];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -307,6 +308,11 @@ impl ModelStore {
         progress: &dyn Fn(u64, u64),
         cancel: &AtomicBool,
     ) -> Result<(), AudioError> {
+        if id == ModelId::Voice(PiperVoice::Dii) {
+            return Err(AudioError::Unsupported(
+                "non-commercial voice is disabled in white-label builds".into(),
+            ));
+        }
         let mut fetcher = Fetcher::new(id.approx_bytes(), progress, cancel);
         match id {
             ModelId::Whisper(m) => {
