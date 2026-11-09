@@ -61,10 +61,14 @@ required = true
 public_key = "MhuEw6S6kUFP+duSB6pBXfOt778LM0lS/j6w65yFizs=" # Public Ed25519 key only. Never put a private key here.
 
 # The Caderna panel (CADERNA-DASHBOARD). Licences are activated there, the
-# brand is downloaded from it and AI goes through it. http:// is accepted
-# only for localhost; a release build needs the panel's https:// address.
+# brand is downloaded from it and AI goes through it.
+#   url      release builds (installer): the panel's https:// address
+#   dev_url  cargo run and tests
+# KG_SERVER_URL overrides both: from the shell or CI, or, in development
+# only, from the repository's .env.
 [server]
-url = "http://localhost:8000"
+url = ""                          # TODO: the online panel, e.g. https://painel.caderna.com.br
+dev_url = "http://localhost:8000"
 text_model = "caderna-texto"      # the panel's AI aliases (config/caderna.php)
 vision_model = "caderna-visao"
 

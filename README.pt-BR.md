@@ -391,7 +391,8 @@ português do Brasil (`[locale]`), e funciona com o seu painel: avaliações e l
 vêm de lá. Os
 textos legais são rascunhos (`[legal] reviewed = false`), então o empacotamento para
 venda continua bloqueado até a revisão. Para rodar:
-`$env:KG_BRAND_DIR = "branding/caderna"; cargo run --release`; cada marca tem a sua pasta
+`$env:KG_BRAND_DIR = "branding/caderna"; cargo run` (fala com o painel em `[server] dev_url`, `http://localhost:8000`; um build de release
+precisa do painel online em `[server] url` ou em `KG_SERVER_URL`); cada marca tem a sua pasta
 de dados, então nunca se mistura com um Know Giver instalado.
 
 **Emitir licenças.** As chaves são criadas uma vez por marca, e a chave privada nunca

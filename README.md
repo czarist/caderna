@@ -384,7 +384,8 @@ in Brazilian Portuguese (`[locale]`), and works with its panel: evaluations and 
 come from there. Its
 legal texts are drafts (`[legal] reviewed = false`), so packaging it for sale stays
 blocked until they are reviewed. Run it with
-`$env:KG_BRAND_DIR = "branding/caderna"; cargo run --release`; each brand keeps its own
+`$env:KG_BRAND_DIR = "branding/caderna"; cargo run` (it talks to the panel at `[server] dev_url`, `http://localhost:8000`; a release build
+needs the online panel in `[server] url` or `KG_SERVER_URL`); each brand keeps its own
 data folder, so it never mixes with an installed Know Giver.
 
 **Issuing licences.** Keys are made once per brand and the private key never enters the

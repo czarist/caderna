@@ -99,8 +99,17 @@ count computers.
 
 ## Panel (`[server]`)
 
-`[server] url` points the brand at its panel ([CADERNA-DASHBOARD](https://github.com/czarist/caderna-dashboard)):
-`https://…`, or `http://localhost…` only while developing. With it:
+`[server]` points the brand at its panel ([CADERNA-DASHBOARD](https://github.com/czarist/caderna-dashboard)).
+The address is chosen when the app is built, never read on the student's computer, so
+nobody can point an installed app at another server:
+
+- `url`: release builds (the installer). Must be `https://`; a release build of a brand
+  with a panel stops without it.
+- `dev_url`: `cargo run` and tests, e.g. `http://localhost:8000`.
+- `KG_SERVER_URL` overrides both, from the shell or CI; in development builds it can also
+  come from the repository's `.env` (see `.env.example`).
+
+With a panel:
 
 - **Licences are activated online.** The key is still checked offline, then the panel
   reserves a seat for this computer and returns a device token valid for 7 days, kept in
