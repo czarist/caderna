@@ -65,8 +65,8 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
         });
         ui.add_space(12.0);
         about_section(ui, draft);
-        if let Some(token) = super::demo::activation(ui, engine) {
-            actions.send(Command::ActivateLicense(token));
+        if let Some(command) = super::demo::activation(ui, engine) {
+            actions.send(command);
         }
         ui.add_space(12.0);
         legal_section(ui, engine, &mut actions);
@@ -131,7 +131,7 @@ fn language(ui: &mut egui::Ui, engine: &Engine, draft: &mut Settings, actions: &
         egui::ComboBox::from_id_salt("language")
             .selected_text(i18n::language_name(&current))
             .show_ui(ui, |ui| {
-                for locale in i18n::LOCALES {
+                for locale in i18n::offered() {
                     if ui
                         .selectable_label(current == locale, i18n::language_name(locale))
                         .clicked()
@@ -150,6 +150,13 @@ fn language(ui: &mut egui::Ui, engine: &Engine, draft: &mut Settings, actions: &
 }
 
 fn ai_section(ui: &mut egui::Ui, engine: &Engine, draft: &mut Settings, actions: &mut Actions) {
+    if kg_brand::has_server() {
+        section(ui, &t!("settings.ai.title"), |ui| {
+            widgets::hint(ui, &t!("panel.ai_hint"));
+            ui.checkbox(&mut draft.ai.fast_responses, t!("settings.ai.fast"));
+        });
+        return;
+    }
     section(ui, &t!("settings.ai.title"), |ui| {
         widgets::hint(ui, &t!("settings.ai.hint"));
         provider_picker(ui, draft);
@@ -962,8 +969,8 @@ fn provider_picker(ui: &mut egui::Ui, draft: &mut Settings) {
 fn about_section(ui: &mut egui::Ui, draft: &mut kg_engine::Settings) {
     section(ui, &t!("settings.about.title"), |ui| {
         widgets::hint(ui, &t!("app.version", version = env!("CARGO_PKG_VERSION")));
-        if !kg_brand::SUPPORT_URL.is_empty() {
-            widgets::link(ui, &t!("licensing.support"), kg_brand::SUPPORT_URL);
+        if !crate::brand::support_url().is_empty() {
+            widgets::link(ui, &t!("licensing.support"), crate::brand::support_url());
         }
         if kg_brand::has_repository() {
             ui.checkbox(&mut draft.check_updates, t!("settings.about.check_updates"))

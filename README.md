@@ -344,8 +344,10 @@ demonstration**. There are no public releases here; each build is made for one c
 | `[updates]` | GitHub repository with the client's releases, or empty for no update checks |
 | `[demo]` | `enabled`, `days` from the first start, `expires` (last day), contact link |
 | `[company]` extras | `support_url` (Settings → About), `teachers_dir` and `stickers_dir` to replace the bundled art |
-| `[legal]` | folder with the brand's 15 legal texts, consent `version`, provider, licensor, contact, review flags |
+| `[legal]` | folder with the brand's legal texts (each language it offers), consent `version`, provider, licensor, contact, review flags |
 | `[licensing]` | Ed25519 **public** key for licence keys, and `required` to stop without one |
+| `[server]` | the brand's panel: online activation, brand download and AI through it, with its model aliases |
+| `[locale]` | languages and regions the brand offers (empty: all) |
 
 **2. Build.** The brand is read at compile time from `KG_BRAND_DIR` (default
 `branding/default`, which is Know Giver itself):
@@ -377,7 +379,9 @@ what is still open is in the [ROADMAP](ROADMAP.md). Check the licences under
 [Credits](#credits) before selling a build.
 
 **Caderna.** `branding/caderna` is the first client brand: paper, graphite and olive,
-its own icon, cover and marks, a 14-day demonstration and its Ed25519 public key. Its
+its own icon, cover and marks and its Ed25519 public key. It is offered only in Brazil,
+in Brazilian Portuguese (`[locale]`), and works with its panel: evaluations and licences
+come from there. Its
 legal texts are drafts (`[legal] reviewed = false`), so packaging it for sale stays
 blocked until they are reviewed. Run it with
 `$env:KG_BRAND_DIR = "branding/caderna"; cargo run --release`; each brand keeps its own
@@ -395,10 +399,14 @@ cargo run -p kg-engine --example license_issue -- sign private.pk8 claims.json l
 clients are validated there, each client's colours, images and texts are set, and
 evaluation tokens and licences are issued in the same format the app verifies offline.
 It also runs an OpenAI-compatible AI gateway whose provider keys stay on the server, and
-runs with Docker or a local PHP install ([czarist/caderna-dashboard](https://github.com/czarist/caderna-dashboard)). The
-app does not connect to it yet: online activation, downloading the brand and using AI
-through the panel are planned ([ROADMAP](ROADMAP.md), Phase W6) and will be described in
-the privacy policy before they ship.
+runs with Docker or a local PHP install ([czarist/caderna-dashboard](https://github.com/czarist/caderna-dashboard)).
+With `[server] url` set, the app activates the licence there (one seat per computer, a
+7-day device token in the operating system's credential store, renewed by itself), checks
+in every hour and keeps working for 14 days without the panel. It also downloads the
+client's name, colours and links, and sends AI requests through the panel, so the
+student needs no AI key. The panel receives the licence key, a hash of the computer's id,
+the app version, the operating system and the AI requests, never the computer's name;
+the Caderna privacy policy says so. See [branding/README.md](branding/README.md).
 
 ## Quick start
 

@@ -211,6 +211,8 @@ impl KnowGiverApp {
             Ok(mut engine) => {
                 let ctx = cc.egui_ctx.clone();
                 engine.set_waker(Arc::new(move || ctx.request_repaint()));
+                crate::brand::apply(engine.panel_brand());
+                theme::apply(&cc.egui_ctx);
                 i18n::set(&engine.settings().locale);
                 if run_options.enable_study_reminders && !engine.settings().study_reminders {
                     let mut settings = engine.settings().clone();
@@ -888,14 +890,14 @@ impl eframe::App for KnowGiverApp {
                 }
                 // A finished demonstration shows only how to get the full version.
                 if demo_over {
-                    screens::demo::expired(ui);
-                    let token = self
+                    screens::demo::expired(ui, self.engine.as_ref().ok());
+                    let command = self
                         .engine
                         .as_ref()
                         .ok()
                         .and_then(|engine| screens::demo::activation(ui, engine));
-                    if let Some(token) = token {
-                        self.dispatch(Command::ActivateLicense(token));
+                    if let Some(command) = command {
+                        self.dispatch(command);
                     }
                     return;
                 }

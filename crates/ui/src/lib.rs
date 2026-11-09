@@ -7,22 +7,22 @@
 // Embeds `locales/*.yml` and defines the lookup used by `t!`.
 rust_i18n::i18n!("../../locales", fallback = "pt-BR");
 
-/// `rust_i18n::t!` with the build's brand filled in: `%{app}` (product),
+/// `rust_i18n::t!` with the brand filled in (see [`brand`]): `%{app}` (product),
 /// `%{company}` and `%{license}` (the mark's licence) in any translation.
 macro_rules! t {
     ($key:expr) => {
         rust_i18n::t!(
             $key,
-            app = kg_brand::NAME,
-            company = kg_brand::COMPANY,
+            app = crate::brand::name(),
+            company = crate::brand::company(),
             license = kg_brand::MARK_LICENSE
         )
     };
     ($key:expr, $($rest:tt)+) => {
         rust_i18n::t!(
             $key,
-            app = kg_brand::NAME,
-            company = kg_brand::COMPANY,
+            app = crate::brand::name(),
+            company = crate::brand::company(),
             license = kg_brand::MARK_LICENSE,
             $($rest)+
         )
@@ -32,6 +32,7 @@ macro_rules! t {
 mod accounts;
 mod app;
 mod art;
+mod brand;
 mod export;
 mod i18n;
 mod icon;

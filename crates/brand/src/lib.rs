@@ -12,6 +12,21 @@ pub fn has_repository() -> bool {
     !REPOSITORY.is_empty()
 }
 
+/// Licences, the brand and AI go through the brand's panel ([`SERVER_URL`]).
+pub fn has_server() -> bool {
+    !SERVER_URL.is_empty()
+}
+
+/// The brand offers this UI language (`pt-BR`, `en`, …).
+pub fn offers_language(locale: &str) -> bool {
+    LANGUAGES.contains(&locale)
+}
+
+/// The brand offers this region (`br`, `us`, …, as saved in settings).
+pub fn offers_region(region: &str) -> bool {
+    REGIONS.contains(&region)
+}
+
 /// The credits ("Made by …") can open the company's site.
 pub fn has_company_url() -> bool {
     !COMPANY_URL.is_empty()
@@ -51,5 +66,10 @@ mod tests {
         let limited = std::hint::black_box(DEMO_DAYS) != 0 || DEMO_EXPIRES.is_some();
         assert!(!DEMO || limited);
         assert!(user_agent("test").starts_with(DATA_DIR));
+        assert!(!LANGUAGES.is_empty() && !REGIONS.is_empty());
+        for locale in LANGUAGES {
+            assert!(!legal_document(&format!("terms-of-use.{locale}")).is_empty());
+            assert!(!legal_document(&format!("privacy-policy.{locale}")).is_empty());
+        }
     }
 }

@@ -227,12 +227,12 @@ fn plain(text: &str) -> String {
 mod tests {
     use super::*;
 
-    /// Every document a student can be shown, with its region.
+    /// Every document a student can be shown in this brand, with its region.
     fn all_shown() -> Vec<(LegalDoc, &'static str, Region, &'static str)> {
         let mut docs = Vec::new();
-        for region in Region::ALL {
+        for region in Region::offered() {
             for doc in LegalDoc::for_region(region) {
-                for locale in crate::i18n::LOCALES {
+                for locale in crate::i18n::offered() {
                     docs.push((*doc, locale, region, doc.text(locale, region)));
                 }
             }
@@ -277,6 +277,10 @@ mod tests {
         assert_eq!(LegalDoc::Terms.language("zh-Hans", Region::Sg), "zh-Hans");
         assert_eq!(LegalDoc::Terms.language("pt-BR", Region::Eu), "en");
         assert_eq!(LegalDoc::for_region(Region::Other), [LegalDoc::Partner]);
+        // The English texts exist only in brands that offer English.
+        if !kg_brand::offers_language("en") {
+            return;
+        }
         let en = [
             LegalDoc::Terms.text("en", Region::Us),
             LegalDoc::Privacy.text("en", Region::Us),
@@ -289,7 +293,11 @@ mod tests {
 
     #[test]
     fn partner_terms_name_no_country() {
-        for locale in crate::i18n::LOCALES {
+        // Only brands offered outside the public regions carry these terms.
+        if Region::offered().iter().all(|r| r.is_public()) {
+            return;
+        }
+        for locale in crate::i18n::offered() {
             let text = LegalDoc::Partner.text(locale, Region::Other);
             for name in [
                 "China", "中国", "中國", "中华", "中華", "大陆", "大陸", "PRC",

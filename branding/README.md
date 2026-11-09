@@ -27,7 +27,8 @@ under `branding/private/<client>`, which git ignores.
    | `watermark_svg` | company mark already **faint and coloured**, for the handout watermark |
 
 3. Fill in `[app]` (name, `slug`, `data_dir`, a new `installer_guid` from
-   `[guid]::NewGuid()`), `[company]`, `[colors]`, `[updates]`, `[demo]`, `[legal]` and `[licensing]`.
+   `[guid]::NewGuid()`), `[company]`, `[colors]`, `[updates]`, `[demo]`, `[legal]` and `[licensing]`,
+   plus `[server]` and `[locale]` when the client has a panel or sells in fewer countries.
    `colors.company` must differ from the handout's own colours; the build says so if not.
 4. Build: `scripts\package.ps1 -Brand branding\<client>`, or for a quick look
    `$env:KG_BRAND_DIR = "branding/<client>"; cargo run --release`.
@@ -64,12 +65,13 @@ the binary, can get around it: it is a commercial limit, not copy protection.
 - `[company] support_url` (`https://` or `mailto:`): the support link in Settings → About.
 - `[company] teachers_dir` / `stickers_dir`: optional folders with the same file names as
   the bundled teacher portraits and stickers; any file found there replaces the default.
-- `[legal] directory`: a folder with all fifteen documents of `docs/legal/`
-  (`terms-of-use`, `privacy-policy`, `partner-access` × five languages). It needs
+- `[legal] directory`: a folder with the documents of `docs/legal/` the brand can show:
+  `terms-of-use` and `privacy-policy` for each language in `[locale] languages`, and
+  `partner-access` only when `[locale] regions` includes `cn` or `other`. It needs
   `version` (becomes the consent version: change it and every student agrees again),
   `provider` (the client, who serves the students), `licensor` and `contact`. Keep the
-  rules of the root `CLAUDE.md`: every language, and the texts still say the AI can be
-  wrong.
+  rules of the root `CLAUDE.md`: every language the brand offers, and the texts still say
+  the AI can be wrong.
 - `[legal] reviewed` and `commercial_reviewed` stay `false` until a lawyer reviewed the
   client's texts and the third-party licences. Packaging for sale refuses to run while
   either is `false`; a passing build is not a review.
@@ -92,7 +94,42 @@ cargo run -p kg-engine --example license_issue -- keygen private.pk8 public.txt
 cargo run -p kg-engine --example license_issue -- sign private.pk8 claims.json license.txt
 ```
 
-Seats are a contractual limit: the check is offline, so the app cannot count computers.
+Without a panel, seats are a contractual limit: the check is offline, so the app cannot
+count computers.
+
+## Panel (`[server]`)
+
+`[server] url` points the brand at its panel ([CADERNA-DASHBOARD](https://github.com/czarist/caderna-dashboard)):
+`https://…`, or `http://localhost…` only while developing. With it:
+
+- **Licences are activated online.** The key is still checked offline, then the panel
+  reserves a seat for this computer and returns a device token valid for 7 days, kept in
+  the operating system's credential store (memory only when there is none). The app
+  checks in when it opens and every hour, renewing the token before it expires
+  (`renew: true`, so a computer signed out in the panel stays out until the student
+  activates it again). Without the panel the app keeps working for 14 days after the last
+  contact (`OFFLINE_GRACE_DAYS`). The panel's refusals (revoked, expired, no seats, signed
+  out, blocked) lock the app with the reason; study data stays. Settings has "Sign out
+  this computer" to free the seat.
+- **The computer's id** sent to the panel is the operating system's machine id hashed with
+  the brand's `slug`; the computer's name is never sent.
+- **AI goes through the panel** with the device token. `text_model` and `vision_model`
+  are the panel's model aliases; the AI choice disappears from the setup and Settings.
+- **The brand is downloaded** from the panel (ETag cache): app and company names, accent
+  and highlight colours, support and contact links. It applies from the next start, so
+  nothing changes mid-session. Images and texts sent by the panel are not applied yet.
+- `[licensing] public_key` is required; set `required = true` and `[demo] enabled = false`
+  so evaluations are licences issued by the panel.
+- The privacy policy must name the panel and what it receives; see
+  `branding/caderna/legal/privacy-policy.pt-BR.md`.
+
+## Languages and regions (`[locale]`)
+
+`languages` (from `pt-BR`, `en`, `ja`, `zh-Hans`, `zh-Hant`) and `regions` (from `br`,
+`us`, `eu`, `uk`, `jp`, `tw`, `hk`, `sg`, `cn`, `other`) limit what the language and
+region pickers offer; empty offers everything. A brand with one of each skips both
+choices in the setup. Only the legal texts of the offered languages are needed. Caderna
+offers only `pt-BR` and `br`.
 
 ## Still open
 

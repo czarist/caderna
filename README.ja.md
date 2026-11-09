@@ -238,7 +238,7 @@ powershell -ExecutionPolicy Bypass -File scripts\package.ps1 -Brand branding\<�
 
 **ブランドごとのライセンスと法的文書:** ブランドに Ed25519 公開鍵を含めると、クライアントの学習者は設定または「デモ終了」画面でライセンスキーを有効化できます（オフライン検証、ブランド・顧客・席数・期間に紐づく。学習データには触れません）。ブランドは独自の利用規約・プライバシーポリシー、サポートリンク、先生の肖像、ステッカーも持てます。法務・商用レビューのフラグが立つまで販売用パッケージは作成されません。詳細は [branding/README.md](branding/README.md)、残りの作業は [ROADMAP](ROADMAP.md) を参照してください。販売前にクレジットのライセンスを確認してください。
 
-**Caderna**：`branding/caderna` は最初の顧客ブランドです（紙・グラファイト・オリーブ色、独自のアイコン・カバー・マーク、14日間の体験版、Ed25519 公開鍵）。法的文書は下書き（`[legal] reviewed = false`）のため、レビューが済むまで販売用パッケージは作成されません。実行は `$env:KG_BRAND_DIR = "branding/caderna"; cargo run --release`。ブランドごとにデータフォルダーが分かれるので、インストール済みの Know Giver と混ざりません。
+**Caderna**：`branding/caderna` は最初の顧客ブランドです（紙・グラファイト・オリーブ色、独自のアイコン・カバー・マーク、Ed25519 公開鍵）。ブラジル国内でブラジルポルトガル語のみで提供され（`[locale]`）、管理パネルと連携します。体験版とライセンスはパネルから発行されます。法的文書は下書き（`[legal] reviewed = false`）のため、レビューが済むまで販売用パッケージは作成されません。実行は `$env:KG_BRAND_DIR = "branding/caderna"; cargo run --release`。ブランドごとにデータフォルダーが分かれるので、インストール済みの Know Giver と混ざりません。
 
 **ライセンスの発行**：鍵はブランドごとに一度だけ作り、秘密鍵はリポジトリに入れません。
 
@@ -247,7 +247,7 @@ cargo run -p kg-engine --example license_issue -- keygen private.pk8 public.txt
 cargo run -p kg-engine --example license_issue -- sign private.pk8 claims.json license.txt
 ```
 
-**CADERNA-DASHBOARD**：Laravel と Filament による別プロジェクトが Caderna の管理パネルです。顧客の承認、顧客ごとの色・画像・テキストの設定、アプリがオフラインで検証するのと同じ形式の体験用トークンとライセンスの発行を行います。プロバイダーの鍵をサーバーにだけ置く OpenAI 互換の AI ゲートウェイもあり、Docker またはローカルの PHP 環境で動きます（[czarist/caderna-dashboard](https://github.com/czarist/caderna-dashboard)）。アプリはまだ接続しません。オンラインでの有効化、ブランドのダウンロード、パネル経由の AI は計画中で（[ROADMAP](ROADMAP.md) フェーズ W6）、提供前にプライバシーポリシーに記載します。
+**CADERNA-DASHBOARD**：Laravel と Filament による別プロジェクトが Caderna の管理パネルです。顧客の承認、顧客ごとの色・画像・テキストの設定、アプリがオフラインで検証するのと同じ形式の体験用トークンとライセンスの発行を行います。プロバイダーの鍵をサーバーにだけ置く OpenAI 互換の AI ゲートウェイもあり、Docker またはローカルの PHP 環境で動きます（[czarist/caderna-dashboard](https://github.com/czarist/caderna-dashboard)）。`[server] url` を設定すると、アプリはパネルでライセンスを有効化し（コンピューター1台につき1席、7日間有効のデバイストークンを OS の資格情報ストアに保存し自動更新）、1時間ごとに確認し、パネルに接続できなくても14日間は動作します。顧客の名前・色・リンクをダウンロードし、AI のリクエストもパネル経由で送るため、学習者に AI キーは不要です。パネルが受け取るのはライセンスキー、コンピューター ID のハッシュ、アプリのバージョン、OS、AI リクエストで、コンピューター名は送りません。Caderna のプライバシーポリシーにも記載しています。詳しくは [branding/README.md](branding/README.md)。
 
 ## はじめかた
 

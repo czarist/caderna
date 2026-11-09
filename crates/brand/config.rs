@@ -22,6 +22,64 @@ pub struct BrandFile {
     pub legal: LegalSection,
     #[serde(default)]
     pub licensing: LicensingSection,
+    #[serde(default)]
+    pub server: ServerSection,
+    #[serde(default)]
+    pub locale: LocaleSection,
+}
+
+/// UI languages a brand can offer (`locales/*.yml`).
+pub const LANGUAGES: [&str; 5] = ["pt-BR", "en", "ja", "zh-Hans", "zh-Hant"];
+
+/// Region ids as saved in settings (engine `Region`).
+pub const REGIONS: [&str; 10] = ["br", "us", "eu", "uk", "jp", "tw", "hk", "sg", "cn", "other"];
+
+#[derive(Debug, Default, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ServerSection {
+    /// The brand's panel (CADERNA-DASHBOARD), e.g. `https://painel.example.com`.
+    /// With it the app activates licences online, downloads the brand and
+    /// uses AI through the panel. Empty: offline licences only.
+    #[serde(default)]
+    pub url: String,
+    /// The panel's model names for text tasks and for images (its AI aliases).
+    #[serde(default)]
+    pub text_model: String,
+    #[serde(default)]
+    pub vision_model: String,
+}
+
+#[derive(Debug, Default, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LocaleSection {
+    /// UI languages offered, from [`LANGUAGES`]; empty offers all of them.
+    #[serde(default)]
+    pub languages: Vec<String>,
+    /// Regions offered, from [`REGIONS`]; empty offers all of them.
+    #[serde(default)]
+    pub regions: Vec<String>,
+}
+
+impl LocaleSection {
+    pub fn offers_language(&self, locale: &str) -> bool {
+        self.languages.is_empty() || self.languages.iter().any(|l| l == locale)
+    }
+
+    pub fn offers_region(&self, region: &str) -> bool {
+        self.regions.is_empty() || self.regions.iter().any(|r| r == region)
+    }
+}
+
+/// `https://…`, or `http://` only for this computer (development).
+pub fn server_url_ok(url: &str) -> bool {
+    let local = ["http://localhost", "http://127.0.0.1", "http://[::1]"]
+        .iter()
+        .any(|prefix| {
+            url.strip_prefix(prefix)
+                .is_some_and(|rest| rest.is_empty() || rest.starts_with(':') || rest.starts_with('/'))
+        });
+    let https = url.strip_prefix("https://").is_some_and(|host| !host.is_empty());
+    (local || https) && !url.ends_with('/') && !url.contains(char::is_whitespace)
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -122,7 +180,9 @@ fn yes() -> bool {
 #[derive(Debug, Default, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct LegalSection {
-    /// All fifteen Markdown documents, relative to the brand folder.
+    /// The Markdown documents (terms, privacy and, for regions outside the
+    /// public ones, partner access) for every language offered, relative to
+    /// the brand folder.
     #[serde(default)]
     pub directory: String,
     #[serde(default)]
@@ -243,6 +303,23 @@ impl Brand {
         let support = &f.company.support_url;
         if !support.is_empty() && !support.starts_with("https://") && !support.starts_with("mailto:") {
             return fail("company.support_url must start with https:// or mailto:");
+        }
+        if !f.server.url.is_empty() && !server_url_ok(&f.server.url) {
+            return fail("server.url must be https://host (http:// only for localhost), without a trailing /");
+        }
+        if !f.server.url.is_empty()
+            && (f.server.text_model.trim().is_empty() || f.server.vision_model.trim().is_empty())
+        {
+            return fail("server.url needs text_model and vision_model (the panel's AI aliases)");
+        }
+        if !f.server.url.is_empty() && f.licensing.public_key.is_empty() {
+            return fail("server.url needs licensing.public_key");
+        }
+        if let Some(bad) = f.locale.languages.iter().find(|l| !LANGUAGES.contains(&l.as_str())) {
+            return fail(&format!("locale.languages: unknown language {bad:?}"));
+        }
+        if let Some(bad) = f.locale.regions.iter().find(|r| !REGIONS.contains(&r.as_str())) {
+            return fail(&format!("locale.regions: unknown region {bad:?}"));
         }
         if f.licensing.required && f.licensing.public_key.is_empty() {
             return fail("licensing.required needs an Ed25519 public_key");

@@ -69,6 +69,30 @@ impl Region {
         Self::Other,
     ];
 
+    /// Id saved in settings (`br`, `us`, …), as the brand lists regions.
+    pub fn id(self) -> &'static str {
+        match self {
+            Self::Br => "br",
+            Self::Us => "us",
+            Self::Eu => "eu",
+            Self::Uk => "uk",
+            Self::Jp => "jp",
+            Self::Tw => "tw",
+            Self::Hk => "hk",
+            Self::Sg => "sg",
+            Self::Cn => "cn",
+            Self::Other => "other",
+        }
+    }
+
+    /// The regions this build's brand offers, in [`Self::ALL`] order.
+    pub fn offered() -> Vec<Self> {
+        Self::ALL
+            .into_iter()
+            .filter(|region| kg_brand::offers_region(region.id()))
+            .collect()
+    }
+
     /// The app is offered to the public here.
     pub fn is_public(self) -> bool {
         !matches!(self, Self::Cn | Self::Other)
@@ -334,6 +358,23 @@ impl Settings {
             kg_audio::RHYTHM_VARIATION_RANGE,
             kg_audio::DEFAULT_RHYTHM_VARIATION,
         );
+        // A brand may offer fewer languages and regions than the app has.
+        if !kg_brand::offers_language(&self.locale) {
+            self.locale = kg_brand::LANGUAGES
+                .first()
+                .map_or_else(|| "pt-BR".to_owned(), |l| (*l).to_owned());
+        }
+        if self
+            .region
+            .is_some_and(|r| !kg_brand::offers_region(r.id()))
+        {
+            self.region = None;
+        }
+        if self.region.is_none()
+            && let [only] = Region::offered().as_slice()
+        {
+            self.region = Some(*only);
+        }
     }
 
     /// Saves settings. A key equal to the `.env` one is not copied into the

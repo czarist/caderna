@@ -64,8 +64,27 @@ fn main() -> Result<(), String> {
     );
     text("MARK_LICENSE", &f.company.mark_license);
     text("REPOSITORY", f.updates.repository.trim_end_matches('/'));
+    text("SERVER_URL", &f.server.url);
+    text("SERVER_TEXT_MODEL", f.server.text_model.trim());
+    text("SERVER_VISION_MODEL", f.server.vision_model.trim());
     text("DEMO_CONTACT_URL", &f.demo.contact_url);
     text("COMPANY_COLOR_HEX", &f.colors.company);
+    let offered = |all: &[&str], chosen: &[String]| -> Vec<String> {
+        all.iter()
+            .filter(|item| chosen.is_empty() || chosen.iter().any(|c| c == *item))
+            .map(|item| (*item).to_owned())
+            .collect()
+    };
+    let _ = writeln!(
+        out,
+        "pub const LANGUAGES: &[&str] = &{:?};",
+        offered(&config::LANGUAGES, &f.locale.languages)
+    );
+    let _ = writeln!(
+        out,
+        "pub const REGIONS: &[&str] = &{:?};",
+        offered(&config::REGIONS, &f.locale.regions)
+    );
     let _ = writeln!(
         out,
         "pub const LICENSE_REQUIRED: bool = {};",
@@ -130,8 +149,17 @@ fn main() -> Result<(), String> {
 
     let out_dir = PathBuf::from(std::env::var("OUT_DIR").map_err(|e| e.to_string())?);
     out.push_str("pub fn legal_document(name: &str) -> &'static str { match name {\n");
+    // Only the texts the brand can show: its languages, and the partner terms
+    // only when it offers a region outside the public ones.
+    let partners = f.locale.offers_region("cn") || f.locale.offers_region("other");
     for kind in ["terms-of-use", "privacy-policy", "partner-access"] {
-        for locale in ["pt-BR", "en", "ja", "zh-Hans", "zh-Hant"] {
+        if kind == "partner-access" && !partners {
+            continue;
+        }
+        for locale in config::LANGUAGES {
+            if !f.locale.offers_language(locale) {
+                continue;
+            }
             let name = format!("{kind}.{locale}");
             let folder = if f.legal.directory.is_empty() {
                 root.join("docs/legal")

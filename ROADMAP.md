@@ -105,13 +105,19 @@ A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
 - [x] Runs with Docker (PHP 8.3 + Apache and MySQL 8.4) or a local PHP install; the
       root page is a Caderna "coming soon" site, the panel lives at `/admin`.
       Repository: <https://github.com/czarist/caderna-dashboard>.
-- [ ] App: after the offline check, activate online (`POST /api/v1/activations`) and keep
-      the device token; sign out frees the seat.
-- [ ] App: download the client's brand at start (`GET /api/v1/brand`, ETag) and cache it,
-      so one Caderna installer serves every client; built-in brand when offline.
-- [ ] App: a "Caderna" AI provider pointing at the panel with the device token.
-- [ ] Privacy policy and terms in every language and region: what goes to the panel
-      (licence key, device id hash, app version, AI requests), with `TERMS_VERSION` bumped.
+- [x] App: after the offline check, activate online (`POST /api/v1/activations`); device
+      token in the OS credential store, renewed silently before it expires (`renew`),
+      check-in at start and every hour, 14 days offline, refusals lock the app with their
+      reason; "Sign out this computer" frees the seat. Hashed machine id, no computer name.
+- [x] App: download the client's brand (`GET /api/v1/brand`, ETag) and cache it; names,
+      colours and links apply from the next start, built-in brand until then.
+- [x] App: AI through the panel with the device token (`[server] text_model` /
+      `vision_model`); the AI choice is hidden in setup and Settings.
+- [x] Caderna privacy policy and terms (pt-BR only, Brazil only, `[locale]`): what goes to
+      the panel, with the legal version bumped.
+- [ ] Apply the panel's images (icon, cover) and texts at runtime.
+- [ ] The panel's `https://` address in `branding/caderna/brand.toml` before a release
+      (`http://localhost:8000` while developing).
 
 ## Licences to check before selling
 

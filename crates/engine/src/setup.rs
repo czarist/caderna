@@ -52,6 +52,8 @@ impl Engine {
 
     /// Saves the choices of the setup and the agreement to the terms.
     pub(crate) fn complete_setup(&mut self, mut settings: Settings) -> Result<(), EngineError> {
+        // The terms are agreed for the region the brand will keep.
+        settings.normalize();
         let ai = &settings.ai;
         if settings.student_name.trim().is_empty()
             || settings.teacher.is_none()
