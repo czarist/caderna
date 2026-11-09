@@ -31,6 +31,8 @@ pub fn run_reminder(args: &[String]) -> eframe::Result {
     let (locale, rest) = args
         .split_first()
         .map_or(("pt-BR", &[][..]), |(locale, rest)| (locale.as_str(), rest));
+    // The same client brand as the app, from its data folder.
+    crate::brand::apply(kg_engine::load_panel_brand(&kg_engine::AppPaths::detect()).as_ref());
     i18n::set(locale);
     let progress = Progress::from_args(rest);
     let height = 240.0;
@@ -115,7 +117,7 @@ impl eframe::App for ReminderPopup {
             );
             egui::Image::new(crate::art::brand_image(
                 "engraving.png",
-                kg_brand::ENGRAVING_PNG,
+                crate::brand::image("engraving.png", kg_brand::ENGRAVING_PNG),
             ))
             .paint_at(ui, art);
             ui.painter()

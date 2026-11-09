@@ -7,31 +7,37 @@
 // Embeds `locales/*.yml` and defines the lookup used by `t!`.
 rust_i18n::i18n!("../../locales", fallback = "pt-BR");
 
-/// `rust_i18n::t!` with the build's brand filled in: `%{app}` (product),
-/// `%{company}` and `%{license}` (the mark's licence) in any translation.
+/// `rust_i18n::t!` with the brand filled in (see [`brand`]): `%{app}` (product),
+/// `%{company}` and `%{license}` (the mark's licence) in any translation. A
+/// text the client set in its panel replaces the app's own.
 macro_rules! t {
-    ($key:expr) => {
-        rust_i18n::t!(
-            $key,
-            app = kg_brand::NAME,
-            company = kg_brand::COMPANY,
-            license = kg_brand::MARK_LICENSE
-        )
-    };
-    ($key:expr, $($rest:tt)+) => {
-        rust_i18n::t!(
-            $key,
-            app = kg_brand::NAME,
-            company = kg_brand::COMPANY,
-            license = kg_brand::MARK_LICENSE,
-            $($rest)+
-        )
-    };
+    ($key:expr $(, $name:ident = $value:expr)* $(,)?) => {{
+        let key = $key;
+        match crate::brand::text(::core::convert::AsRef::<str>::as_ref(&key)) {
+            Some(text) => crate::brand::fill(
+                text,
+                &[
+                    ("app", crate::brand::name().to_string()),
+                    ("company", crate::brand::company().to_string()),
+                    ("license", kg_brand::MARK_LICENSE.to_string()),
+                    $((stringify!($name), ($value).to_string()),)*
+                ],
+            ),
+            None => rust_i18n::t!(
+                key,
+                app = crate::brand::name(),
+                company = crate::brand::company(),
+                license = kg_brand::MARK_LICENSE
+                $(, $name = $value)*
+            ),
+        }
+    }};
 }
 
 mod accounts;
 mod app;
 mod art;
+mod brand;
 mod export;
 mod i18n;
 mod icon;
@@ -84,7 +90,9 @@ pub struct RunOptions {
 ///
 /// Returns an error if eframe cannot start the native application.
 pub fn run(env_ai: AiConfig, run_options: RunOptions, instance: SingleInstance) -> eframe::Result {
-    rust_i18n::set_locale(i18n::DEFAULT_LOCALE);
+    // The client's brand from its panel, before the window gets its title and icon.
+    brand::apply(kg_engine::load_panel_brand(&AppPaths::detect()).as_ref());
+    i18n::set(i18n::DEFAULT_LOCALE);
     let title = t!("app.name").into_owned();
 
     let options = eframe::NativeOptions {

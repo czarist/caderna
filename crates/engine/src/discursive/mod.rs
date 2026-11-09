@@ -239,8 +239,9 @@ impl Engine {
         if self.manuscript_ocr() != crate::ManuscriptOcr::ExternalVision {
             return None;
         }
-        let model = self.settings.ai.models.vision.trim();
-        (!model.is_empty()).then(|| (model.to_owned(), host(&self.settings.ai.base_url)))
+        let ai = self.ai_config();
+        let model = ai.models.vision.trim();
+        (!model.is_empty()).then(|| (model.to_owned(), host(&ai.base_url)))
     }
 
     /// What a full answer covers. Hidden until an attempt on the proposal

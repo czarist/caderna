@@ -17,7 +17,8 @@ pub fn rgba(size: u32) -> Vec<u8> {
 }
 
 fn render(size: u32) -> Option<Vec<u8>> {
-    let image = image::load_from_memory_with_format(ICON_PNG, image::ImageFormat::Png).ok()?;
+    let bytes = crate::brand::image("icon.png", ICON_PNG);
+    let image = image::load_from_memory_with_format(bytes, image::ImageFormat::Png).ok()?;
     let resized = image.resize_exact(size, size, image::imageops::FilterType::Lanczos3);
     Some(resized.into_rgba8().into_raw())
 }

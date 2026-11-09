@@ -21,12 +21,20 @@ pub fn current() -> String {
     rust_i18n::locale().to_string()
 }
 
-/// Switches the UI language; unknown locales fall back to the default.
+/// The locales this brand offers, in display order.
+pub fn offered() -> impl Iterator<Item = &'static str> {
+    LOCALES.into_iter().filter(|l| kg_brand::offers_language(l))
+}
+
+/// Switches the UI language; locales the brand does not offer fall back to
+/// the default, or to the brand's first language.
 pub fn set(locale: &str) {
-    let locale = if LOCALES.contains(&locale) {
+    let locale = if LOCALES.contains(&locale) && kg_brand::offers_language(locale) {
         locale
-    } else {
+    } else if kg_brand::offers_language(DEFAULT_LOCALE) {
         DEFAULT_LOCALE
+    } else {
+        offered().next().unwrap_or(DEFAULT_LOCALE)
     };
     rust_i18n::set_locale(locale);
 }
@@ -307,6 +315,11 @@ pub fn error_message(err: &EngineError) -> String {
         EngineError::Store(StoreError::PlanNotFound(_)) => t!("error.store.not_found"),
         EngineError::Store(_) => t!("error.store.generic"),
         EngineError::License(_) => t!("licensing.invalid"),
+        EngineError::Panel(kg_engine::PanelError::Refused(refusal)) => {
+            return crate::screens::demo::refusal_message(*refusal);
+        }
+        EngineError::Panel(kg_engine::PanelError::Unreachable(_)) => t!("panel.error.unreachable"),
+        EngineError::Panel(_) => t!("panel.error.unexpected"),
         EngineError::Ai(AiError::Connection { url, .. }) => t!("error.ai.connection", url = url),
         EngineError::Ai(AiError::Auth { .. }) => t!("error.ai.auth"),
         EngineError::Ai(AiError::Copilot(_)) => t!("error.ai.copilot"),

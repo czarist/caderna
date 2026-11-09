@@ -166,7 +166,7 @@ fn collect(frame: &Frame, ts: Transform, out: &mut Vec<TextBox>) {
 /// Text in the company's colour (`brand` in the template).
 fn is_brand(fill: &Paint) -> bool {
     match fill {
-        Paint::Solid(color) => color.to_vec4_u8()[..3] == kg_brand::COMPANY_COLOR,
+        Paint::Solid(color) => color.to_vec4_u8()[..3] == crate::company_color(),
         _ => false,
     }
 }

@@ -40,16 +40,16 @@ watermark_svg = "watermark.svg"  # faint, in the company colour
 [updates]
 repository = ""                   # https://github.com/<owner>/<name> with releases, or ""
 
+# Evaluations are licences issued by the panel (kind "evaluation"), so the
+# app has no local demonstration clock. contact_url is the "get a licence" link.
 [demo]
-enabled = true
-days = 14                         # days from the first start; 0 = no day limit
-expires = "2027-03-31"            # last day of use, whatever the first start; "" = none
+enabled = false
 contact_url = "https://example.com/contato"   # https:// or mailto:
 
 # Editable drafts. Set reviewed only after review for the actual client.
 [legal]
 directory = "legal"
-version = "2026-11-08.1"
+version = "2026-11-09.2"
 provider = "Caderna Educação — empresa demonstrativa"
 licensor = "TRENTIN SOLUÇÕES EM SOFTWARE LTDA – ME, CNPJ 36.154.590/0001-54"
 contact = "https://example.com/suporte"
@@ -57,5 +57,18 @@ reviewed = false
 commercial_reviewed = false
 
 [licensing]
-required = false
+required = true
 public_key = "MhuEw6S6kUFP+duSB6pBXfOt778LM0lS/j6w65yFizs=" # Public Ed25519 key only. Never put a private key here.
+
+# The Caderna panel (CADERNA-DASHBOARD). Licences are activated there, the
+# brand is downloaded from it and AI goes through it. http:// is accepted
+# only for localhost; a release build needs the panel's https:// address.
+[server]
+url = "http://localhost:8000"
+text_model = "caderna-texto"      # the panel's AI aliases (config/caderna.php)
+vision_model = "caderna-visao"
+
+# This version is offered only in Brazil, in Brazilian Portuguese.
+[locale]
+languages = ["pt-BR"]
+regions = ["br"]

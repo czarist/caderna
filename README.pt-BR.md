@@ -350,8 +350,10 @@ Aqui não há releases públicos; cada build é feito para um cliente.
 | `[updates]` | repositório GitHub com os releases do cliente, ou vazio para não buscar atualizações |
 | `[demo]` | `enabled`, `days` desde o primeiro uso, `expires` (último dia), link de contato |
 | extras de `[company]` | `support_url` (Configurações → Sobre), `teachers_dir` e `stickers_dir` para trocar a arte embutida |
-| `[legal]` | pasta com os 15 textos legais da marca, `version` do aceite, prestadora, licenciadora, contato, marcas de revisão |
+| `[legal]` | pasta com os textos legais da marca (um por idioma oferecido), `version` do aceite, prestadora, licenciadora, contato, marcas de revisão |
 | `[licensing]` | chave **pública** Ed25519 das licenças, e `required` para parar sem uma |
+| `[server]` | o painel da marca: ativação online, download da marca e IA por ele, com os apelidos dos modelos |
+| `[locale]` | idiomas e regiões que a marca oferece (vazio: todos) |
 
 **2. Gere o build.** A marca é lida na compilação a partir de `KG_BRAND_DIR` (padrão
 `branding/default`, que é o próprio Know Giver):
@@ -384,7 +386,9 @@ Veja [branding/README.md](branding/README.md); o que falta está no
 build.
 
 **Caderna.** `branding/caderna` é a primeira marca de cliente: papel, grafite e oliva,
-ícone, capa e marcas próprios, demonstração de 14 dias e chave pública Ed25519. Os
+ícone, capa e marcas próprios e chave pública Ed25519. É oferecida só no Brasil, em
+português do Brasil (`[locale]`), e funciona com o seu painel: avaliações e licenças
+vêm de lá. Os
 textos legais são rascunhos (`[legal] reviewed = false`), então o empacotamento para
 venda continua bloqueado até a revisão. Para rodar:
 `$env:KG_BRAND_DIR = "branding/caderna"; cargo run --release`; cada marca tem a sua pasta
@@ -403,9 +407,15 @@ lá os clientes são validados, as cores, imagens e textos de cada cliente são 
 tokens de avaliação e licenças são emitidos no mesmo formato que o app verifica offline.
 Ele também tem um gateway de IA compatível com a OpenAI, com as chaves dos provedores só
 no servidor, e roda em Docker ou numa instalação PHP local
-([czarist/caderna-dashboard](https://github.com/czarist/caderna-dashboard)). O app ainda não se conecta a ele: ativação online, download da marca e IA
-pelo painel estão planejados ([ROADMAP](ROADMAP.md), Fase W6) e serão descritos na
-política de privacidade antes de saírem.
+([czarist/caderna-dashboard](https://github.com/czarist/caderna-dashboard)). Com
+`[server] url` definido, o app ativa a licença no painel (uma vaga por computador, token
+do aparelho de 7 dias no cofre de credenciais do sistema, renovado sozinho), confere a
+licença a cada hora e continua funcionando por 14 dias sem o painel. Ele também baixa o
+nome, as cores, os links, as imagens e os textos do cliente e manda as tarefas de IA pelo painel, então o aluno
+não precisa de chave de IA. O painel recebe a chave de licença, um hash do identificador
+do computador, a versão do app, o sistema operacional e as tarefas de IA, nunca o nome do
+computador; a política de privacidade da Caderna diz isso. Veja
+[branding/README.md](branding/README.md).
 
 ## Começo rápido
 
