@@ -39,7 +39,8 @@ definida em `KG_DATA_DIR`):
   credenciais do sistema operacional (Gerenciador de Credenciais no Windows, Chaveiro no
   macOS, chaveiro do kernel no Linux). Se o cofre não estiver disponível, o token fica só na
   memória enquanto o app está aberto;
-- o nome, as cores e os links da {{company}} recebidos do painel;
+- a identidade visual da {{company}} recebida do painel: nome, cores, links, imagens (ícone,
+  capa, ilustração, marca e marca-d'água) e textos de telas do app;
 - editais, provas, gabaritos e materiais enviados, além dos planos, do progresso, dos
   quizzes, das revisões, das apostilas, dos destaques e das notas;
 - conversas das aulas e o caderno de erros;
@@ -56,6 +57,7 @@ gravações temporárias de diagnóstico ficam só na pasta de dados.
 
 | Para onde | O quê | Quando |
 |---|---|---|
+| Painel da {{company}}, ou o endereço que ele indicar para as imagens da identidade visual | Pedidos de download das imagens, que mostram o seu endereço IP (sem a chave nem o token) | Quando a identidade visual muda no painel |
 | Painel da {{company}} | A chave de licença; um código deste computador (o identificador do sistema operacional passado por hash, que não revela o identificador original); a versão do app; o sistema operacional (Windows, macOS ou Linux); o endereço IP | Ao ativar a licença, ao abrir o app e a cada hora com o app aberto |
 | Painel da {{company}}, que repassa ao fornecedor de IA contratado por ela | Trechos do edital e dos materiais, tópicos, suas mensagens e respostas transcritas, seu nome (para o tutor chamar você), textos das apostilas | Em cada tarefa de IA |
 | PaddleOCR-VL rodando localmente pelo `llama-server` v0.8.0 do llama.cpp | Fotos das respostas discursivas | Por padrão; processadas no computador, não enviadas ao painel |
@@ -115,7 +117,12 @@ arquivo SECURITY.md do projeto.
 - **"Desconectar este computador"** (em Configurações) libera a vaga da licença e apaga a
   chave e o token deste computador. Os seus estudos ficam.
 
-## 9. Seus direitos
+## 9. Encarregado pelo tratamento de dados
+
+O encarregado pelo tratamento de dados pessoais da {{company}} (art. 41 da LGPD) recebe
+reclamações, pedidos e comunicações dos titulares e da ANPD pelo contato {{contact}}.
+
+## 10. Seus direitos
 
 A LGPD garante, entre outros, os direitos de acesso, correção, eliminação, portabilidade e
 informação sobre compartilhamento (art. 18).
@@ -126,21 +133,21 @@ informação sobre compartilhamento (art. 18).
 - **Reclamação:** você também pode recorrer à Autoridade Nacional de Proteção de Dados
   (ANPD).
 
-## 10. Crianças e adolescentes
+## 11. Crianças e adolescentes
 
 Menores de 18 anos devem usar o aplicativo com o conhecimento e o consentimento dos pais ou
 responsáveis (art. 14 da LGPD).
 
-## 11. Inteligência artificial
+## 12. Inteligência artificial
 
 As respostas geradas pela IA podem conter erros, e a qualidade depende dos limites do
 modelo usado pela {{company}}. Veja os Termos de Uso, item 6.
 
-## 12. Alterações
+## 13. Alterações
 
 Quando esta Política mudar, a nova versão terá uma nova data, e o aplicativo pedirá um novo
 aceite.
 
-## 13. Contato
+## 14. Contato
 
 Dúvidas sobre privacidade: {{contact}}.

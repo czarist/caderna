@@ -69,6 +69,9 @@ impl Icon {
 
 /// The app icon (Thoth as a baboon, engraved, on a jade tile) at `size` points.
 pub fn logo(size: f32) -> Image<'static> {
-    Image::new(crate::art::brand_image("icon.png", kg_brand::ICON_PNG))
-        .fit_to_exact_size(vec2(size, size))
+    Image::new(crate::art::brand_image(
+        "icon.png",
+        crate::brand::image("icon.png", kg_brand::ICON_PNG),
+    ))
+    .fit_to_exact_size(vec2(size, size))
 }

@@ -411,7 +411,7 @@ no servidor, e roda em Docker ou numa instalação PHP local
 `[server] url` definido, o app ativa a licença no painel (uma vaga por computador, token
 do aparelho de 7 dias no cofre de credenciais do sistema, renovado sozinho), confere a
 licença a cada hora e continua funcionando por 14 dias sem o painel. Ele também baixa o
-nome, as cores e os links do cliente e manda as tarefas de IA pelo painel, então o aluno
+nome, as cores, os links, as imagens e os textos do cliente e manda as tarefas de IA pelo painel, então o aluno
 não precisa de chave de IA. O painel recebe a chave de licença, um hash do identificador
 do computador, a versão do app, o sistema operacional e as tarefas de IA, nunca o nome do
 computador; a política de privacidade da Caderna diz isso. Veja

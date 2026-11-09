@@ -403,7 +403,7 @@ runs with Docker or a local PHP install ([czarist/caderna-dashboard](https://git
 With `[server] url` set, the app activates the licence there (one seat per computer, a
 7-day device token in the operating system's credential store, renewed by itself), checks
 in every hour and keeps working for 14 days without the panel. It also downloads the
-client's name, colours and links, and sends AI requests through the panel, so the
+client's name, colours, links, pictures and texts, and sends AI requests through the panel, so the
 student needs no AI key. The panel receives the licence key, a hash of the computer's id,
 the app version, the operating system and the AI requests, never the computer's name;
 the Caderna privacy policy says so. See [branding/README.md](branding/README.md).

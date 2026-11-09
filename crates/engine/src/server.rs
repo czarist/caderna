@@ -17,6 +17,7 @@ use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
+use crate::panel_brand::{self, PanelBrand};
 use crate::{EngineError, Event};
 
 /// Days the app works without reaching the panel.
@@ -27,7 +28,6 @@ const CHECK_EVERY: StdDuration = StdDuration::from_secs(60 * 60);
 const RETRY_AFTER_FAILURE: StdDuration = StdDuration::from_secs(5 * 60);
 
 const SESSION_SETTING: &str = "panel_session";
-const BRAND_SETTING: &str = "panel_brand";
 const FALLBACK_ID_SETTING: &str = "panel_device_fallback";
 /// Changing it gives every computer a new id, and so a new seat.
 const DEVICE_SALT: &str = "kg-device-v1";
@@ -99,71 +99,6 @@ pub enum PanelStatus {
     Refused(Refusal),
 }
 
-/// The brand as the panel sends it, already checked. Applied at the next start.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PanelBrand {
-    pub app_name: Option<String>,
-    pub company_name: Option<String>,
-    pub accent_light: Option<[u8; 3]>,
-    pub accent_dark: Option<[u8; 3]>,
-    pub highlight_light: Option<[u8; 3]>,
-    pub highlight_dark: Option<[u8; 3]>,
-    pub support_url: Option<String>,
-    pub contact_url: Option<String>,
-}
-
-impl PanelBrand {
-    /// Reads the panel's brand JSON, dropping anything that is not safe to show.
-    pub(crate) fn from_json(value: &serde_json::Value) -> Self {
-        let text = |key: &str| {
-            value
-                .get(key)
-                .and_then(|v| v.as_str())
-                .map(str::trim)
-                .filter(|v| !v.is_empty() && v.chars().count() <= 60 && !v.contains(['\n', '\r']))
-                .map(str::to_owned)
-        };
-        let url = |key: &str| {
-            value
-                .get(key)
-                .and_then(|v| v.as_str())
-                .map(str::trim)
-                .filter(|v| {
-                    v.len() <= 500
-                        && (v.starts_with("https://") || v.starts_with("mailto:"))
-                        && !v.contains(char::is_whitespace)
-                })
-                .map(str::to_owned)
-        };
-        let color = |key: &str| {
-            value
-                .get("colors")
-                .and_then(|c| c.get(key))
-                .and_then(|v| v.as_str())
-                .and_then(parse_hex)
-        };
-        Self {
-            app_name: text("app_name"),
-            company_name: text("company_name"),
-            accent_light: color("accent_light"),
-            accent_dark: color("accent_dark"),
-            highlight_light: color("highlight_light"),
-            highlight_dark: color("highlight_dark"),
-            support_url: url("support_url"),
-            contact_url: url("contact_url"),
-        }
-    }
-}
-
-fn parse_hex(text: &str) -> Option<[u8; 3]> {
-    let hex = text.trim().strip_prefix('#')?;
-    if hex.len() != 6 || !hex.chars().all(|c| c.is_ascii_hexdigit()) {
-        return None;
-    }
-    let byte = |i: usize| u8::from_str_radix(&hex[i..i + 2], 16).ok();
-    Some([byte(0)?, byte(2)?, byte(4)?])
-}
-
 /// The panel's answer to an activation.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub(crate) struct Activation {
@@ -184,6 +119,8 @@ pub(crate) trait PanelApi {
         etag: Option<&str>,
     ) -> Result<Option<(serde_json::Value, Option<String>)>, PanelError>;
     fn sign_out(&self, token: &str) -> Result<(), PanelError>;
+    /// A picture of the brand (no token: it may live on another host).
+    fn download(&self, url: &str) -> Result<Vec<u8>, PanelError>;
 }
 
 /// The panel over HTTPS (HTTP only for localhost, checked in the brand).
@@ -354,6 +291,27 @@ impl PanelApi for HttpPanel {
             Err(failure(status, &text))
         }
     }
+
+    fn download(&self, url: &str) -> Result<Vec<u8>, PanelError> {
+        let mut response = self
+            .agent
+            .get(url)
+            .call()
+            .map_err(|e| PanelError::Unreachable(e.to_string()))?;
+        let status = response.status().as_u16();
+        if status != 200 {
+            return Err(PanelError::Unexpected {
+                status,
+                detail: format!("picture {url}"),
+            });
+        }
+        response
+            .body_mut()
+            .with_config()
+            .limit(3 * 1024 * 1024)
+            .read_to_vec()
+            .map_err(|e| PanelError::Unreachable(e.to_string()))
+    }
 }
 
 /// What a background check found.
@@ -361,8 +319,37 @@ impl PanelApi for HttpPanel {
 pub(crate) struct CheckIn {
     /// A new token, when the old one was renewed.
     pub renewed: Option<Activation>,
-    /// The brand, when it changed (with its ETag).
-    pub brand: Option<(serde_json::Value, Option<String>)>,
+    /// The brand with its pictures, when it changed.
+    pub brand: Option<BrandDownload>,
+}
+
+/// A changed brand, its pictures already checked.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct BrandDownload {
+    pub json: serde_json::Value,
+    pub etag: Option<String>,
+    pub images: Vec<(&'static str, Vec<u8>)>,
+}
+
+/// Downloads the brand's pictures; one that fails or is not safe fails the
+/// whole brand, which is tried again at the next check.
+fn download_images(
+    api: &dyn PanelApi,
+    json: &serde_json::Value,
+) -> Result<Vec<(&'static str, Vec<u8>)>, PanelError> {
+    let mut images = Vec::new();
+    for (file, url) in panel_brand::image_urls(json) {
+        let Some(url) = url else { continue };
+        let bytes = api.download(&url)?;
+        if !panel_brand::image_ok(file, &bytes) {
+            return Err(PanelError::Unexpected {
+                status: 200,
+                detail: format!("{file} is not a usable picture"),
+            });
+        }
+        images.push((file, bytes));
+    }
+    Ok(images)
 }
 
 /// Confirms this computer with the panel, renewing the token when it is
@@ -396,10 +383,20 @@ pub(crate) fn check_in(
             token
         }
     };
-    let brand = api.brand(&token, etag).unwrap_or_else(|err| {
-        tracing::warn!(%err, "could not download the brand from the panel");
-        None
-    });
+    let brand = match api.brand(&token, etag) {
+        Ok(Some((json, etag))) => match download_images(api, &json) {
+            Ok(images) => Some(BrandDownload { json, etag, images }),
+            Err(err) => {
+                tracing::warn!(%err, "could not download the brand's pictures");
+                None
+            }
+        },
+        Ok(None) => None,
+        Err(err) => {
+            tracing::warn!(%err, "could not download the brand from the panel");
+            None
+        }
+    };
     Ok(CheckIn { renewed, brand })
 }
 
@@ -489,7 +486,10 @@ pub(crate) struct Panel {
     busy: bool,
     /// `None`: no background checks (tests, or nothing to check).
     next_check: Option<Instant>,
+    /// The brand of this start (a newer download applies at the next one).
     brand: Option<PanelBrand>,
+    /// A brand is kept on disk, so its ETag can be sent.
+    brand_kept: bool,
 }
 
 impl Default for Panel {
@@ -502,6 +502,7 @@ impl Default for Panel {
             busy: false,
             next_check: None,
             brand: None,
+            brand_kept: false,
         }
     }
 }
@@ -520,12 +521,14 @@ impl crate::Engine {
             .flatten()
             .and_then(|json| serde_json::from_str(&json).ok())
             .unwrap_or_default();
-        let brand = self
-            .store
-            .setting(BRAND_SETTING)
-            .ok()
-            .flatten()
-            .and_then(|json| serde_json::from_str(&json).ok());
+        let brand = panel_brand::load_panel_brand(&self.paths);
+        if let Some(brand) = &brand {
+            kg_handout::set_brand(kg_handout::HandoutBrand {
+                company: brand.company_name.clone(),
+                color: brand.company_color,
+                watermark_svg: brand.image("watermark.svg").map(<[u8]>::to_vec),
+            });
+        }
         self.panel = Panel {
             session,
             token: vault.load(),
@@ -533,6 +536,7 @@ impl crate::Engine {
             device: None,
             busy: false,
             next_check: background.then(Instant::now),
+            brand_kept: brand.is_some(),
             brand,
         };
     }
@@ -733,7 +737,12 @@ impl crate::Engine {
         let device = self.device();
         let token = self.panel.token.clone();
         let expires = self.panel.session.token_expires_at;
-        let etag = self.panel.session.brand_etag.clone();
+        let etag = self
+            .panel
+            .session
+            .brand_etag
+            .clone()
+            .filter(|_| self.panel.brand_kept);
         self.panel.busy = true;
         self.panel.next_check = None;
         self.spawn(move || {
@@ -760,15 +769,17 @@ impl crate::Engine {
                 if let Some(activation) = &check.renewed {
                     self.keep_token(activation);
                 }
-                if let Some((json, etag)) = check.brand {
-                    let brand = PanelBrand::from_json(&json);
-                    match serde_json::to_string(&brand) {
-                        Ok(text) => {
-                            if self.store.set_setting(BRAND_SETTING, &text).is_ok() {
-                                self.panel.session.brand_etag = etag;
-                            }
+                if let Some(download) = check.brand {
+                    let mut brand = PanelBrand::from_json(&download.json);
+                    for (file, bytes) in download.images {
+                        brand.images.insert(file.to_owned(), bytes);
+                    }
+                    match panel_brand::save_panel_brand(&self.paths, &brand) {
+                        Ok(()) => {
+                            self.panel.session.brand_etag = download.etag;
+                            self.panel.brand_kept = true;
                         }
-                        Err(err) => tracing::warn!(%err, "could not encode the panel brand"),
+                        Err(err) => tracing::warn!(%err, "could not keep the panel brand"),
                     }
                 }
                 self.panel.session.last_ok_at = Some(now);
@@ -824,13 +835,21 @@ mod tests {
             self.calls.borrow_mut().push("brand".into());
             Ok((etag != Some("v1")).then(|| {
                 (
-                    serde_json::json!({"app_name": "Escola", "colors": {"accent_light": "#112233"}}),
+                    serde_json::json!({
+                        "app_name": "Escola",
+                        "colors": {"accent_light": "#112233"},
+                        "images": {"mark": "https://cdn.example/mark.svg", "icon": null},
+                    }),
                     Some("v1".into()),
                 )
             }))
         }
         fn sign_out(&self, _: &str) -> Result<(), PanelError> {
             Ok(())
+        }
+        fn download(&self, url: &str) -> Result<Vec<u8>, PanelError> {
+            self.calls.borrow_mut().push(format!("download {url}"));
+            Ok(b"<svg xmlns='http://www.w3.org/2000/svg'/>".to_vec())
         }
     }
 
@@ -873,8 +892,16 @@ mod tests {
             };
             let check = check_in(&panel, "key", "dev", token, None, now()).unwrap();
             assert_eq!(check.renewed, Some(fresh_token(7)));
-            assert!(check.brand.is_some());
+            let brand = check.brand.unwrap();
+            assert_eq!(brand.images.len(), 1);
+            assert_eq!(brand.images[0].0, "mark.svg");
             assert_eq!(panel.calls.borrow()[0], "activate renew=true");
+            assert!(
+                panel
+                    .calls
+                    .borrow()
+                    .contains(&"download https://cdn.example/mark.svg".to_owned())
+            );
         }
         let panel = FakePanel {
             current: Some(Err(PanelError::Unauthenticated)),
@@ -971,9 +998,8 @@ mod tests {
         }
     }
 
-    fn engine() -> crate::Engine {
-        let dir = std::env::temp_dir();
-        crate::Engine::in_memory(crate::AppPaths::new(&dir), crate::AiConfig::default()).unwrap()
+    fn engine(dir: &std::path::Path) -> crate::Engine {
+        crate::Engine::in_memory(crate::AppPaths::new(dir), crate::AiConfig::default()).unwrap()
     }
 
     #[test]
@@ -981,7 +1007,8 @@ mod tests {
         if !kg_brand::has_server() {
             return;
         }
-        let mut engine = engine();
+        let dir = tempfile::tempdir().unwrap();
+        let mut engine = engine(dir.path());
         engine.panel.session.last_ok_at = Some(now());
         engine.license = Some(crate::license::tests::sample_license());
         assert_eq!(
@@ -1008,12 +1035,21 @@ mod tests {
         engine.apply_check(
             Ok(CheckIn {
                 renewed: Some(fresh_token(7)),
-                brand: Some((serde_json::json!({"app_name": "Escola"}), Some("v2".into()))),
+                brand: Some(BrandDownload {
+                    json: serde_json::json!({"app_name": "Escola"}),
+                    etag: Some("v2".into()),
+                    images: vec![("mark.svg", b"<svg/>".to_vec())],
+                }),
             }),
             now(),
         );
         assert_eq!(engine.panel.token.as_deref(), Some("new"));
         assert_eq!(engine.panel.session.brand_etag.as_deref(), Some("v2"));
+        // Kept for the next start, not applied to this one.
+        assert_eq!(engine.panel_brand(), None);
+        let kept = panel_brand::load_panel_brand(&engine.paths).unwrap();
+        assert_eq!(kept.app_name.as_deref(), Some("Escola"));
+        assert!(kept.image("mark.svg").is_some());
         let ai = engine.panel_ai(&crate::AiConfig::default());
         assert_eq!(ai.api_key, "new");
         assert_eq!(ai.models.vision, kg_brand::SERVER_VISION_MODEL);

@@ -544,7 +544,10 @@ pub(crate) fn source_link(ui: &mut egui::Ui, color: egui::Color32) {
 
 /// The company's mark from the brand (white, tinted when drawn).
 pub(crate) fn company_mark() -> egui::Image<'static> {
-    egui::Image::new(crate::art::brand_image("mark.svg", kg_brand::MARK_SVG))
+    egui::Image::new(crate::art::brand_image(
+        "mark.svg",
+        crate::brand::image("mark.svg", kg_brand::MARK_SVG),
+    ))
 }
 
 /// A small credit to the brand's company that opens its site, if it has one.

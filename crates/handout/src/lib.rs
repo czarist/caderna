@@ -32,14 +32,49 @@ const BRAND_MARK_PATH: &str = "/brand/watermark.svg";
 /// The brand's name, site and colour for the watermark and the footer.
 const BRAND_INFO_PATH: &str = "/brand/brand.json";
 
+/// The client's brand from its panel, over the build's (`kg-brand`).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct HandoutBrand {
+    pub company: Option<String>,
+    /// Must differ from the template's own colours (the engine checks it).
+    pub color: Option<[u8; 3]>,
+    pub watermark_svg: Option<Vec<u8>>,
+}
+
+static BRAND: std::sync::OnceLock<HandoutBrand> = std::sync::OnceLock::new();
+
+/// Lays the panel's brand over the build's for every handout. Only the
+/// first call counts, so handouts of one session look the same.
+pub fn set_brand(brand: HandoutBrand) {
+    let _ = BRAND.set(brand);
+}
+
+fn brand() -> Option<&'static HandoutBrand> {
+    BRAND.get()
+}
+
+/// The company colour of the handouts (the reader leaves text in it out).
+pub(crate) fn company_color() -> [u8; 3] {
+    brand()
+        .and_then(|b| b.color)
+        .unwrap_or(kg_brand::COMPANY_COLOR)
+}
+
+fn watermark_svg() -> &'static [u8] {
+    brand()
+        .and_then(|b| b.watermark_svg.as_deref())
+        .unwrap_or(kg_brand::WATERMARK_SVG)
+}
+
 /// What the template prints about the company that ships the app.
 fn brand_info() -> Vec<u8> {
+    let [r, g, b] = company_color();
     serde_json::json!({
         "show": kg_brand::SHOW_CREDIT,
-        "name": kg_brand::COMPANY,
+        "name": brand().and_then(|b| b.company.as_deref()).unwrap_or(kg_brand::COMPANY),
         "url": kg_brand::COMPANY_URL,
         "label": kg_brand::COMPANY_URL_LABEL,
-        "color": kg_brand::COMPANY_COLOR_HEX,
+        "color": format!("#{r:02X}{g:02X}{b:02X}"),
     })
     .to_string()
     .into_bytes()
@@ -256,7 +291,7 @@ impl HandoutWorld {
                 .iter()
                 .map(|(path, bytes)| Ok((file(path)?, Bytes::new(bytes.clone()))))
                 .chain([
-                    Ok((file(BRAND_MARK_PATH)?, Bytes::new(kg_brand::WATERMARK_SVG))),
+                    Ok((file(BRAND_MARK_PATH)?, Bytes::new(watermark_svg()))),
                     Ok((file(BRAND_INFO_PATH)?, Bytes::new(brand_info()))),
                 ])
                 .collect::<Result<_, HandoutError>>()?,
