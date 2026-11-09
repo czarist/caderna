@@ -117,8 +117,10 @@ A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
       the panel, with the legal version bumped.
 - [x] Apply the panel's pictures (icon, cover, reminder art, mark, handout watermark) and
       texts at runtime, from the next start, after checking them.
-- [ ] The panel's `https://` address in `branding/caderna/brand.toml` before a release
-      (`http://localhost:8000` while developing).
+- [x] Panel address per build: `[server] dev_url` (localhost) for `cargo run` and tests,
+      `[server] url` or `KG_SERVER_URL` for releases; never read on the student's computer.
+- [ ] The online panel's `https://` address in `[server] url` of `branding/caderna/brand.toml`
+      (or `KG_SERVER_URL` in CI) before the first Caderna release.
 
 ## Licences to check before selling
 

@@ -73,3 +73,56 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+#[allow(dead_code)]
+mod config {
+    include!("../config.rs");
+
+    #[test]
+    fn development_builds_use_dev_url_and_releases_need_https() {
+        let server = ServerSection {
+            url: "https://painel.example.com".into(),
+            dev_url: "http://localhost:8000".into(),
+            text_model: "t".into(),
+            vision_model: "v".into(),
+        };
+        assert_eq!(
+            server.url_for(false, None).as_deref(),
+            Ok("http://localhost:8000")
+        );
+        assert_eq!(
+            server.url_for(true, None).as_deref(),
+            Ok("https://painel.example.com")
+        );
+        // KG_SERVER_URL wins in both, without a trailing slash.
+        assert_eq!(
+            server
+                .url_for(true, Some("https://outro.example.com/"))
+                .as_deref(),
+            Ok("https://outro.example.com")
+        );
+        assert!(
+            server
+                .url_for(true, Some("http://evil.example.com"))
+                .is_err()
+        );
+
+        let dev_only = ServerSection {
+            url: String::new(),
+            ..server
+        };
+        assert_eq!(
+            dev_only.url_for(false, None).as_deref(),
+            Ok("http://localhost:8000")
+        );
+        assert!(
+            dev_only.url_for(true, None).is_err(),
+            "never ship localhost"
+        );
+        assert_eq!(
+            ServerSection::default().url_for(true, None).as_deref(),
+            Ok("")
+        );
+    }
+}

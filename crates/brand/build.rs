@@ -64,7 +64,24 @@ fn main() -> Result<(), String> {
     );
     text("MARK_LICENSE", &f.company.mark_license);
     text("REPOSITORY", f.updates.repository.trim_end_matches('/'));
-    text("SERVER_URL", &f.server.url);
+    // Development builds talk to dev_url (or KG_SERVER_URL from the shell or
+    // the repository's .env); release builds to url (or KG_SERVER_URL from the
+    // shell or CI), never to a file on the student's computer.
+    println!("cargo:rerun-if-env-changed=KG_SERVER_URL");
+    let release = std::env::var("PROFILE").as_deref() == Ok("release");
+    let mut server_override = std::env::var("KG_SERVER_URL").ok();
+    if !release && server_override.is_none() {
+        let dotenv = root.join(".env");
+        println!("cargo:rerun-if-changed={}", dotenv.display());
+        server_override = std::fs::read_to_string(&dotenv).ok().and_then(|text| {
+            text.lines().find_map(|line| {
+                let value = line.trim().strip_prefix("KG_SERVER_URL=")?;
+                Some(value.trim().trim_matches(['"', '\'']).to_owned())
+            })
+        });
+    }
+    let server_url = f.server.url_for(release, server_override.as_deref())?;
+    text("SERVER_URL", &server_url);
     text("SERVER_TEXT_MODEL", f.server.text_model.trim());
     text("SERVER_VISION_MODEL", f.server.vision_model.trim());
     text("DEMO_CONTACT_URL", &f.demo.contact_url);
