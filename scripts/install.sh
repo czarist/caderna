@@ -25,12 +25,14 @@ data_dir="${KG_INSTALL_DATA_DIR:-}"
 slug="${KG_INSTALL_SLUG:-}"
 repo="${KG_INSTALL_REPOSITORY:-}"
 app_name="${KG_INSTALL_NAME:-}"
+exe_name="${KG_INSTALL_EXE:-}"
 config_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || true)"
 if [[ -n "$config_dir" && -f "$config_dir/brand.conf" ]]; then
-  { IFS= read -r data_dir; IFS= read -r slug; IFS= read -r repo; IFS= read -r app_name; } < "$config_dir/brand.conf"
+  { IFS= read -r data_dir; IFS= read -r slug; IFS= read -r repo; IFS= read -r app_name; IFS= read -r exe_name || true; } < "$config_dir/brand.conf"
 fi
 [[ "$data_dir" =~ ^[A-Za-z0-9_-]+$ && "$slug" =~ ^[a-z0-9-]+$ ]] || { printf 'Set valid KG_INSTALL_DATA_DIR and KG_INSTALL_SLUG\n' >&2; exit 1; }
 [[ -n "$app_name" ]] || app_name="$data_dir"
+[[ "$exe_name" =~ ^[A-Za-z0-9_-]+$ ]] || exe_name=know-giver
 [[ "$app_name" != *$'\n'* && "$app_name" != *$'\r'* ]] || exit 1
 
 
@@ -177,7 +179,7 @@ if [[ "$(uname -s)" == Darwin ]]; then
   if [[ $startup_choice == 1 ]]; then
     launch_agents="$HOME/Library/LaunchAgents"
     mkdir -p "$launch_agents"
-    executable="$(xml_escape "$app/Contents/MacOS/know-giver")"
+    executable="$(xml_escape "$app/Contents/MacOS/${exe_name}")"
     cat > "$launch_agents/org.study.${slug}.desktop.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -202,15 +204,15 @@ else
   menu="$HOME/.local/share/applications"
   icons="$HOME/.local/share/icons/hicolor/256x256/apps"
   first_install=1
-  [[ -x "$dest/know-giver" ]] && first_install=0
+  [[ -x "$dest/${exe_name}" ]] && first_install=0
   collect_install_choices
   mkdir -p "$dest" "$bin" "$menu" "$icons"
   # Replaced by renaming, so a running copy keeps working until it closes.
   cp "$tmp/x/${data_dir}/brand.conf" "$dest/brand.conf"
   cp -R "$tmp/x/${data_dir}/local-runtime" "$dest/"
-  cp "$tmp/x/${data_dir}/know-giver" "$dest/know-giver.new"
-  chmod +x "$dest/know-giver.new"
-  mv -f "$dest/know-giver.new" "$dest/know-giver"
+  cp "$tmp/x/${data_dir}/${exe_name}" "$dest/${exe_name}.new"
+  chmod +x "$dest/${exe_name}.new"
+  mv -f "$dest/${exe_name}.new" "$dest/${exe_name}"
   # Read-me files in each app language (one README.txt before v0.33.1).
   rm -f -- "$dest"/README*.txt
   cp "$tmp/x/${data_dir}/"README*.txt "$tmp/x/${data_dir}/.env.example" "$dest/"
@@ -219,12 +221,12 @@ else
     chmod +x "$dest/uninstall.sh"
   fi
   cp "$tmp/x/${data_dir}/${slug}.png" "$icons/${slug}.png"
-  ln -sf "$dest/know-giver" "$bin/${slug}"
+  ln -sf "$dest/${exe_name}" "$bin/${slug}"
   entry="[Desktop Entry]
 Type=Application
 Name=$app_name
 Comment=Study plans and voice lessons for exams
-Exec=$dest/know-giver
+Exec=$dest/${exe_name}
 Icon=$slug
 Categories=Education;
 Terminal=false"
@@ -243,7 +245,7 @@ Terminal=false"
   if [[ $startup_choice == 1 ]]; then
     autostart="$HOME/.config/autostart"
     mkdir -p "$autostart"
-    executable="$(desktop_escape "$dest/know-giver")"
+    executable="$(desktop_escape "$dest/${exe_name}")"
     cat > "$autostart/${slug}.desktop" <<EOF
 [Desktop Entry]
 Type=Application
@@ -257,7 +259,7 @@ NoDisplay=true
 X-GNOME-Autostart-enabled=true
 EOF
   fi
-  printf 'Installed: %s (command: know-giver)\n' "$dest"
+  printf 'Installed: %s (command: %s)\n' "$dest" "$slug"
   if [[ "${claude_choice:-0}" == 1 ]]; then
     printf "Installing Claude Code with Anthropic's official installer\n"
     curl -fsSL https://claude.ai/install.sh | bash ||
@@ -266,9 +268,9 @@ EOF
   printf 'To uninstall: %s/uninstall.sh\n' "$dest"
   case ":$PATH:" in
     *":$bin:"*) ;;
-    *) printf 'Add %s to your PATH to run know-giver from a terminal.\n' "$bin" ;;
+    *) printf 'Add %s to your PATH to run %s from a terminal.\n' "$bin" "$slug" ;;
   esac
   if [[ "${KG_LAUNCH:-}" == 1 ]]; then
-    nohup "$dest/know-giver" >/dev/null 2>&1 &
+    nohup "$dest/${exe_name}" >/dev/null 2>&1 &
   fi
 fi

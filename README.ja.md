@@ -232,7 +232,7 @@ Know Giver は日本、ブラジル、アメリカ合衆国、欧州連合、イ
 powershell -ExecutionPolicy Bypass -File scripts\package.ps1 -Brand branding\<顧客>
 ```
 
-`dist\<data_dir>-<バージョン>-windows-x64.zip` と、[Inno Setup 6](https://jrsoftware.org/isinfo.php) があればインストーラーが作られます。
+`dist\<data_dir>-<バージョン>-windows-x64.zip` と、[Inno Setup 6](https://jrsoftware.org/isinfo.php) があればインストーラーが作られます。実行ファイル名は `[app] executable` で決まります（例：`Caderna.exe`、既定は `know-giver.exe`）。
 
 **体験版**：`[demo] enabled = true` にすると、初回起動から `days` 日、または `expires` の日まで（早いほう）使えます。サイドバーに残り日数が表示され、期間が終わると「体験期間が終了しました」の画面だけが開き、顧客の連絡先へのボタンが表示されます。学習計画と進捗はコンピューターに残ります。
 

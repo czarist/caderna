@@ -13,6 +13,7 @@ metadata="$target_dir/debug/examples/metadata"
 app_name="$("$metadata" name)"
 data_dir="$("$metadata" data_dir)"
 slug="$("$metadata" slug)"
+executable="$("$metadata" executable)"
 repository="$("$metadata" repository)"
 icon="$("$metadata" icon_png)"
 if [[ "${KG_COMMERCIAL:-0}" == 1 ]]; then
@@ -28,13 +29,14 @@ cargo build --locked --release -p know-giver
 mkdir -p dist
 stage="$(mktemp -d "$repo_root/dist/.package.XXXXXX")"
 trap 'rm -rf -- "$stage"' EXIT
-brand_config() { printf '%s\n' "$data_dir" "$slug" "${repository#https://github.com/}" "$app_name" > "$1/brand.conf"; }
+brand_config() { printf '%s\n' "$data_dir" "$slug" "${repository#https://github.com/}" "$app_name" "$executable" > "$1/brand.conf"; }
 xml_escape() { printf '%s' "$1" | sed -e 's/\&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g'; }
 if [[ "$platform" == Darwin ]]; then
   app="$stage/$data_dir.app"
   bundle="$app/Contents"
   mkdir -p "$bundle/MacOS" "$bundle/Resources"
-  cp "$target_dir/release/know-giver" .env.example "$bundle/MacOS/"
+  cp "$target_dir/release/know-giver" "$bundle/MacOS/$executable"
+  cp .env.example "$bundle/MacOS/"
   cp -R "$target_dir/release/local-runtime" "$bundle/MacOS/"
   cp scripts/uninstall.sh "$bundle/Resources/"
   brand_config "$bundle/Resources"
@@ -50,7 +52,7 @@ if [[ "$platform" == Darwin ]]; then
 <plist version="1.0"><dict>
 <key>CFBundleIdentifier</key><string>org.study.$slug</string>
 <key>CFBundleName</key><string>$(xml_escape "$app_name")</string>
-<key>CFBundleExecutable</key><string>know-giver</string>
+<key>CFBundleExecutable</key><string>$executable</string>
 <key>CFBundleIconFile</key><string>app.icns</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleShortVersionString</key><string>$version</string>
@@ -80,7 +82,8 @@ EOF
 else
   dest="$stage/$data_dir"
   mkdir -p "$dest"
-  cp "$target_dir/release/know-giver" .env.example scripts/uninstall.sh "$dest/"
+  cp "$target_dir/release/know-giver" "$dest/$executable"
+  cp .env.example scripts/uninstall.sh "$dest/"
   cp packaging/unix/README.*.txt "$dest/"
   cp -R "$target_dir/release/local-runtime" "$dest/"
   cp "$icon" "$dest/$slug.png"
@@ -89,7 +92,7 @@ else
 [Desktop Entry]
 Type=Application
 Name=$app_name
-Exec=know-giver
+Exec=$executable
 Icon=$slug
 Categories=Education;
 Terminal=false

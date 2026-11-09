@@ -337,7 +337,7 @@ demonstration**. There are no public releases here; each build is made for one c
 
 | Section | What it sets |
 | --- | --- |
-| `[app]` | product name, `slug` (window id, database name), `data_dir` (data and install folder), installer GUID |
+| `[app]` | product name, `slug` (window id, database name), `data_dir` (data and install folder), `executable` (program file name), installer GUID |
 | `[company]` | company name, site, "Made by …" credit on/off, licence of the mark |
 | `[colors]` | accent and highlight (light and dark themes), handout credit colour |
 | `[assets]` | app icon (PNG and ICO), cover art, reminder art, mark (SVG) and handout watermark (SVG) |

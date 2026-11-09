@@ -26,7 +26,8 @@ under `branding/private/<client>`, which git ignores.
    | `mark_svg` | company mark, **white**, one colour (the app tints it) |
    | `watermark_svg` | company mark already **faint and coloured**, for the handout watermark |
 
-3. Fill in `[app]` (name, `slug`, `data_dir`, a new `installer_guid` from
+3. Fill in `[app]` (name, `slug`, `data_dir`, `executable` for the program's file name
+   such as `Caderna` → `Caderna.exe` (default `know-giver`), a new `installer_guid` from
    `[guid]::NewGuid()`), `[company]`, `[colors]`, `[updates]`, `[demo]`, `[legal]` and `[licensing]`,
    plus `[server]` and `[locale]` when the client has a panel or sells in fewer countries.
    `colors.company` must differ from the handout's own colours; the build says so if not.

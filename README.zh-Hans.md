@@ -227,7 +227,7 @@ Know Giver 在新加坡、巴西、美国、欧盟、英国、日本、台湾和
 powershell -ExecutionPolicy Bypass -File scripts\package.ps1 -Brand branding\<客户>
 ```
 
-会生成 `dist\<data_dir>-<版本>-windows-x64.zip`，安装了 [Inno Setup 6](https://jrsoftware.org/isinfo.php) 时还会生成安装程序。
+会生成 `dist\<data_dir>-<版本>-windows-x64.zip`，安装了 [Inno Setup 6](https://jrsoftware.org/isinfo.php) 时还会生成安装程序。程序文件名取自 `[app] executable`（例如 `Caderna.exe`，默认 `know-giver.exe`）。
 
 **试用版**：设置 `[demo] enabled = true` 后，应用从首次启动起可用 `days` 天，或用到 `expires` 当天（以先到者为准）。侧边栏显示剩余天数；到期后只会打开"试用期已结束"页面，并提供联系客户的按钮。学习计划和进度仍保存在电脑上。
 

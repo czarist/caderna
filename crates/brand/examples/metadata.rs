@@ -4,6 +4,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let value = match field.as_str() {
         "name" => kg_brand::NAME,
         "data_dir" => kg_brand::DATA_DIR,
+        "executable" => kg_brand::EXECUTABLE,
         "slug" => kg_brand::SLUG,
         "company" => kg_brand::COMPANY,
         "url" => kg_brand::COMPANY_URL,

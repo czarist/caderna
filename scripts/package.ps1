@@ -41,6 +41,7 @@ try {
     $metadata = Join-Path $target 'debug\examples\metadata.exe'
     $appName = & $metadata name
     $appDir = & $metadata data_dir
+    $appExe = & $metadata executable
     $appGuid = & $metadata guid
     $publisher = & $metadata company
     $publisherUrl = & $metadata url
@@ -72,8 +73,9 @@ try {
     }
     if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
     New-Item -ItemType Directory -Force $stage | Out-Null
-    Copy-Item (Join-Path $target 'release\know-giver.exe') $stage
-    & (Join-Path $PSScriptRoot 'sign-windows.ps1') -Path (Join-Path $stage 'know-giver.exe') -Required:$RequireSignature
+    # Cargo always builds know-giver.exe; the package carries the brand's name.
+    Copy-Item (Join-Path $target 'release\know-giver.exe') (Join-Path $stage "$appExe.exe")
+    & (Join-Path $PSScriptRoot 'sign-windows.ps1') -Path (Join-Path $stage "$appExe.exe") -Required:$RequireSignature
     Copy-Item (Join-Path $target 'release\local-runtime') $stage -Recurse
     foreach ($dll in @('vcruntime140.dll', 'vcruntime140_1.dll')) {
         $runtimeDll = Join-Path (Join-Path $target 'release\local-runtime') $dll
@@ -108,7 +110,7 @@ try {
 
     if ($SkipInstaller) { return }
     & $iscc "/DAppVersion=$version" "/DSourceDir=$stage" "/DRepoRoot=$root" "/O$dist" `
-        "/DAppName=$appName" "/DAppDir=$appDir" "/DAppGuid=$appGuid" `
+        "/DAppName=$appName" "/DAppDir=$appDir" "/DAppExe=$appExe" "/DAppGuid=$appGuid" `
         "/DAppPublisher=$publisher" "/DAppUrl=$publisherUrl" "/DAppIcon=$icon" `
         'packaging\windows\know-giver.iss'
     if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed" }

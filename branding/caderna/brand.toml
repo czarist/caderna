@@ -11,6 +11,7 @@
 name = "Caderna"          # product name shown to students
 slug = "caderna"          # a-z, 0-9 and - only
 data_dir = "Caderna"       # data folder and install folder
+executable = "Caderna"     # Caderna.exe (default: know-giver)
 # A new GUID per client: PowerShell [guid]::NewGuid()
 installer_guid = "F104D038-F0C6-44A0-9C76-2FC42659D335"
 

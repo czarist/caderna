@@ -385,6 +385,7 @@ fn run_installer(package: &Path, dir: &Path) -> Result<(), String> {
         .env("KG_INSTALL_DATA_DIR", kg_brand::DATA_DIR)
         .env("KG_INSTALL_SLUG", kg_brand::SLUG)
         .env("KG_INSTALL_NAME", kg_brand::NAME)
+        .env("KG_INSTALL_EXE", kg_brand::EXECUTABLE)
         .env(
             "KG_INSTALL_REPOSITORY",
             kg_brand::REPOSITORY.trim_start_matches("https://github.com/"),
