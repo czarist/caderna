@@ -52,11 +52,13 @@ try {
         $RequireSignature = $true
     }
     if ($RequireSignature -and -not $env:KG_SIGN_CERT_SHA1) { throw 'Signing certificate is required' }
+    # KG_ISCC points at an ISCC.exe outside the usual install folders.
     $iscc = @(
+        $env:KG_ISCC,
         "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
         "$env:ProgramFiles\Inno Setup 6\ISCC.exe",
         "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe"
-    ) | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+    ) | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
     if (-not $SkipInstaller -and -not $iscc) { throw 'Inno Setup 6 is required; use -SkipInstaller for a portable preview' }
     Write-Host "Brand: $appName ($brandDir)"
 
