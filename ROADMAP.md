@@ -92,6 +92,24 @@ If a machine overheats, limit it for that run with `-j N` or `CARGO_BUILD_JOBS`.
 - [ ] Optional online check when the client wants it (seats in use), off by default and
       stated in the privacy policy. Needs a real client service contract first.
 
+## Phase W6 — Caderna dashboard (CADERNA-DASHBOARD)
+
+A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
+
+- [x] Panel: clients with validation status, per-client brand (colours, images, texts,
+      versioned), licences and evaluation tokens signed byte-identically to
+      `license_issue`, devices and seats, AI usage per client.
+- [x] OpenAI-compatible AI gateway (`/api/v1/ai`): provider keys and models only in the
+      panel's `.env`, aliases for the app, streaming, monthly quota, images only to the
+      vision model.
+- [ ] App: after the offline check, activate online (`POST /api/v1/activations`) and keep
+      the device token; sign out frees the seat.
+- [ ] App: download the client's brand at start (`GET /api/v1/brand`, ETag) and cache it,
+      so one Caderna installer serves every client; built-in brand when offline.
+- [ ] App: a "Caderna" AI provider pointing at the panel with the device token.
+- [ ] Privacy policy and terms in every language and region: what goes to the panel
+      (licence key, device id hash, app version, AI requests), with `TERMS_VERSION` bumped.
+
 ## Licences to check before selling
 
 - [x] Dii voice (OpenVoiceOS/pipertts_pt-BR_dii): CC BY-NC-ND 4.0, non-commercial. No

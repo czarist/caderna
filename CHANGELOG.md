@@ -23,6 +23,9 @@ repository.
 
 ### Changed
 - The Dii voice (non-commercial licence) is no longer offered or downloaded.
+- READMEs in all five languages show the Caderna icon and screenshots rendered with the
+  Caderna brand, the full brand.toml sections, licence issuing and the CADERNA-DASHBOARD
+  panel (its integration in the app is ROADMAP Phase W6). Builds use every core again.
 
 ## [0.1.0] - 2026-11-08
 
