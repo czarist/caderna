@@ -705,9 +705,11 @@ impl Engine {
     }
 
     fn is_copilot_provider(&self) -> bool {
-        crate::ai_provider(&self.settings.ai_provider)
-            .or_else(|| crate::provider_for_url(&self.settings.ai.base_url))
-            .is_some_and(|provider| provider.id == "copilot")
+        // With a panel, AI always goes through it.
+        !kg_brand::has_server()
+            && crate::ai_provider(&self.settings.ai_provider)
+                .or_else(|| crate::provider_for_url(&self.settings.ai.base_url))
+                .is_some_and(|provider| provider.id == "copilot")
     }
 
     pub(crate) fn install_ocr_model(&mut self) -> Result<(), crate::EngineError> {

@@ -91,8 +91,14 @@ pub fn strong_family() -> FontFamily {
 /// egui follows the system theme by default.
 pub fn apply(ctx: &egui::Context) {
     set_fonts(ctx, &crate::i18n::current());
-    ctx.set_visuals_of(Theme::Light, visuals(Visuals::light(), &LIGHT));
-    ctx.set_visuals_of(Theme::Dark, visuals(Visuals::dark(), &DARK));
+    ctx.set_visuals_of(
+        Theme::Light,
+        visuals(Visuals::light(), &palette_of(Theme::Light)),
+    );
+    ctx.set_visuals_of(
+        Theme::Dark,
+        visuals(Visuals::dark(), &palette_of(Theme::Dark)),
+    );
 
     ctx.all_styles_mut(|style| {
         use FontFamily::{Monospace, Proportional};
@@ -252,8 +258,22 @@ fn blend(base: Color32, over: Color32, share: f32) -> Color32 {
 
 /// Palette for the current theme.
 pub fn palette(ctx: &egui::Context) -> Palette {
-    match ctx.theme() {
-        Theme::Light => LIGHT,
-        Theme::Dark => DARK,
+    palette_of(ctx.theme())
+}
+
+/// The palette with the brand's colours (see [`crate::brand`]).
+fn palette_of(theme: Theme) -> Palette {
+    let colors = crate::brand::colors();
+    match theme {
+        Theme::Light => Palette {
+            accent: rgb(colors.accent_light),
+            highlight: rgb(colors.highlight_light),
+            ..LIGHT
+        },
+        Theme::Dark => Palette {
+            accent: rgb(colors.accent_dark),
+            highlight: rgb(colors.highlight_dark),
+            ..DARK
+        },
     }
 }

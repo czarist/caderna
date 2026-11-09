@@ -59,6 +59,10 @@ impl SetupUi {
     }
 
     fn ai_ready(&self) -> bool {
+        // The brand's panel provides the AI.
+        if kg_brand::has_server() {
+            return true;
+        }
         let Some(provider) = self.provider else {
             return false;
         };
@@ -229,7 +233,7 @@ fn language_step(ui: &mut egui::Ui, setup: &mut SetupUi) {
     step_title(ui, &t!("setup.language.title"), &t!("setup.language.hint"));
     let current = i18n::current();
     ui.horizontal_wrapped(|ui| {
-        for locale in i18n::LOCALES {
+        for locale in i18n::offered() {
             let selected = setup.language_chosen && current == locale;
             let label = RichText::new(i18n::language_name(locale)).size(16.0);
             if ui
@@ -286,6 +290,10 @@ fn teacher_step(ui: &mut egui::Ui, engine: &Engine, setup: &mut SetupUi) {
 }
 
 fn ai_step(ui: &mut egui::Ui, engine: &Engine, setup: &mut SetupUi, actions: &mut Actions) {
+    if kg_brand::has_server() {
+        step_title(ui, &t!("setup.ai.title"), &t!("panel.ai_hint"));
+        return;
+    }
     step_title(ui, &t!("setup.ai.title"), &t!("setup.ai.hint"));
 
     ui.horizontal(|ui| {
@@ -840,7 +848,17 @@ fn start(setup: &mut SetupUi, settings: &Settings) {
         draft.student_name.clear();
         draft.teacher = None;
         draft.ai_provider.clear();
-        draft.region = None;
+        // A brand with one region needs no choice.
+        draft.region = match kg_engine::Region::offered().as_slice() {
+            [only] => Some(*only),
+            _ => None,
+        };
+    }
+    // Nor with one language.
+    if let [only] = i18n::offered().collect::<Vec<_>>().as_slice() {
+        i18n::set(only);
+        draft.locale = (*only).to_owned();
+        setup.language_chosen = true;
     }
     setup.draft = Some(draft);
 }
@@ -930,7 +948,7 @@ fn region_select(ui: &mut egui::Ui, setup: &mut SetupUi) {
         .selected_text(selected)
         .width(FIELD_WIDTH)
         .show_ui(ui, |ui| {
-            for region in kg_engine::Region::ALL {
+            for region in kg_engine::Region::offered() {
                 ui.selectable_value(&mut draft.region, Some(region), i18n::region_name(region));
             }
         });
@@ -1031,6 +1049,10 @@ fn finished(setup: &SetupUi) -> Option<Settings> {
         return None;
     }
     let mut settings = setup.draft.clone()?;
+    if kg_brand::has_server() {
+        settings.locale = i18n::current();
+        return Some(settings);
+    }
     let provider = setup.provider?;
     let ai = setup.ai_config()?;
     // Returning students keep their per-task models unless they changed
@@ -1088,7 +1110,26 @@ mod tests {
     }
 
     #[test]
+    fn with_a_panel_the_ai_step_is_already_done() {
+        if !kg_brand::has_server() {
+            return;
+        }
+        let mut setup = ready();
+        setup.provider = None;
+        assert!(setup.step_done(3));
+        let settings = finished(&setup).unwrap();
+        assert_eq!(settings.ai, Settings::default().ai);
+        let mut not_agreed = ready();
+        not_agreed.agreed = false;
+        assert!(finished(&not_agreed).is_none());
+    }
+
+    #[test]
     fn every_step_must_be_done() {
+        // A brand with a panel has no AI choice (see the test below).
+        if kg_brand::has_server() {
+            return;
+        }
         let setup = ready();
         let settings = finished(&setup).unwrap();
         assert_eq!(settings.ai.models.tutor, "glm-5.3");
@@ -1112,6 +1153,10 @@ mod tests {
 
     #[test]
     fn account_services_need_a_sign_in_not_a_key() {
+        // A brand with a panel has no AI choice (see the test below).
+        if kg_brand::has_server() {
+            return;
+        }
         for id in ["copilot", "chatgpt", "claude-code"] {
             let mut setup = SetupUi::default();
             setup.pick_provider(kg_engine::ai_provider(id).unwrap());
@@ -1202,6 +1247,10 @@ mod tests {
 
     #[test]
     fn local_servers_need_no_key() {
+        // A brand with a panel has no AI choice (see the test below).
+        if kg_brand::has_server() {
+            return;
+        }
         let mut setup = ready();
         setup.pick_provider(kg_engine::ai_provider("ollama").unwrap());
         setup.api_key.clear();

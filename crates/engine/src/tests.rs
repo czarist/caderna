@@ -1101,6 +1101,44 @@ fn an_exam_sent_with_its_answer_key_reads_the_key_next() {
     engine.handle(Command::CancelBoard).unwrap();
 }
 
+/// Every language, region and AI service: the default brand. A client brand
+/// may offer fewer (`[locale]`) or bring AI from its panel (`[server]`).
+pub(crate) fn brand_offers_everything() -> bool {
+    kg_brand::LANGUAGES.len() == 5
+        && kg_brand::REGIONS.len() == Region::ALL.len()
+        && !kg_brand::has_server()
+}
+
+#[test]
+fn a_limited_brand_keeps_its_language_and_region() {
+    if brand_offers_everything() {
+        return;
+    }
+    let (mut engine, _dir) = engine();
+    let mut choices = setup_choices(&engine);
+    choices.locale = "xx".into();
+    choices.region = Region::ALL
+        .into_iter()
+        .find(|r| !kg_brand::offers_region(r.id()));
+    if choices.region.is_none() {
+        choices.region = Region::offered().first().copied();
+    }
+    engine
+        .handle(Command::CompleteSetup(Box::new(choices)))
+        .unwrap();
+    let settings = engine.settings();
+    assert!(kg_brand::offers_language(&settings.locale));
+    assert!(
+        settings
+            .region
+            .is_some_and(|r| kg_brand::offers_region(r.id()))
+    );
+    if let [only] = Region::offered().as_slice() {
+        assert_eq!(settings.region, Some(*only));
+        assert!(!engine.needs_setup());
+    }
+}
+
 fn setup_choices(engine: &Engine) -> Settings {
     let mut settings = engine.settings().clone();
     settings.locale = "en".into();
@@ -1115,6 +1153,9 @@ fn setup_choices(engine: &Engine) -> Settings {
 
 #[test]
 fn setup_keeps_existing_plans_and_asks_for_the_tour() {
+    if !brand_offers_everything() {
+        return;
+    }
     let (mut engine, _dir) = engine_with_plan();
     let plans = engine.plans().len();
     assert!(engine.needs_setup(), "settings from before the setup");
@@ -1162,6 +1203,9 @@ fn setup_keeps_existing_plans_and_asks_for_the_tour() {
 
 #[test]
 fn new_terms_ask_for_agreement_again() {
+    if !brand_offers_everything() {
+        return;
+    }
     let (mut engine, _dir) = engine();
     engine
         .handle(Command::CompleteSetup(Box::new(setup_choices(&engine))))
@@ -1177,6 +1221,9 @@ fn new_terms_ask_for_agreement_again() {
 
 #[test]
 fn another_region_asks_for_its_terms_before_the_app_opens() {
+    if !brand_offers_everything() {
+        return;
+    }
     let (mut engine, _dir) = engine();
     engine
         .handle(Command::CompleteSetup(Box::new(setup_choices(&engine))))

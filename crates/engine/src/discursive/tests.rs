@@ -607,6 +607,9 @@ fn deleting_an_attempt_removes_its_photos() {
 
 #[test]
 fn vision_host_is_named_before_photos_are_sent() {
+    if !crate::tests::brand_offers_everything() {
+        return;
+    }
     let (mut engine, _dir) = engine_with(NOTICE);
     assert!(engine.vision_target().is_none());
     engine.settings.ai.models.vision = "gpt-vision".into();
@@ -619,6 +622,9 @@ fn vision_host_is_named_before_photos_are_sent() {
 
 #[test]
 fn copilot_never_uses_external_vision_for_written_answers() {
+    if !crate::tests::brand_offers_everything() {
+        return;
+    }
     let (mut engine, _dir) = engine_with(NOTICE);
     engine.settings.ai_provider = "copilot".into();
     engine.settings.manuscript_ocr = crate::ManuscriptOcr::ExternalVision;

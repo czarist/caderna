@@ -233,7 +233,7 @@ powershell -ExecutionPolicy Bypass -File scripts\package.ps1 -Brand branding\<�
 
 **依品牌的授權與法律文本：** 品牌可以包含 Ed25519 公鑰；客戶的學生隨後可在設定或「示範已結束」畫面啟用授權金鑰（離線驗證，綁定品牌、客戶、席位和日期，不會動到學習資料）。品牌也可以自帶使用條款和隱私權政策、支援連結、老師肖像和貼紙。在品牌的法律和商業審查標記設定之前，銷售用打包不會執行。詳見 [branding/README.md](branding/README.md)，未完成的部分見 [ROADMAP](ROADMAP.md)。出售前請檢查致謝中的授權。
 
-**Caderna**：`branding/caderna` 是第一個客戶品牌：紙張、石墨和橄欖色，獨立的圖示、封面和標誌，14 天試用版和 Ed25519 公鑰。其法律文本仍是草稿（`[legal] reviewed = false`），審查完成前無法打包銷售。執行：`$env:KG_BRAND_DIR = "branding/caderna"; cargo run --release`；每個品牌有自己的資料夾，不會與已安裝的 Know Giver 混在一起。
+**Caderna**：`branding/caderna` 是第一個客戶品牌：紙張、石墨和橄欖色，獨立的圖示、封面和標誌，以及 Ed25519 公鑰。它只在巴西以巴西葡萄牙語提供（`[locale]`），並與管理面板搭配使用：試用和授權都由面板簽發。其法律文本仍是草稿（`[legal] reviewed = false`），審查完成前無法打包銷售。執行：`$env:KG_BRAND_DIR = "branding/caderna"; cargo run --release`；每個品牌有自己的資料夾，不會與已安裝的 Know Giver 混在一起。
 
 **簽發授權**：每個品牌只產生一次金鑰，私鑰絕不進入儲存庫：
 
@@ -242,7 +242,7 @@ cargo run -p kg-engine --example license_issue -- keygen private.pk8 public.txt
 cargo run -p kg-engine --example license_issue -- sign private.pk8 claims.json license.txt
 ```
 
-**CADERNA-DASHBOARD**：一個獨立的 Laravel 和 Filament 專案是 Caderna 的管理面板：在那裡審核客戶，設定每個客戶的顏色、圖片和文字，並以應用程式離線驗證的同一格式簽發試用權杖和授權。它還提供相容 OpenAI 的 AI 閘道，服務商金鑰只保存在伺服器上；可透過 Docker 或本機 PHP 環境執行（[czarist/caderna-dashboard](https://github.com/czarist/caderna-dashboard)）。應用程式目前尚未連線面板：線上啟用、下載品牌和透過面板使用 AI 仍在規劃中（[ROADMAP](ROADMAP.md) 階段 W6），上線前會寫入隱私權政策。
+**CADERNA-DASHBOARD**：一個獨立的 Laravel 和 Filament 專案是 Caderna 的管理面板：在那裡審核客戶，設定每個客戶的顏色、圖片和文字，並以應用程式離線驗證的同一格式簽發試用權杖和授權。它還提供相容 OpenAI 的 AI 閘道，服務商金鑰只保存在伺服器上；可透過 Docker 或本機 PHP 環境執行（[czarist/caderna-dashboard](https://github.com/czarist/caderna-dashboard)）。設定 `[server] url` 後，應用程式會在面板上啟用授權（每台電腦一個席位，7 天有效的裝置權杖保存在作業系統的憑證存放區並自動續期），每小時核對一次，無法連線面板時仍可使用 14 天。它還會下載客戶的名稱、顏色和連結，並透過面板傳送 AI 請求，因此學生不需要 AI 金鑰。面板收到的是授權金鑰、電腦識別碼的雜湊、應用程式版本、作業系統和 AI 請求，從不傳送電腦名稱；Caderna 的隱私權政策也寫明了這一點。詳見 [branding/README.md](branding/README.md)。
 
 ## 開始使用
 

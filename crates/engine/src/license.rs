@@ -107,6 +107,31 @@ impl crate::Engine {
             .and_then(|token| verify(&token, kg_brand::LICENSE_PUBLIC_KEY, kg_brand::SLUG).ok());
     }
 
+    /// The licence key kept on this computer.
+    pub(crate) fn license_key(&self) -> Option<String> {
+        self.store
+            .setting(SETTING)
+            .ok()
+            .flatten()
+            .filter(|key| !key.trim().is_empty())
+    }
+
+    /// Keeps a key the panel accepted (already verified offline).
+    pub(crate) fn store_license(&mut self, key: &str) -> Result<(), LicenseError> {
+        let license = verify(key, kg_brand::LICENSE_PUBLIC_KEY, kg_brand::SLUG)?;
+        self.store.set_setting(SETTING, key.trim())?;
+        self.license = Some(license);
+        Ok(())
+    }
+
+    /// Forgets the licence on this computer (signed out from the panel).
+    pub(crate) fn forget_license(&mut self) {
+        if let Err(err) = self.store.set_setting(SETTING, "") {
+            tracing::warn!(%err, "could not forget the licence key");
+        }
+        self.license = None;
+    }
+
     /// The authenticated claims, including an expired license for renewal display.
     pub fn license(&self) -> Option<&License> {
         self.license.as_ref()
@@ -145,9 +170,22 @@ impl crate::Engine {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use ring::signature::{Ed25519KeyPair, KeyPair};
+
+    /// A licence valid for years around today, for other modules' tests.
+    pub(crate) fn sample_license() -> License {
+        License(Claims {
+            version: 1,
+            id: "sample".into(),
+            brand: kg_brand::SLUG.into(),
+            customer: "School".into(),
+            seats: 1,
+            not_before: NaiveDate::from_ymd_opt(2000, 1, 1).unwrap_or_default(),
+            expires: NaiveDate::from_ymd_opt(2999, 12, 31).unwrap_or_default(),
+        })
+    }
 
     fn signed() -> (String, String, Claims) {
         signed_between(
@@ -230,6 +268,8 @@ mod tests {
         engine
             .activate_checked(&token, &key, "client", today)
             .unwrap();
+        // With a panel the licence must also be confirmed there.
+        engine.confirm_panel_for_test();
         assert_eq!(engine.demo(), DemoStatus::Full);
         assert_eq!(
             engine.store.setting("student_note").unwrap().as_deref(),

@@ -25,6 +25,7 @@ mod practice;
 mod prepare;
 mod progress;
 mod reader;
+mod server;
 mod settings;
 mod setup;
 mod stt;
@@ -97,6 +98,7 @@ pub use practice::{QuizSession, QuizStep, REVIEW_ROUNDS, ReviewSession, ReviewSt
 pub use prepare::{PrepareJob, PrepareRequest, PrepareSummary, slug};
 pub use progress::Milestone;
 pub use reader::{ContentsEntry, ReaderState};
+pub use server::{OFFLINE_GRACE_DAYS, PanelBrand, PanelError, PanelStatus, Refusal};
 pub use settings::{
     DEFAULT_REMINDER_MINUTES, DEFAULT_TURN_PAUSE, ManuscriptOcr, Region, SETUP_VERSION, Settings,
     TERMS_VERSION, TURN_PAUSE_RANGE, TermsAcceptance,
@@ -167,7 +169,12 @@ pub enum Command {
     CloseReview,
 
     SaveSettings(Settings),
+    /// Activates a licence key: offline, or with the brand's panel when it has one.
     ActivateLicense(String),
+    /// Activates this computer with the panel again, with the kept licence key.
+    ReactivateDevice,
+    /// Frees this computer's seat in the panel and forgets the licence here.
+    SignOutDevice,
     TestConnection,
     /// Tests settings not saved yet (first-run setup).
     TestAiConfig(Box<AiConfig>),
@@ -339,6 +346,8 @@ pub enum EngineError {
     #[error(transparent)]
     License(#[from] license::LicenseError),
     #[error(transparent)]
+    Panel(#[from] server::PanelError),
+    #[error(transparent)]
     Study(#[from] StudyError),
     #[error(transparent)]
     Store(#[from] StoreError),
@@ -502,6 +511,13 @@ pub(crate) enum Event {
     },
     UpdateChecked(Result<Option<update::Release>, String>),
     UpdateInstalled(Result<(), String>),
+    /// The panel's answer to activating a licence key on this computer.
+    PanelActivated {
+        key: String,
+        result: Result<server::Activation, server::PanelError>,
+    },
+    PanelChecked(Result<server::CheckIn, server::PanelError>),
+    PanelSignedOut(Result<(), server::PanelError>),
 }
 
 /// Called by workers after sending an event, so the UI wakes up.
@@ -575,6 +591,7 @@ pub struct Engine {
     /// Demonstration limits and clock; `None` in full builds.
     demo: Option<(demo::DemoLimit, demo::DemoClock)>,
     license: Option<license::License>,
+    panel: server::Panel,
 }
 
 impl std::fmt::Debug for Engine {
@@ -609,6 +626,7 @@ impl Engine {
         let mut engine = Self::with_store(store, paths, env_ai, notices);
         engine.start_demo(demo::clock_file());
         engine.load_license();
+        engine.start_panel(server::Vault::System, true);
         Ok(engine)
     }
 
@@ -623,6 +641,19 @@ impl Engine {
 
     /// Whether this is a demonstration build and how long it has left.
     pub fn demo(&self) -> DemoStatus {
+        // With a panel, the licence must also be confirmed there.
+        if kg_brand::has_server() {
+            let usable = self
+                .license
+                .as_ref()
+                .is_some_and(|license| license.valid_on(self.license_day()))
+                && self.panel_allows_use();
+            return if usable {
+                DemoStatus::Full
+            } else {
+                DemoStatus::Expired
+            };
+        }
         if let Some(license) = &self.license {
             return if license.valid_on(self.license_day()) {
                 DemoStatus::Full
@@ -718,6 +749,7 @@ impl Engine {
             next_session_id: 1,
             demo: None,
             license: None,
+            panel: server::Panel::default(),
         };
         engine.restore_chatgpt_session();
         engine.recover_writing();
@@ -972,7 +1004,16 @@ impl Engine {
 
             Command::SaveSettings(settings) => self.save_settings(settings),
             Command::ActivateLicense(token) => {
-                self.activate_license(&token).map_err(EngineError::from)
+                if kg_brand::has_server() {
+                    self.activate_online(&token)
+                } else {
+                    self.activate_license(&token).map_err(EngineError::from)
+                }
+            }
+            Command::ReactivateDevice => self.reactivate_device(),
+            Command::SignOutDevice => {
+                self.sign_out_device();
+                Ok(())
             }
             Command::InstallOcrModel => self.install_ocr_model(),
             Command::CancelOcrModelDownload => {
@@ -1196,6 +1237,12 @@ impl Engine {
                 Event::EditalRevalidated { plan, result } => {
                     self.on_edital_revalidated(plan, result)
                 }
+                Event::PanelActivated { key, result } => self.on_panel_activated(&key, result),
+                Event::PanelChecked(result) => {
+                    self.on_panel_checked(result);
+                    Ok(())
+                }
+                Event::PanelSignedOut(result) => self.on_panel_signed_out(result),
             };
             if let Err(err) = result {
                 tracing::warn!(%err, "background task failed");
@@ -1204,6 +1251,7 @@ impl Engine {
         }
         self.tick_lesson();
         self.tick_reader();
+        self.tick_panel();
     }
 
     fn save_settings(&mut self, mut settings: Settings) -> Result<(), EngineError> {
@@ -1227,7 +1275,17 @@ impl Engine {
     }
 
     fn test_connection(&mut self) {
-        self.test_config(self.settings.ai.clone());
+        self.test_config(self.ai_config());
+    }
+
+    /// The AI service in use: the brand's panel when it has one, otherwise
+    /// the student's choice.
+    pub fn ai_config(&self) -> AiConfig {
+        if kg_brand::has_server() {
+            self.panel_ai(&self.settings.ai)
+        } else {
+            self.settings.ai.clone()
+        }
     }
 
     fn test_config(&mut self, config: AiConfig) {
@@ -1273,7 +1331,7 @@ impl Engine {
     }
 
     pub(crate) fn ai_client(&self) -> kg_ai::Client {
-        kg_ai::Client::new(self.settings.ai.clone())
+        kg_ai::Client::new(self.ai_config())
             .with_language(self.prompt_language())
             .with_culture(
                 self.settings

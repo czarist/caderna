@@ -37,6 +37,8 @@ The user uploads an exam notice (edital PDF), the AI generates a study plan and 
 - Demonstration limits live in engine `demo.rs`; the expired screen keeps study data and shows only the contact link.
 - Release asset names follow the brand's `data_dir` (`<data_dir>-setup.exe`, …); the updater, installer (`packaging/windows/know-giver.iss`) and `scripts/package.ps1 -Brand` read the same brand.
 - Legal texts in `docs/legal/` are not branded yet (ROADMAP Phase W2); do not ship a client build without texts reviewed for that client.
+- `[locale]` in a brand limits its languages and regions; its legal folder then holds only those languages (Caderna: pt-BR and Brazil only, by the owner's decision). The base app and `locales/*.yml` still cover all five languages.
+- `[server]` connects a brand to its panel (CADERNA-DASHBOARD): online licence activation, the downloaded brand and AI through the panel (engine `server.rs`). What the panel receives must stay listed in that brand's privacy policy; never send the computer's name.
 
 ## Rules
 - Do not mix business logic into the UI

@@ -1,29 +1,24 @@
 # Termos de Uso do {{app}}
 
-Rascunho para revisão do cliente. Prestadora do serviço aos alunos: {{provider}}. Licenciadora do software: {{licensor}}. Contato da prestadora: {{contact}}. A prestadora responde pelo atendimento e pelo tratamento de dados que realizar fora do aplicativo; esses tratamentos devem ser descritos em sua própria política. O software local não envia dados de estudo à licenciadora. A licença comercial não altera as licenças de código aberto dos componentes. Este texto deve ser adaptado ao contrato e à região antes da distribuição.
+Rascunho para revisão do cliente. Prestadora do serviço aos alunos: {{provider}}. Licenciadora do software: {{licensor}}. Contato da prestadora: {{contact}}. Este texto deve ser revisado com o contrato entre a prestadora e a licenciadora antes da distribuição.
 
-Versão de 8 de novembro de 2026 ({{version}}). Esta é a versão para quem usa o
-aplicativo no Brasil.
+Versão de 9 de novembro de 2026 ({{version}}). O {{app}} é oferecido apenas no Brasil.
 
 ## 1. Quem somos
 
-O {{app}} é desenvolvido por {{licensor}}, CNPJ
-36.154.590/0001-54 ("{{licensor}}", "nós"). Contato: {{contact}}.
+O {{app}} é oferecido aos alunos por {{provider}} ("{{company}}", "nós"). Contato:
+{{contact}}. O software é desenvolvido e licenciado à {{company}} por {{licensor}}.
 
 ## 2. O que é o {{app}}
 
 O {{app}} é um aplicativo de estudo instalado no seu computador. Ele lê o edital que você
 envia, monta um plano de estudo e oferece aulas por voz, quizzes, revisões, apostilas e
-correção formativa de respostas discursivas. O código é aberto e está disponível sob a
-licença MIT ou a Apache 2.0, à sua escolha.
+correção formativa de respostas discursivas.
 
 ## 3. Onde o aplicativo é oferecido
 
-O {{app}} é oferecido ao público no Brasil, nos Estados Unidos, na União Europeia, no
-Reino Unido, no Japão, em Taiwan, em Hong Kong e em Singapura. Em qualquer outro país ou
-região, ele não é oferecido ao público: o uso é restrito a parceiros autorizados pela
-{{licensor}} por acordo escrito, segundo os Termos de Acesso de Parceiros. Você informa o país
-ou região no aplicativo, e os termos dessa região se aplicam.
+O {{app}} é oferecido apenas no Brasil e em português do Brasil. Estes Termos seguem as
+leis brasileiras.
 
 ## 4. Aceite
 
@@ -31,27 +26,24 @@ Ao marcar "Li e concordo" e usar o aplicativo, você aceita estes Termos e a Pol
 Privacidade. Se não concordar, não use o aplicativo. Quando estes Termos mudarem, o
 aplicativo pedirá um novo aceite.
 
-## 5. Sua chave de IA e o fornecedor que você escolhe
+## 5. Licença, ativação e a IA incluída
 
-- O {{app}} funciona com um serviço de inteligência artificial escolhido por você (por
-  exemplo Z.ai, Anthropic, OpenAI, Google ou um servidor local). Você usa a sua própria
-  chave de API.
-- A relação com esse fornecedor é direta entre você e ele: os preços, limites, regras de
-  uso e o tratamento de dados seguem os termos dele. Os custos de uso da chave são cobrados
-  pelo fornecedor, não pela {{licensor}}.
-- Você é responsável por guardar a sua chave e pelo uso feito com ela.
-- No GitHub Copilot, o login é feito pela conta GitHub no Copilot CLI oficial, sem chave
-  de API no {{app}}. O CLI normalmente guarda as credenciais no chaveiro do sistema
-  operacional; se ele estiver indisponível, pode recorrer a um arquivo de configuração
-  sem criptografia (`~/.copilot/config.json`). O {{app}} não as guarda no banco. A
-  disponibilidade e o uso dependem dos termos e do plano da sua conta GitHub Copilot.
-- No ChatGPT, você entra pela página da OpenAI ("Sign in with ChatGPT"), sem chave de
-  API. O uso segue os termos e os limites do seu plano do ChatGPT.
-- No Claude, o {{app}} executa o Claude Code oficial da Anthropic, sem modificações,
-  com a sua própria conta Claude e sem chave de API. O uso segue os termos da Anthropic e
-  os limites da sua assinatura Claude.
-- O {{app}} não é afiliado à OpenAI, à Anthropic nem ao GitHub, nem é endossado por
-  eles.
+- O uso do {{app}} depende de uma **licença** ou de uma **avaliação** fornecida pela
+  {{company}}, com prazo de validade e número de vagas (computadores).
+- Ao colar a chave no aplicativo, ele a confere neste computador e no **painel da
+  {{company}}**, que reserva uma vaga da licença para este computador. A chave é pessoal ou
+  da sua instituição: não a compartilhe além das vagas contratadas.
+- O {{app}} confirma a licença com o painel ao abrir e a cada hora. **Sem internet, ele
+  funciona por até 14 dias** desde o último contato; depois, pede uma conexão para
+  continuar. Seus estudos ficam guardados.
+- A {{company}} pode desconectar ou bloquear um computador no painel, por exemplo para
+  liberar uma vaga ou em caso de uso indevido. Você pode liberar a vaga deste computador em
+  Configurações → "Desconectar este computador".
+- A **inteligência artificial vem do painel**, incluída na licença, com um fornecedor de IA
+  contratado pela {{company}}. Não é preciso chave nem conta de IA. A licença pode ter uma
+  cota de uso de IA; ao atingir a cota, as tarefas de IA param até a renovação.
+- Quando a licença ou a avaliação termina, as funções do aplicativo param, mas os seus
+  estudos continuam guardados no computador.
 
 ## 6. A inteligência artificial pode errar
 
@@ -60,9 +52,9 @@ aplicativo pedirá um novo aceite.
   artificial e **podem conter erros**: informações incorretas, desatualizadas ou
   incompletas, leitura errada do edital ou da sua letra, e avaliações diferentes das de
   uma banca.
-- **A qualidade depende dos limites da IA que você escolheu**: capacidade do modelo,
+- **A qualidade depende dos limites da IA usada pela {{company}}**: capacidade do modelo,
   tamanho de contexto, desempenho em português, leitura de imagens, limites de uso e
-  disponibilidade do serviço. Modelos mais simples ou mais baratos tendem a errar mais.
+  disponibilidade do serviço.
 - O aplicativo confere parte das respostas da IA (por exemplo, citações e somas das
   notas), mas essas verificações não eliminam todos os erros.
 - Confira sempre o edital oficial, a legislação e as fontes oficiais. As notas das
@@ -74,51 +66,53 @@ aplicativo pedirá um novo aceite.
 - Use o {{app}} para estudo. Envie apenas arquivos que você tem o direito de usar
   (editais, provas anteriores, materiais e fotos das suas próprias respostas).
 - Respeite os direitos autorais de provas, apostilas e outros materiais de terceiros.
-- Não use o aplicativo para violar a lei, os direitos de outras pessoas ou as regras do
-  fornecedor de IA.
+- Não use o aplicativo para violar a lei ou os direitos de outras pessoas, não tente
+  contornar a licença, as vagas ou a cota de IA e não use a IA do painel para outros fins.
 
 ## 8. Seu conteúdo
 
 Seus arquivos, planos, anotações e respostas continuam seus. Eles ficam no seu computador.
-Uma parte do conteúdo é enviada ao fornecedor de IA que você configurou, apenas o
+Uma parte do conteúdo passa pelo painel da {{company}} até o fornecedor de IA, apenas o
 necessário para cada tarefa, como explica a Política de Privacidade.
 
 ## 9. Serviços e conteúdos de terceiros
 
-O aplicativo pode acessar serviços de terceiros: o fornecedor de IA escolhido, a Wikipédia
-(imagens do quadro), o GitHub (para procurar e baixar novas versões), sites de onde baixa modelos de voz e de reconhecimento de fala, e um
-serviço de voz na nuvem, se você ativar. Vozes, fontes e imagens de terceiros têm licenças
-próprias. A voz Dii, por exemplo, é só para uso pessoal e não comercial. A {{licensor}} não
-controla esses serviços e não responde por eles.
+O aplicativo pode acessar serviços de terceiros: a Wikipédia (imagens do quadro), o GitHub
+(para procurar e baixar novas versões), sites de onde baixa modelos de voz e de
+reconhecimento de fala, e um serviço de voz na nuvem, se você ativar. Vozes, fontes e
+imagens de terceiros têm licenças próprias. A voz Dii, por exemplo, é só para uso pessoal e
+não comercial. A {{company}} e a {{licensor}} não controlam esses serviços e não
+respondem por eles.
 
 O OCR local usa o PaddleOCR-VL pelo runtime `llama-server` do [llama.cpp](https://github.com/ggml-org/llama.cpp),
 versão 0.8.0, licenciado sob MIT e incluído no pacote do aplicativo. Os pacotes para
 Windows e Linux incluem uma versão com Vulkan: o app usa uma GPU compatível quando
 disponível e volta para CPU se não encontrar um dispositivo ou se a inicialização da GPU
 falhar. No macOS, usa CPU. O Vulkan usa o driver da GPU instalado no computador; o runtime
-e o backend Vulkan não enviam fotos de OCR à {{licensor}} nem a fornecedores.
+e o backend Vulkan não enviam fotos de OCR ao painel, à {{licensor}} nem a fornecedores.
 
 ## 10. Licença do software
 
-O código do {{app}} é licenciado sob a MIT ou a Apache 2.0, à sua escolha. Os textos
-dessas licenças prevalecem sobre estes Termos no que diz respeito ao código. O nome Know
-Giver e a arte do aplicativo não são licenciados como marca.
+O {{app}} é licenciado à {{company}} por {{licensor}}; você recebe o direito de usá-lo
+enquanto a sua licença ou avaliação estiver válida. Componentes de código aberto incluídos
+no aplicativo mantêm as suas próprias licenças, que prevalecem sobre estes Termos no que diz
+respeito a esses componentes.
 
 ## 11. Garantias e responsabilidade
 
-- O aplicativo é oferecido gratuitamente, no estado em que se encontra. Não garantimos que
-  funcione sem falhas, que esteja sempre disponível nem que você será aprovado em qualquer
-  prova.
-- Na máxima extensão permitida pela lei, a {{licensor}} não responde por danos indiretos, por
-  custos cobrados pelo fornecedor de IA, por decisões tomadas com base em respostas da IA
-  nem por perda de dados mantidos no seu computador. Faça cópias de segurança.
+- O aplicativo é oferecido no estado em que se encontra. Não garantimos que funcione sem
+  falhas, que o painel ou a IA estejam sempre disponíveis nem que você será aprovado em
+  qualquer prova.
+- Na máxima extensão permitida pela lei, a {{company}} e a {{licensor}} não respondem por
+  danos indiretos, por decisões tomadas com base em respostas da IA nem por perda de dados
+  mantidos no seu computador. Faça cópias de segurança.
 - Nada nestes Termos afasta direitos que a lei garante e que não podem ser renunciados,
   inclusive os previstos no Código de Defesa do Consumidor.
 
 ## 12. Menores de idade
 
 Menores de 18 anos devem usar o aplicativo com o conhecimento e o consentimento dos pais ou
-responsáveis, que também respondem pela escolha do fornecedor de IA e pela chave usada.
+responsáveis.
 
 ## 13. Alterações
 
@@ -128,7 +122,7 @@ novo aceite antes de continuar.
 ## 14. Lei aplicável e foro
 
 Estes Termos seguem as leis do Brasil. Fica eleito o foro do domicílio do usuário, quando
-consumidor, ou, nos demais casos, o foro da sede da {{licensor}}.
+consumidor, ou, nos demais casos, o foro da sede da {{company}}.
 
 ## 15. Contato
 
