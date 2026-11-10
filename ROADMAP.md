@@ -126,8 +126,9 @@ A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
 - [x] Panel: charges. The admins bill a client for anything; the client pays in its area by
       Pix or credit card (up to 3 instalments without interest) through Asaas, with the
       Asaas webhook and Caderna-themed emails.
-- [ ] Charges: a card payment approved on the Asaas sandbox, then the production key and
-      webhook token before the first real charge.
+- [x] Charges tested on the Asaas sandbox: Pix, card in 3 instalments, refusal, webhook,
+      cancelling.
+- [ ] Charges: the production Asaas key and webhook token before the first real charge.
 - [ ] The online panel's `https://` address in `[server] url` of `branding/caderna/brand.toml`
       (or `KG_SERVER_URL` in CI) before the first Caderna release.
 
