@@ -1285,6 +1285,7 @@ mod tests {
             exam: "Exam".into(),
             weeks: 4,
             created_on: day(1),
+            purpose: String::new(),
             subjects: vec![Subject {
                 id: SubjectId(1),
                 name: "Subject".into(),

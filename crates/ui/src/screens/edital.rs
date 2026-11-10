@@ -1,7 +1,7 @@
 //! Edital import, plan generation and the list of saved plans.
 
 use egui::RichText;
-use kg_engine::{Command, Edital, Engine, ImportState, PlanPrefs, PlanSummary};
+use kg_engine::{Command, Edital, Engine, ExamPurpose, ImportState, PlanPrefs, PlanSummary};
 
 use super::Actions;
 use crate::app::{KnowGiverApp, Screen};
@@ -15,55 +15,61 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
     let state = &mut app.ui;
     widgets::header(ui, &t!("edital.title"), &t!("edital.subtitle"));
 
+    let creates_plans = engine.role().creates_plans();
     egui::ScrollArea::vertical().show(ui, |ui| {
-        match engine.import_state() {
-            ImportState::Extracting { file } => {
-                widgets::card(ui, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.spinner();
-                        ui.label(t!("edital.extracting", file = file));
+        if !creates_plans {
+            student_card(ui, engine, &mut actions);
+        } else {
+            match engine.import_state() {
+                ImportState::Extracting { file } => {
+                    widgets::card(ui, |ui| {
+                        ui.horizontal(|ui| {
+                            ui.spinner();
+                            ui.label(t!("edital.extracting", file = file));
+                        });
                     });
-                });
-            }
-            ImportState::Ready(edital) => match engine.generating_since() {
-                Some(started) => {
-                    let detail = t!("edital.generating", seconds = started.elapsed().as_secs());
-                    let note = if state.prepare_all {
-                        t!("edital.generating_then_prepare")
-                    } else {
-                        t!("edital.generating_note")
-                    };
-                    working::panel(
+                }
+                ImportState::Ready(edital) => match engine.generating_since() {
+                    Some(started) => {
+                        let detail = t!("edital.generating", seconds = started.elapsed().as_secs());
+                        let note = if state.prepare_all {
+                            t!("edital.generating_then_prepare")
+                        } else {
+                            t!("edital.generating_note")
+                        };
+                        working::panel(
+                            ui,
+                            engine,
+                            &working::Working {
+                                title: &t!("edital.generating_title"),
+                                detail: &detail,
+                                note: &note,
+                                progress: None,
+                            },
+                            |_| {},
+                        );
+                    }
+                    None => ready_card(
                         ui,
                         engine,
-                        &working::Working {
-                            title: &t!("edital.generating_title"),
-                            detail: &detail,
-                            note: &note,
-                            progress: None,
-                        },
-                        |_| {},
-                    );
+                        edital,
+                        &mut state.prefs,
+                        &mut state.prepare_all,
+                        &mut state.purpose_chosen,
+                        &mut actions,
+                    ),
+                },
+                ImportState::Empty | ImportState::Failed => {
+                    widgets::card(ui, |ui| {
+                        widgets::hint(ui, &t!("edital.empty"));
+                        ui.add_space(4.0);
+                        if widgets::primary_button(ui, &t!("edital.select_pdf")).clicked()
+                            && let Some(path) = pick_pdf()
+                        {
+                            actions.send(Command::ImportEdital(path));
+                        }
+                    });
                 }
-                None => ready_card(
-                    ui,
-                    engine,
-                    edital,
-                    &mut state.prefs,
-                    &mut state.prepare_all,
-                    &mut actions,
-                ),
-            },
-            ImportState::Empty | ImportState::Failed => {
-                widgets::card(ui, |ui| {
-                    widgets::hint(ui, &t!("edital.empty"));
-                    ui.add_space(4.0);
-                    if widgets::primary_button(ui, &t!("edital.select_pdf")).clicked()
-                        && let Some(path) = pick_pdf()
-                    {
-                        actions.send(Command::ImportEdital(path));
-                    }
-                });
             }
         }
 
@@ -76,9 +82,9 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
         for summary in engine.plans() {
             plan_row(
                 ui,
+                engine,
                 summary,
                 active == Some(summary.id),
-                engine.revalidating(),
                 &mut state.confirm_delete,
                 &mut actions,
             );
@@ -93,6 +99,7 @@ fn ready_card(
     edital: &Edital,
     prefs: &mut PlanPrefs,
     prepare_all: &mut bool,
+    purpose_chosen: &mut bool,
     actions: &mut Actions,
 ) {
     widgets::card(ui, |ui| {
@@ -116,6 +123,8 @@ fn ready_card(
                     });
             });
 
+        ui.add_space(8.0);
+        purpose_picker(ui, &mut prefs.purpose, purpose_chosen);
         ui.add_space(8.0);
         let roles = engine.edital_roles();
         let choose_role = roles.len() >= 2;
@@ -171,14 +180,17 @@ fn ready_card(
         let role_chosen = !choose_role || roles.iter().any(|r| r.name == prefs.role);
         ui.horizontal(|ui| {
             let generate = ui
-                .add_enabled_ui(role_chosen, |ui| {
+                .add_enabled_ui(role_chosen && *purpose_chosen, |ui| {
                     widgets::primary_button(ui, &t!("edital.generate"))
                 })
                 .inner;
-            if !role_chosen {
+            if !*purpose_chosen {
+                widgets::hint(ui, &t!("edital.pick_purpose_first"));
+            } else if !role_chosen {
                 widgets::hint(ui, &t!("edital.pick_role_first"));
             }
             if generate.clicked() {
+                *purpose_chosen = false;
                 actions.send(Command::GeneratePlan(prefs.clone()));
                 if *prepare_all {
                     actions.send(Command::PrepareContent(super::handout::prepare_request()));
@@ -190,6 +202,50 @@ fn ready_card(
                 actions.send(Command::ImportEdital(path));
             }
         });
+    });
+}
+
+/// Students do not create plans: their classrooms give them.
+fn student_card(ui: &mut egui::Ui, engine: &Engine, actions: &mut Actions) {
+    widgets::card(ui, |ui| {
+        ui.label(RichText::new(t!("classes.student_title")).strong());
+        widgets::hint(ui, &t!("classes.student_note"));
+        ui.add_space(6.0);
+        ui.horizontal(|ui| {
+            if engine.syncing_classes() {
+                ui.spinner();
+                widgets::hint(ui, &t!("classes.syncing"));
+            } else if ui.button(t!("classes.sync_now")).clicked() {
+                actions.send(Command::SyncClasses);
+            }
+            if let Some(at) = engine.last_class_sync() {
+                widgets::hint(
+                    ui,
+                    &t!(
+                        "classes.last_sync",
+                        date = i18n::date(at.with_timezone(&chrono::Local).date_naive())
+                    ),
+                );
+            }
+        });
+    });
+}
+
+/// What the plan prepares for; the prompts adapt to it. Asked every time.
+fn purpose_picker(ui: &mut egui::Ui, purpose: &mut ExamPurpose, chosen: &mut bool) {
+    ui.label(RichText::new(t!("edital.purpose_title")).strong());
+    widgets::hint(ui, &t!("edital.purpose_hint"));
+    ui.horizontal_wrapped(|ui| {
+        for option in ExamPurpose::ALL {
+            let selected = *chosen && *purpose == option;
+            if ui
+                .selectable_label(selected, i18n::purpose_name(option))
+                .clicked()
+            {
+                *purpose = option;
+                *chosen = true;
+            }
+        }
     });
 }
 
@@ -218,12 +274,15 @@ fn role_picker(ui: &mut egui::Ui, roles: &[kg_engine::Role], chosen: &mut String
 
 fn plan_row(
     ui: &mut egui::Ui,
+    engine: &Engine,
     summary: &PlanSummary,
     is_active: bool,
-    revalidating: Option<kg_engine::PlanId>,
     confirm_delete: &mut Option<kg_engine::PlanId>,
     actions: &mut Actions,
 ) {
+    let revalidating = engine.revalidating();
+    let creates_plans = engine.role().creates_plans();
+    let course = engine.course_link(summary.id);
     let p = theme::palette(ui.ctx());
     widgets::card(ui, |ui| {
         ui.horizontal(|ui| {
@@ -232,6 +291,13 @@ fn plan_row(
                     ui.label(RichText::new(&summary.title).strong());
                     if is_active {
                         widgets::chip(ui, &t!("edital.active"), p.accent);
+                    }
+                    match course {
+                        Some(link) if link.assigned => {
+                            widgets::chip(ui, &t!("classes.from_teacher"), p.muted);
+                        }
+                        Some(_) => widgets::chip(ui, &t!("classes.published_short"), p.muted),
+                        None => {}
                     }
                 });
                 if !summary.exam.is_empty() {
@@ -249,14 +315,16 @@ fn plan_row(
                 );
             });
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.button(t!("edital.delete")).clicked() {
+                if creates_plans && ui.button(t!("edital.delete")).clicked() {
                     *confirm_delete = Some(summary.id);
                 }
                 if ui.button(t!("edital.open")).clicked() {
                     actions.send(Command::SelectPlan(summary.id));
                     actions.go_to(Screen::Plan);
                 }
-                if revalidating == Some(summary.id) {
+                if !creates_plans {
+                    // Students use the plan as their teacher made it.
+                } else if revalidating == Some(summary.id) {
                     ui.spinner();
                 } else if ui
                     .add_enabled(

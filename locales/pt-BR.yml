@@ -103,6 +103,7 @@ demo:
   expired_body: "O período de demonstração do %{app} acabou. Seus planos e seu progresso continuam salvos neste computador e voltam com a versão completa."
   contact: "Falar com %{company}"
 nav:
+  classes: "Turmas"
   mock: "Simulados"
   discursive: "Discursivas"
   preparing: "%{done}/%{total}"
@@ -141,6 +142,9 @@ grade:
   easy: "Fácil"
 
 edital:
+  pick_purpose_first: "Escolha a finalidade para gerar o plano."
+  purpose_hint: "O plano, as apostilas, as aulas e as questões se adaptam à finalidade."
+  purpose_title: "Para qual prova é este plano?"
   revalidate: "Reler o programa"
   revalidate_hint: "Lê de novo o programa da prova (um PDF novo ou retificado) para este plano. Tópicos, progresso, apostilas e discursivas continuam como estão."
   title: "Programa da prova"
@@ -514,6 +518,9 @@ update:
   downloading: "Baixando a versão %{version}… %{percent}%"
   installing: "Instalando a versão %{version}. O app vai fechar e abrir de novo."
 tour:
+  classes:
+    title: "Turmas"
+    text: "Escolha um plano e as turmas que o recebem. Aqui você também vê como cada aluno está indo."
   mock:
     title: "Simulados"
     text: "Uma prova inteira no formato da sua, com tempo marcado. Faça na tela ou imprima com cartão-resposta e folha de redação."
@@ -618,6 +625,7 @@ handout:
   pdf_filter: "Documento PDF"
   generated: "Gerada em %{date}"
   label:
+    references: "Referências bibliográficas"
     handout: "Apostila"
     contents: "Sumário"
     key_points: "Pontos-chave"
@@ -801,6 +809,8 @@ working:
   minutes: "%{minutes} min"
 
 notice:
+  courses_updated: "%{count} curso(s) novo(s) ou atualizado(s) da sua turma."
+  plan_published: "Plano publicado para %{count} turma(s)."
   exam_format_read: "Formato da prova lido do programa. Confira os números antes de gerar."
   exam_format_missing: "O programa não diz quantas questões a prova tem por matéria. Ajuste o formato à mão."
   mock_created: "Simulado pronto. Faça na tela ou imprima."
@@ -1517,3 +1527,47 @@ modules:
   locked_body: "%{module} não faz parte da sua licença. Fale com %{company} para liberar."
   contact: "Falar com %{company}"
   disabled: "%{module} não está incluído no seu plano. Fale com %{company} para liberar."
+
+purpose:
+  national_exam: "ENEM"
+  university_entrance: "Vestibular"
+  civil_service: "Concurso público"
+  professional: "OAB ou certificação"
+  general: "Outra prova"
+
+classes:
+  title: "Turmas"
+  subtitle: "Publique planos para as turmas e acompanhe os alunos"
+  teachers_only: "Só professores criam planos e conteúdos. Seus planos chegam pela sua turma."
+  panel_offline: "Sem conexão com o painel. Confira a internet e tente de novo."
+  classrooms: "Suas turmas"
+  refresh: "Atualizar"
+  not_loaded: "As turmas ainda não foram carregadas. Confira a conexão e clique em Atualizar."
+  no_classrooms: "Nenhuma turma ainda. A escola cria as turmas e coloca os alunos na área do cliente do painel."
+  publish_title: "Publicar plano para turmas"
+  publish_hint: "Os alunos recebem o plano com as apostilas e questões já prontas e não podem mudá-lo."
+  no_plans: "Crie um plano em Programa para publicar."
+  published: "Publicado · versão %{version}"
+  published_short: "Publicado"
+  publish_note: "Publicar de novo envia a versão atual; o progresso dos alunos nos tópicos que continuam é mantido. Prepare as apostilas antes, para os alunos não gastarem IA."
+  publishing: "Publicando…"
+  publish: "Publicar"
+  classroom_header: "%{name} · %{count} aluno(s)"
+  no_students: "Nenhum aluno nesta turma."
+  no_courses: "Esta turma ainda não recebeu nenhum plano."
+  time: "%{hours} h %{minutes} min"
+  course_number: "Curso %{number}"
+  from_teacher: "Da sua turma"
+  student_title: "Seus planos vêm da sua turma"
+  student_note: "Seu professor escolhe o que você estuda. Aulas, quizzes e apostilas ficam aqui, e seu progresso fica salvo na nuvem: em outro computador, ele volta."
+  syncing: "Sincronizando…"
+  sync_now: "Sincronizar agora"
+  last_sync: "Última sincronização: %{date}"
+  col:
+    student: "Aluno"
+    course: "Plano"
+    topics: "Tópicos dominados"
+    quizzes: "Acertos"
+    lessons: "Aulas"
+    time: "Tempo de estudo"
+    last: "Última atividade"

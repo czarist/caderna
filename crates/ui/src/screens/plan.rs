@@ -142,10 +142,11 @@ fn handout_bar(
         None => {
             ui.add(Icon::Handout.image(18.0, p.accent));
             ask.button(ui, &t!("plan.handout_all"), HandoutScope::Plan, true);
-            if ui
-                .button(t!("plan.prepare_all"))
-                .on_hover_text(t!("plan.prepare_all_hint"))
-                .clicked()
+            if engine.role().creates_plans()
+                && ui
+                    .button(t!("plan.prepare_all"))
+                    .on_hover_text(t!("plan.prepare_all_hint"))
+                    .clicked()
             {
                 actions.send(Command::PrepareContent(handout::prepare_request()));
             }

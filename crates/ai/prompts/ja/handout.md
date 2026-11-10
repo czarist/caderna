@@ -21,7 +21,8 @@
 - "pitfalls"：出題機関のよくあるひっかけを3〜5個、それぞれ一文で説明。
 - "summary"：要点をまとめた4〜6文。
 - "exercises"：出題機関のスタイルの選択式問題をちょうど5問。それぞれ選択肢4つで正解は1つ。選択肢を記号で始めないこと。"correct" は正解の番号で0から数える。"explanation" は正解が正しい理由を最大80字程度で、選択肢の記号ではなく内容を引用して述べる。
+- "references"：内容の根拠となる実在の参考文献を2〜5件。学習者の国で一般的な書式で書く。法令や公的資料（番号と年を付ける）、広く知られた教科書や参考書を優先する。著者と書名が確かに実在すると確信できる文献だけを挙げ、ページ、版、URL、DOI を作らないこと。迷うときは少なく挙げる。
 - Markdownや装飾は使わず、JSONの中はプレーンテキストだけにすること。
 
 有効なJSONだけで答え、前後に文章を書かないこと。形式：
-{"introduction": "...", "sections": [{"heading": "...", "paragraphs": ["..."], "key_points": ["..."], "image": ""}], "examples": ["..."], "pitfalls": ["..."], "summary": ["..."], "exercises": [{"prompt": "...", "options": ["...", "...", "...", "..."], "correct": 0, "explanation": "..."}]}
+{"introduction": "...", "sections": [{"heading": "...", "paragraphs": ["..."], "key_points": ["..."], "image": ""}], "examples": ["..."], "pitfalls": ["..."], "summary": ["..."], "references": ["..."], "exercises": [{"prompt": "...", "options": ["...", "...", "...", "..."], "correct": 0, "explanation": "..."}]}

@@ -605,6 +605,7 @@ fn reader_snapshots(
         answers: tr("Gabarito comentado", "Answer key").into(),
         picture_source: tr("Imagem: Wikipédia", "Picture: Wikipedia").into(),
         answer_grid: tr("Respostas rápidas", "Quick answers").into(),
+        references: tr("Referências bibliográficas", "References").into(),
         demonstration: String::new(),
     };
     // The paragraph highlighted in the reader.

@@ -12,6 +12,7 @@ use crate::AiError;
 use crate::config::{AiConfig, PromptLanguage, Task};
 use crate::culture::ExamCulture;
 use crate::providers::{Quirks, parse_model_list};
+use crate::purpose::ExamPurpose;
 use crate::throttle::{self, MAX_ATTEMPTS, Throttle};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -74,6 +75,8 @@ pub struct Client {
     language: PromptLanguage,
     /// The student's exam culture, added to teaching tasks.
     culture: Option<ExamCulture>,
+    /// What the plan prepares for, added after the culture.
+    purpose: Option<ExamPurpose>,
 }
 
 #[derive(Deserialize)]
@@ -120,12 +123,19 @@ impl Client {
             throttle: None,
             language: PromptLanguage::default(),
             culture: None,
+            purpose: None,
         }
     }
 
     /// Teaching tasks run with this client follow `culture`.
     pub fn with_culture(mut self, culture: Option<ExamCulture>) -> Self {
         self.culture = culture;
+        self
+    }
+
+    /// Teaching tasks run with this client aim at `purpose`.
+    pub fn with_purpose(mut self, purpose: Option<ExamPurpose>) -> Self {
+        self.purpose = purpose;
         self
     }
 
@@ -140,6 +150,10 @@ impl Client {
         if let Some(culture) = self.culture {
             content.push_str("\n\n");
             content.push_str(culture.note(self.language));
+        }
+        if let Some(purpose) = self.purpose {
+            content.push_str("\n\n");
+            content.push_str(purpose.note(self.language));
         }
         ChatMessage::system(content)
     }

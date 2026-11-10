@@ -3,7 +3,7 @@
 Para: advogado(a) que revisará os Termos de Uso e a Política de Privacidade do Caderna, e
 para a prestadora (Caderna Educação), que precisa tomar as decisões de negócio marcadas abaixo.
 
-Textos em revisão (versão `2026-11-09.3`):
+Textos em revisão (versão `2026-11-10.1`):
 
 - `terms-of-use.pt-BR.md` (Termos de Uso)
 - `privacy-policy.pt-BR.md` (Política de Privacidade)
@@ -15,6 +15,18 @@ e pede um novo aceite sempre que a versão muda.
 
 O Caderna é oferecido só no Brasil e só em português do Brasil. Não há versões em outros
 idiomas ou regiões.
+
+## Novidades da versão 2026-11-10.1 (turmas, nuvem e base comum)
+
+- Professores e alunos cadastrados pela escola: o painel guarda os planos publicados e o
+  progresso de cada aluno, visível aos professores da escola. Revisar a base legal
+  (execução de contrato com a escola ou com o aluno), o papel da escola (controladora ou
+  operadora quanto ao progresso dos alunos) e o consentimento de responsáveis para menores.
+- Base comum entre escolas: materiais feitos pela IA (sem dados pessoais) ficam no painel e
+  são reaproveitados por todas as escolas. Decidir se o contrato com as escolas precisa
+  prever esse compartilhamento e quem responde por material errado.
+- Referências bibliográficas nas apostilas, sugeridas e conferidas pela IA, com aviso nos
+  Termos de que podem estar erradas.
 
 ## 1. O que o app faz com dados (fatos técnicos)
 

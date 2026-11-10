@@ -36,6 +36,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             weeks: 6,
             hours_per_week: 10,
             role: String::new(),
+            purpose: Default::default(),
         },
     )?;
     println!("plan ({:?}): {} / {}", t.elapsed(), plan.title, plan.exam);

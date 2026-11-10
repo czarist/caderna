@@ -28,6 +28,7 @@ pub enum Icon {
     Update,
     Award,
     Timer,
+    Users,
 }
 
 impl Icon {
@@ -35,6 +36,7 @@ impl Icon {
         match self {
             Self::Edital => include_image!("../assets/icons/file-text.svg"),
             Self::Plan => include_image!("../assets/icons/map.svg"),
+            Self::Users => include_image!("../assets/icons/users.svg"),
             Self::Board => include_image!("../assets/icons/landmark.svg"),
             Self::Lesson => include_image!("../assets/icons/mic.svg"),
             Self::Quiz => include_image!("../assets/icons/list-checks.svg"),

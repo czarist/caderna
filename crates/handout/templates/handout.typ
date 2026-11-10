@@ -180,6 +180,13 @@
     heading(level: 2, labels.summary)
     list(..topic.summary.map(item => [#item]))
   }
+  if topic.at("references", default: ()).len() > 0 {
+    heading(level: 2, labels.at("references", default: ""))
+    set text(size: 0.88em)
+    for reference in topic.references {
+      par(hanging-indent: 1.2em, reference)
+    }
+  }
 
   if topic.exercises.len() > 0 {
     heading(level: 2, labels.exercises)

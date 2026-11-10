@@ -28,6 +28,8 @@ pub enum StoreError {
     Sqlite(#[from] rusqlite::Error),
     #[error("plan {0:?} not found")]
     PlanNotFound(PlanId),
+    #[error("the course has no subjects with topics")]
+    EmptyCourse,
     #[error("corrupt value in column {column}: {value}")]
     Corrupt { column: &'static str, value: String },
 }
@@ -323,9 +325,27 @@ const MIGRATIONS: &[&str] = &[
     );
     CREATE INDEX mock_attempts_exam ON mock_attempts(exam_id);
 ",
+    // Classes in the cloud: what a plan prepares for, the plans published by
+    // a teacher or received from one through the panel, and the topics'
+    // stable keys there (the teacher's topic ids).
+    r"
+    ALTER TABLE plans ADD COLUMN purpose TEXT NOT NULL DEFAULT 'general';
+    CREATE TABLE plan_courses (
+        plan_id INTEGER PRIMARY KEY REFERENCES plans(id) ON DELETE CASCADE,
+        course_id INTEGER NOT NULL UNIQUE,
+        version INTEGER NOT NULL,
+        assigned INTEGER NOT NULL
+    );
+    CREATE TABLE topic_keys (
+        topic_id INTEGER PRIMARY KEY REFERENCES topics(id) ON DELETE CASCADE,
+        key TEXT NOT NULL
+    );
+",
 ];
 
 mod challenges;
+mod cloud;
+pub use cloud::{CourseLink, CoursePlan, CourseSubject, CourseTopic};
 mod discursive;
 mod mock;
 
@@ -406,15 +426,16 @@ impl Store {
     ) -> Result<StudyPlan> {
         let tx = self.conn.transaction()?;
         tx.execute(
-            "INSERT INTO plans (title, exam, weeks, created_on, edital_name, edital_text)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            "INSERT INTO plans (title, exam, weeks, created_on, edital_name, edital_text, purpose)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
             params![
                 plan.title(),
                 plan.exam(),
                 plan.weeks(),
                 today.to_string(),
                 edital_name,
-                edital_text
+                edital_text,
+                plan.purpose()
             ],
         )?;
         let plan_id = PlanId(tx.last_insert_rowid());
@@ -482,7 +503,7 @@ impl Store {
         let header = self
             .conn
             .query_row(
-                "SELECT title, exam, weeks, created_on FROM plans WHERE id = ?1",
+                "SELECT title, exam, weeks, created_on, purpose FROM plans WHERE id = ?1",
                 [id.0],
                 |r| {
                     Ok((
@@ -490,11 +511,12 @@ impl Store {
                         r.get::<_, String>(1)?,
                         r.get::<_, u32>(2)?,
                         r.get::<_, String>(3)?,
+                        r.get::<_, String>(4)?,
                     ))
                 },
             )
             .optional()?;
-        let Some((title, exam, weeks, created_on)) = header else {
+        let Some((title, exam, weeks, created_on, purpose)) = header else {
             return Err(StoreError::PlanNotFound(id));
         };
 
@@ -532,6 +554,7 @@ impl Store {
             exam,
             weeks,
             created_on: parse_date("created_on", &created_on)?,
+            purpose,
             subjects,
         })
     }

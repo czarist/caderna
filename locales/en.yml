@@ -103,6 +103,7 @@ demo:
   expired_body: "The demonstration period of %{app} is over. Your plans and progress are still saved on this computer and come back with the full version."
   contact: "Talk to %{company}"
 nav:
+  classes: "Classes"
   mock: "Mock exams"
   discursive: "Written answers"
   preparing: "%{done}/%{total}"
@@ -141,6 +142,9 @@ grade:
   easy: "Easy"
 
 edital:
+  pick_purpose_first: "Choose the purpose to create the plan."
+  purpose_hint: "The plan, handouts, lessons and questions adapt to the purpose."
+  purpose_title: "What exam is this plan for?"
   revalidate: "Re-read syllabus"
   revalidate_hint: "Reads the exam syllabus again (a new or amended PDF) for this plan. Topics, progress, handouts and written answers stay as they are."
   title: "Exam syllabus"
@@ -514,6 +518,9 @@ update:
   downloading: "Downloading version %{version}… %{percent}%"
   installing: "Installing version %{version}. The app will close and open again."
 tour:
+  classes:
+    title: "Classes"
+    text: "Choose a plan and the classes that receive it. Here you also see how each student is doing."
   mock:
     title: "Mock exams"
     text: "A whole exam in your exam's format, against the clock. Take it on screen or print it with an answer card and an essay sheet."
@@ -618,6 +625,7 @@ handout:
   pdf_filter: "PDF document"
   generated: "Generated on %{date}"
   label:
+    references: "References"
     handout: "Study handout"
     contents: "Contents"
     key_points: "Key points"
@@ -801,6 +809,8 @@ working:
   minutes: "%{minutes} min"
 
 notice:
+  courses_updated: "%{count} new or updated course(s) from your class."
+  plan_published: "Plan published to %{count} class(es)."
   exam_format_read: "Exam format read from the syllabus. Check the numbers before you generate."
   exam_format_missing: "The syllabus does not say how many questions each subject has. Adjust the format by hand."
   mock_created: "Mock exam ready. Take it on screen or print it."
@@ -1517,3 +1527,47 @@ modules:
   locked_body: "%{module} is not part of your license. Contact %{company} to unlock it."
   contact: "Contact %{company}"
   disabled: "%{module} is not included in your plan. Contact %{company} to unlock it."
+
+purpose:
+  national_exam: "National exam (e.g. SAT)"
+  university_entrance: "University entrance exam"
+  civil_service: "Civil service exam"
+  professional: "Bar or certification exam"
+  general: "Other exam"
+
+classes:
+  title: "Classes"
+  subtitle: "Publish plans to your classes and follow your students"
+  teachers_only: "Only teachers create plans and content. Your plans come from your class."
+  panel_offline: "No connection to the panel. Check the internet and try again."
+  classrooms: "Your classes"
+  refresh: "Refresh"
+  not_loaded: "Classes not loaded yet. Check the connection and click Refresh."
+  no_classrooms: "No classes yet. The school creates classes and adds students in the panel's client area."
+  publish_title: "Publish a plan to classes"
+  publish_hint: "Students receive the plan with the handouts and questions already made, and cannot change it."
+  no_plans: "Create a plan in Syllabus to publish it."
+  published: "Published · version %{version}"
+  published_short: "Published"
+  publish_note: "Publishing again sends the current version; students keep their progress on topics that stay. Prepare the handouts first so students do not spend AI."
+  publishing: "Publishing…"
+  publish: "Publish"
+  classroom_header: "%{name} · %{count} student(s)"
+  no_students: "No students in this class."
+  no_courses: "This class has not received any plan yet."
+  time: "%{hours} h %{minutes} min"
+  course_number: "Course %{number}"
+  from_teacher: "From your class"
+  student_title: "Your plans come from your class"
+  student_note: "Your teacher chooses what you study. Lessons, quizzes and handouts are here, and your progress is kept in the cloud: on another computer it comes back."
+  syncing: "Syncing…"
+  sync_now: "Sync now"
+  last_sync: "Last synced: %{date}"
+  col:
+    student: "Student"
+    course: "Plan"
+    topics: "Topics mastered"
+    quizzes: "Correct answers"
+    lessons: "Lessons"
+    time: "Study time"
+    last: "Last activity"

@@ -132,6 +132,9 @@ pub struct TopicHandout {
     pub summary: Vec<String>,
     #[serde(default)]
     pub exercises: Vec<Exercise>,
+    /// Bibliographic references behind the content.
+    #[serde(default)]
+    pub references: Vec<String>,
     /// A picture of the topic itself, set just before rendering.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub picture: Option<Picture>,
@@ -144,9 +147,15 @@ impl TopicHandout {
         self.exercises
             .retain(|e| (2..=8).contains(&e.options.len()) && e.correct < e.options.len());
         self.sections.retain(|s| !s.heading.trim().is_empty());
+        self.references.retain(|r| !r.trim().is_empty());
+        self.references.dedup();
+        self.references.truncate(MAX_REFERENCES);
         self
     }
 }
+
+/// Most references a topic shows.
+const MAX_REFERENCES: usize = 8;
 
 /// Fixed words in the PDF, in the reader's language. They come from the
 /// app's translation files.
@@ -167,6 +176,8 @@ pub struct Labels {
     pub picture_source: String,
     /// Heading of the quick answer grid, e.g. "Respostas".
     pub answer_grid: String,
+    /// Heading of the bibliography, e.g. "Referências bibliográficas".
+    pub references: String,
 }
 
 /// A highlight drawn over the text when exporting: rectangles in points
@@ -355,6 +366,7 @@ mod tests {
             answers: "Gabarito".into(),
             picture_source: "Imagem: Wikipédia".into(),
             answer_grid: "Respostas".into(),
+            references: "Referências".into(),
             demonstration: String::new(),
         }
     }
@@ -391,6 +403,9 @@ mod tests {
                     correct: 5,
                     explanation: String::new(),
                 },
+            ],
+            references: vec![
+                "BRASIL. Constituição da República Federativa do Brasil de 1988.".into(),
             ],
             picture: None,
         }

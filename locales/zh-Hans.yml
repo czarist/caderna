@@ -103,6 +103,7 @@ demo:
   expired_body: "%{app} 的试用期已结束。你的学习计划和进度仍保存在这台电脑上，换成正式版后即可继续使用。"
   contact: "联系 %{company}"
 nav:
+  classes: "班级"
   mock: "模拟考试"
   discursive: "主观题与作文"
   preparing: "%{done}/%{total}"
@@ -141,6 +142,9 @@ grade:
   easy: "轻松"
 
 edital:
+  pick_purpose_first: "请先选择目的再生成计划。"
+  purpose_hint: "计划、讲义、课程和题目会根据目的调整。"
+  purpose_title: "这个计划是为哪种考试准备的？"
   revalidate: "重新读取大纲"
   revalidate_hint: "为这个计划重新读取考试大纲（新的或修订后的 PDF）。知识点、进度、讲义和主观题作答都保持不变。"
   title: "考试大纲"
@@ -514,6 +518,9 @@ update:
   downloading: "正在下载版本 %{version}… %{percent}%"
   installing: "正在安装版本 %{version}。应用会关闭并重新打开。"
 tour:
+  classes:
+    title: "班级"
+    text: "选择一个计划以及接收它的班级。你也可以在这里查看每个学生的进度。"
   mock:
     title: "模拟考试"
     text: "按大纲格式的一整场考试，限时作答。可以在屏幕上做，也可以连同答题卡和作文纸打印出来。"
@@ -618,6 +625,7 @@ handout:
   pdf_filter: "PDF 文档"
   generated: "%{date} 生成"
   label:
+    references: "参考文献"
     handout: "学习讲义"
     contents: "目录"
     key_points: "要点"
@@ -801,6 +809,8 @@ working:
   minutes: "%{minutes} 分钟"
 
 notice:
+  courses_updated: "你的班级有 %{count} 门新增或更新的课程。"
+  plan_published: "计划已发布到 %{count} 个班级。"
   exam_format_read: "已从大纲读取考试形式。生成前请核对数字。"
   exam_format_missing: "大纲没有写明每科的题量。请手动调整形式。"
   mock_created: "模拟考试已生成。可以在屏幕上作答或打印。"
@@ -1517,3 +1527,47 @@ modules:
   locked_body: "%{module}不在您的许可证范围内。如需开通，请联系 %{company}。"
   contact: "联系 %{company}"
   disabled: "%{module}不在您的套餐内。如需开通，请联系 %{company}。"
+
+purpose:
+  national_exam: "高考"
+  university_entrance: "大学自主招生考试"
+  civil_service: "公务员考试"
+  professional: "职业资格考试"
+  general: "其他考试"
+
+classes:
+  title: "班级"
+  subtitle: "向班级发布计划并跟进学生"
+  teachers_only: "只有老师可以创建计划和内容。你的计划来自你的班级。"
+  panel_offline: "无法连接到管理面板。请检查网络后重试。"
+  classrooms: "你的班级"
+  refresh: "刷新"
+  not_loaded: "尚未加载班级。请检查连接后点击“刷新”。"
+  no_classrooms: "还没有班级。学校会在管理面板的客户区创建班级并添加学生。"
+  publish_title: "将计划发布到班级"
+  publish_hint: "学生会收到附带已完成讲义和题目的计划，且无法修改。"
+  no_plans: "请先在“大纲”中创建计划再发布。"
+  published: "已发布 · 第 %{version} 版"
+  published_short: "已发布"
+  publish_note: "再次发布会发送当前版本，学生在保留主题上的进度不受影响。请先准备好讲义，学生就不必消耗 AI。"
+  publishing: "正在发布…"
+  publish: "发布"
+  classroom_header: "%{name} · %{count} 名学生"
+  no_students: "这个班级还没有学生。"
+  no_courses: "这个班级还没有收到任何计划。"
+  time: "%{hours} 小时 %{minutes} 分钟"
+  course_number: "课程 %{number}"
+  from_teacher: "来自你的班级"
+  student_title: "你的计划来自你的班级"
+  student_note: "学习内容由老师决定。课程、测验和讲义都在这里，你的进度保存在云端，换电脑也能恢复。"
+  syncing: "正在同步…"
+  sync_now: "立即同步"
+  last_sync: "上次同步：%{date}"
+  col:
+    student: "学生"
+    course: "计划"
+    topics: "已掌握主题"
+    quizzes: "正确率"
+    lessons: "课程"
+    time: "学习时长"
+    last: "最近活动"

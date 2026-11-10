@@ -62,6 +62,10 @@
 
 The exam syllabus is read on your machine; only its content outline goes to the AI.
 
+- **What exam it is for.** When you create the plan you choose its purpose (national
+  exam such as the ENEM, university entrance exam, public-service exam, bar or
+  certification exam, other), and the plan, lessons, handouts and questions adapt to it.
+  Each handout topic ends with bibliographic references.
 - **Pick your role.** Some exams cover several positions. Caderna finds them and
   asks which one you are applying for, so the plan has the shared subjects plus only
   *your* position's specific ones.
@@ -410,6 +414,17 @@ client's name, colours, links, pictures and texts, and sends AI requests through
 student needs no AI key. The panel receives the licence key, a hash of the computer's id,
 the app version, the operating system and the AI requests, never the computer's name;
 the Caderna privacy policy says so. See [branding/README.md](branding/README.md).
+
+**Classes in the cloud.** In the client area the school enrols each person as a teacher
+or a student and builds the classes. Teachers create a plan in Caderna and publish it to
+classes on the Classes screen, with the handouts and questions already made; there they
+see, per student, topics mastered, correct answers, lessons, study time and last activity.
+Students only use what their class receives (lessons, quizzes, handouts and readings) and
+create no subjects. A student's progress is kept in the panel and comes back on another
+computer; when two computers studied offline, the app merges both without duplicates.
+Before asking the AI for a plan, a handout or questions, the app looks in a **shared base**
+for the same request made by any school, and shares what the AI makes, to spend less AI;
+only AI-made material goes there, never student data or the exams a school uploaded.
 
 ## Quick start
 

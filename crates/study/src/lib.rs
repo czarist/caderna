@@ -14,6 +14,7 @@ pub mod quiz;
 pub mod reading;
 pub mod review;
 pub mod store;
+pub mod sync;
 
 pub use activity::{
     ActivityKind, PROGRESS_MILESTONES, STREAK_MILESTONES, progress_milestone, streak,
@@ -47,7 +48,7 @@ pub use plan::{
 pub use quiz::{Quiz, QuizAttempt, QuizQuestion, QuizStats};
 pub use reading::{Highlight, HighlightColor, HighlightId, Reading, ReadingId};
 pub use review::{ReviewGrade, ReviewState};
-pub use store::{Store, StoreError};
+pub use store::{CourseLink, CoursePlan, CourseSubject, CourseTopic, Store, StoreError};
 
 /// Errors raised by study rules.
 ///

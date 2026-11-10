@@ -9,6 +9,7 @@ use kg_study::{
     Difficulty, NewPlan, NewSubject, NewTopic, PlanId, QuizStats, StoreError, TopicId, TopicStatus,
 };
 
+use crate::shared::{SharedBase, SharedKind};
 use crate::{Engine, EngineError, Event, ImportState, Notice};
 
 const ACTIVE_PLAN_KEY: &str = "active_plan";
@@ -157,9 +158,15 @@ impl Engine {
             .find(|role| role.name == prefs.role.trim())
             .and_then(|role| role.number);
         self.generating_since = Some(Instant::now());
+        let shared = self.shared_base_with(prefs.purpose);
+        let prompt = kg_ai::prompts_in(self.prompt_language()).plan;
         self.spawn(move || {
             let excerpt = edital.text.for_prompt_role(PROMPT_CHARS, number);
-            let result = kg_ai::generate_plan(&client, &excerpt, &prefs);
+            let result = plan_from_shared_base(shared.as_ref(), prompt, &excerpt, &prefs)
+                .map_or_else(
+                    || new_shared_plan(&client, shared.as_ref(), prompt, &excerpt, &prefs),
+                    Ok,
+                );
             Event::PlanGenerated {
                 edital,
                 prefs,
@@ -178,7 +185,8 @@ impl Engine {
         self.generating_since = None;
         let prepare = self.pending_prepare.take();
         let draft = result?;
-        let plan = new_plan_from_draft(draft, &edital, prefs.weeks)?;
+        let plan =
+            new_plan_from_draft(draft, &edital, prefs.weeks)?.with_purpose(prefs.purpose.id());
         let stored = self.store.insert_plan(
             &plan,
             &edital.file_name,
@@ -287,6 +295,7 @@ impl Engine {
             Ok(plans) => self.plans = plans,
             Err(err) => self.notices.push(Notice::Error(err.into())),
         }
+        self.refresh_course_links();
     }
 
     pub(crate) fn refresh_stats(&mut self) {
@@ -336,6 +345,58 @@ impl Engine {
         self.review = None;
         self.close_reader();
     }
+}
+
+/// The plan's key in the shared base: the prompt, the syllabus excerpt sent
+/// to the AI and the teacher's choices.
+fn plan_key(base: &SharedBase, prompt: &str, excerpt: &str, prefs: &PlanPrefs) -> String {
+    base.key(
+        SharedKind::Plan,
+        prompt,
+        &[
+            excerpt,
+            &prefs.role.trim().to_lowercase(),
+            &prefs.weeks.to_string(),
+            &prefs.hours_per_week.to_string(),
+        ],
+    )
+}
+
+/// A plan another school already made from the same syllabus and choices.
+fn plan_from_shared_base(
+    base: Option<&SharedBase>,
+    prompt: &str,
+    excerpt: &str,
+    prefs: &PlanPrefs,
+) -> Option<PlanDraft> {
+    let base = base?;
+    let json = base.fetch(&plan_key(base, prompt, excerpt, prefs))?;
+    serde_json::from_str::<PlanDraft>(&json)
+        .ok()
+        .filter(|draft| draft.subjects.iter().any(|s| !s.topics.is_empty()))
+}
+
+/// Asks the AI for the plan and shares it.
+fn new_shared_plan(
+    client: &kg_ai::Client,
+    base: Option<&SharedBase>,
+    prompt: &str,
+    excerpt: &str,
+    prefs: &PlanPrefs,
+) -> Result<PlanDraft, kg_ai::AiError> {
+    let draft = kg_ai::generate_plan(client, excerpt, prefs)?;
+    if let Some(base) = base
+        && let Ok(json) = serde_json::to_string(&draft)
+    {
+        base.give(
+            &plan_key(base, prompt, excerpt, prefs),
+            SharedKind::Plan,
+            "",
+            &draft.title,
+            &json,
+        );
+    }
+    Ok(draft)
 }
 
 fn new_plan_from_draft(
