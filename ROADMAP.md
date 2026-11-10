@@ -169,6 +169,14 @@ Needs a brand with a panel (`[server]`); without one the app works as before.
 - [ ] Moderation flow for the shared base beyond removal (reports from schools).
 - [ ] Check references against a bibliographic database before showing them.
 
+## Voice programs per system
+
+- [x] Voice programs download on Windows, Linux (x86_64, aarch64) and macOS, pinned
+      with checksums: Piper 2023.11.14-2 and sherpa-onnx v1.12.20 (Kokoro, Parakeet)
+- [ ] Piper on macOS: its official macOS archives are broken (an Intel binary without
+      its libraries), so macOS uses the Kokoro voices; Settings says so. Revisit when a
+      working build exists
+
 ## Licences to check before selling
 
 - [x] Dii voice (OpenVoiceOS/pipertts_pt-BR_dii): CC BY-NC-ND 4.0, non-commercial. No

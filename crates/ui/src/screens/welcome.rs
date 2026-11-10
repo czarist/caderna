@@ -1,7 +1,7 @@
 //! After the setup and the tour: voice models and the first edital.
 
 use egui::{Color32, RichText};
-use kg_engine::{Command, Engine, ModelId, ModelStatus, PiperVoice, WhisperModel};
+use kg_engine::{Command, Engine, ModelId, ModelStatus, WhisperModel};
 
 use super::Actions;
 use crate::app::{KnowGiverApp, Screen};
@@ -9,12 +9,16 @@ use crate::art::Art;
 use crate::icons::Icon;
 use crate::{theme, widgets};
 
-/// Models the voice step downloads.
-const VOICE_MODELS: [ModelId; 3] = [
-    ModelId::Whisper(WhisperModel::Base),
-    ModelId::PiperRuntime,
-    ModelId::Voice(PiperVoice::Faber),
-];
+/// Models the voice step downloads: speech recognition and the chosen
+/// voice with its program (Kokoro on macOS, where Piper has no build).
+fn voice_models(engine: &Engine) -> [ModelId; 3] {
+    let voice = engine.settings().voice;
+    [
+        ModelId::Whisper(WhisperModel::Base),
+        voice.runtime_id(),
+        voice.model_id(),
+    ]
+}
 
 pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
     let mut actions = Actions::default();
@@ -77,10 +81,8 @@ fn step(ui: &mut egui::Ui, number: u8, done: bool, title: &str, add: impl FnOnce
 }
 
 fn voice_step(ui: &mut egui::Ui, engine: &Engine, actions: &mut Actions) {
-    let statuses: Vec<ModelStatus> = VOICE_MODELS
-        .iter()
-        .map(|id| engine.model_status(*id))
-        .collect();
+    let models = voice_models(engine);
+    let statuses: Vec<ModelStatus> = models.iter().map(|id| engine.model_status(*id)).collect();
     let installed = statuses
         .iter()
         .filter(|s| matches!(s, ModelStatus::Installed { .. }))
@@ -92,7 +94,7 @@ fn voice_step(ui: &mut egui::Ui, engine: &Engine, actions: &mut Actions) {
             _ => None,
         })
         .collect();
-    let done = installed == VOICE_MODELS.len();
+    let done = installed == models.len();
     step(ui, 1, done, &t!("welcome.voice.title"), |ui| {
         widgets::hint(ui, &t!("welcome.voice.text"));
         if done {
@@ -101,7 +103,7 @@ fn voice_step(ui: &mut egui::Ui, engine: &Engine, actions: &mut Actions) {
         if downloading.is_empty() {
             let label = t!("welcome.voice.download");
             if widgets::primary_button(ui, &label).clicked() {
-                for id in VOICE_MODELS {
+                for id in models {
                     actions.send(Command::DownloadModel(id));
                 }
             }
@@ -115,7 +117,7 @@ fn voice_step(ui: &mut egui::Ui, engine: &Engine, actions: &mut Actions) {
                 })
                 .sum();
             ui.add(
-                egui::ProgressBar::new(total / VOICE_MODELS.len() as f32)
+                egui::ProgressBar::new(total / models.len() as f32)
                     .show_percentage()
                     .desired_height(8.0),
             );
