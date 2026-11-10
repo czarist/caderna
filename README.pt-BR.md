@@ -406,6 +406,8 @@ cargo run -p kg-engine --example license_issue -- sign private.pk8 claims.json l
 **CADERNA-DASHBOARD.** Um projeto separado, em Laravel e Filament, é o painel da Caderna:
 lá os clientes são validados, as cores, imagens e textos de cada cliente são definidos, e
 tokens de avaliação e licenças são emitidos no mesmo formato que o app verifica offline.
+As escolas têm lá uma área do cliente para cadastrar os alunos e pagar as cobranças do
+painel por Pix ou cartão de crédito (em até 3x sem juros, pela Asaas).
 Ele também tem um gateway de IA compatível com a OpenAI, com as chaves dos provedores só
 no servidor, e roda em Docker ou numa instalação PHP local
 ([czarist/caderna-dashboard](https://github.com/czarist/caderna-dashboard)). Com
