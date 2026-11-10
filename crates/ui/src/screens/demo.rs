@@ -179,6 +179,30 @@ fn sign_out(ui: &mut egui::Ui, command: &mut Option<Command>) {
     }
 }
 
+/// A screen the licence's plan does not open: what is missing and who to ask.
+pub fn module_locked(ui: &mut egui::Ui, module: kg_engine::Module) {
+    ui.add_space(24.0);
+    widgets::header(ui, &t!("modules.locked_title"), &t!("app.name"));
+    ui.add_space(8.0);
+    ui.label(t!("modules.locked_body", module = module_name(module)));
+    let url = crate::brand::contact_url();
+    if !url.is_empty() {
+        ui.add_space(16.0);
+        if widgets::primary_button(ui, &t!("modules.contact")).clicked() {
+            crate::app::open_url(url);
+        }
+    }
+}
+
+/// A module's name, as the panel calls it.
+pub fn module_name(module: kg_engine::Module) -> String {
+    match module {
+        kg_engine::Module::Lessons => t!("modules.lessons"),
+        kg_engine::Module::Content => t!("modules.content"),
+    }
+    .into_owned()
+}
+
 /// Why the panel refused this computer, for the student.
 pub fn refusal_message(refusal: Refusal) -> String {
     match refusal {

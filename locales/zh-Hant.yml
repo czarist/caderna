@@ -1509,3 +1509,11 @@ panel:
   error:
     unreachable: "無法連線 %{company} 的管理面板。請檢查網路後重試。"
     unexpected: "管理面板傳回了非預期的回應。請稍後重試。"
+
+modules:
+  lessons: "影音課程"
+  content: "內容製作"
+  locked_title: "不在您的方案內"
+  locked_body: "%{module}不在您的授權範圍內。如需開通，請聯絡 %{company}。"
+  contact: "聯絡 %{company}"
+  disabled: "%{module}不在您的方案內。如需開通，請聯絡 %{company}。"

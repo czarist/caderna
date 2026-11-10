@@ -280,6 +280,10 @@ fn next_step(
         NextStep::Mock => (t!("challenges.open_mock"), None, Screen::Mock, None),
         NextStep::None => return,
     };
+    // Nothing that points outside the licence's plan.
+    if !screen.open_in(engine) {
+        return;
+    }
     let mut button = widgets::primary_button(ui, &label);
     // The topic it opens, on hover.
     if let Some((subject, topic)) = place {

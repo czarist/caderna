@@ -1509,3 +1509,11 @@ panel:
   error:
     unreachable: "%{company}のパネルに接続できませんでした。インターネット接続を確認してもう一度お試しください。"
     unexpected: "パネルから予期しない応答がありました。しばらくしてからもう一度お試しください。"
+
+modules:
+  lessons: "ビデオ授業"
+  content: "教材作成"
+  locked_title: "ご利用のプランに含まれていません"
+  locked_body: "%{module}はライセンスに含まれていません。利用するには%{company}にご連絡ください。"
+  contact: "%{company}に連絡する"
+  disabled: "%{module}はご利用のプランに含まれていません。利用するには%{company}にご連絡ください。"

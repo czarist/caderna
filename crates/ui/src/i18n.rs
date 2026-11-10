@@ -320,6 +320,10 @@ pub fn error_message(err: &EngineError) -> String {
         }
         EngineError::Panel(kg_engine::PanelError::Unreachable(_)) => t!("panel.error.unreachable"),
         EngineError::Panel(_) => t!("panel.error.unexpected"),
+        EngineError::ModuleDisabled(module) => t!(
+            "modules.disabled",
+            module = crate::screens::demo::module_name(*module)
+        ),
         EngineError::Ai(AiError::Connection { url, .. }) => t!("error.ai.connection", url = url),
         EngineError::Ai(AiError::Auth { .. }) => t!("error.ai.auth"),
         EngineError::Ai(AiError::Copilot(_)) => t!("error.ai.copilot"),

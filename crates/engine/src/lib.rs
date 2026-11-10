@@ -18,6 +18,7 @@ mod lesson;
 pub mod license;
 mod mock;
 mod models;
+mod modules;
 mod ocr;
 mod panel_brand;
 mod paths;
@@ -93,6 +94,7 @@ pub use kg_study::{LessonRecap, Mistake, MistakeId};
 pub use lesson::{LessonPhase, LessonSession, LessonTurn, Speaker};
 pub use mock::{MockJob, MockPrint, mock_code};
 pub use models::ModelStatus;
+pub use modules::Module;
 pub use ocr::{OcrError, OcrModelStatus};
 pub use panel_brand::{PanelBrand, load_panel_brand};
 pub use paths::AppPaths;
@@ -349,6 +351,8 @@ pub enum EngineError {
     License(#[from] license::LicenseError),
     #[error(transparent)]
     Panel(#[from] server::PanelError),
+    #[error("the licence does not include the {0:?} module")]
+    ModuleDisabled(Module),
     #[error(transparent)]
     Study(#[from] StudyError),
     #[error(transparent)]
@@ -888,6 +892,12 @@ impl Engine {
     }
 
     pub fn handle(&mut self, command: Command) -> Result<(), EngineError> {
+        // The licence's plan, set in the brand's panel.
+        if let Some(module) = command.module()
+            && !self.module_enabled(module)
+        {
+            return Err(EngineError::ModuleDisabled(module));
+        }
         match command {
             Command::ImportEdital(path) => self.import_edital(path),
             Command::ClearEdital => {
