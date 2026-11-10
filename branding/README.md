@@ -123,6 +123,11 @@ With a panel:
   this computer" to free the seat.
 - **The computer's id** sent to the panel is the operating system's machine id hashed with
   the brand's `slug`; the computer's name is never sent.
+- **Modules per licence.** The panel's licence says which paid areas it opens:
+  *Videoaula* (voice lessons) and *Criação de conteúdos* (handouts, quizzes, reviews,
+  mock exams, written answers, exam board). The sidebar and the tour leave the others
+  out, a closed screen says so with the contact link, and the engine refuses their
+  commands (`EngineError::ModuleDisabled`). Changes in the panel arrive at the next check.
 - **AI goes through the panel** with the device token. `text_model` and `vision_model`
   are the panel's model aliases; the AI choice disappears from the setup and Settings.
 - **The brand is downloaded** from the panel (ETag cache): app and company names, accent

@@ -104,6 +104,17 @@ pub enum PanelStatus {
 pub(crate) struct Activation {
     pub token: String,
     pub token_expires_at: DateTime<Utc>,
+    #[serde(default)]
+    pub license: LicenseInfo,
+}
+
+/// What the panel says about the licence (`data.license`).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
+pub(crate) struct LicenseInfo {
+    /// The app's modules the licence opens (`lessons`, `content`); `None`
+    /// from a panel that does not send them yet.
+    #[serde(default)]
+    pub modules: Option<Vec<String>>,
 }
 
 /// The panel's API. A trait so the check-in logic can be tested without a network.
@@ -111,7 +122,8 @@ pub(crate) trait PanelApi {
     /// `renew`: an automatic renewal, which the panel refuses for a computer
     /// signed out there.
     fn activate(&self, key: &str, device: &str, renew: bool) -> Result<Activation, PanelError>;
-    fn current(&self, token: &str) -> Result<(), PanelError>;
+    /// Confirms the token; returns the licence's modules.
+    fn current(&self, token: &str) -> Result<LicenseInfo, PanelError>;
     /// `None` when the brand did not change since `etag`.
     fn brand(
         &self,
@@ -230,7 +242,7 @@ impl PanelApi for HttpPanel {
             })
     }
 
-    fn current(&self, token: &str) -> Result<(), PanelError> {
+    fn current(&self, token: &str) -> Result<LicenseInfo, PanelError> {
         let (status, _, text) = read(
             self.agent
                 .get(&self.url("activations/current"))
@@ -238,11 +250,14 @@ impl PanelApi for HttpPanel {
                 .header("Authorization", &format!("Bearer {token}"))
                 .call(),
         )?;
-        if status == 200 {
-            Ok(())
-        } else {
-            Err(failure(status, &text))
+        if status != 200 {
+            return Err(failure(status, &text));
         }
+        Ok(serde_json::from_str::<serde_json::Value>(&text)
+            .ok()
+            .and_then(|v| v.pointer("/data/license").cloned())
+            .and_then(|license| serde_json::from_value(license).ok())
+            .unwrap_or_default())
     }
 
     fn brand(
@@ -321,6 +336,8 @@ pub(crate) struct CheckIn {
     pub renewed: Option<Activation>,
     /// The brand with its pictures, when it changed.
     pub brand: Option<BrandDownload>,
+    /// The licence's modules, when the panel sent them.
+    pub modules: Option<Vec<String>>,
 }
 
 /// A changed brand, its pictures already checked.
@@ -364,10 +381,14 @@ pub(crate) fn check_in(
     now: DateTime<Utc>,
 ) -> Result<CheckIn, PanelError> {
     let usable = token.filter(|(_, expires)| *expires > now + RENEW_BEFORE);
-    let mut renewed = None;
+    let mut renewed: Option<Activation> = None;
+    let mut modules = None;
     let token = match usable {
         Some((token, _)) => match api.current(token) {
-            Ok(()) => token.to_owned(),
+            Ok(license) => {
+                modules = license.modules;
+                token.to_owned()
+            }
             Err(PanelError::Unauthenticated) => {
                 let fresh = api.activate(key, device, true)?;
                 let token = fresh.token.clone();
@@ -397,7 +418,12 @@ pub(crate) fn check_in(
             None
         }
     };
-    Ok(CheckIn { renewed, brand })
+    let modules = modules.or_else(|| renewed.as_ref().and_then(|a| a.license.modules.clone()));
+    Ok(CheckIn {
+        renewed,
+        brand,
+        modules,
+    })
 }
 
 /// This computer's id for the panel: the operating system's machine id,
@@ -474,6 +500,9 @@ struct Session {
     last_ok_at: Option<DateTime<Utc>>,
     refused: Option<Refusal>,
     brand_etag: Option<String>,
+    /// The licence's modules from the last check; `None` opens all of them.
+    #[serde(default)]
+    modules: Option<Vec<String>>,
 }
 
 /// The engine's panel state.
@@ -546,6 +575,19 @@ impl crate::Engine {
     #[cfg(test)]
     pub(crate) fn confirm_panel_for_test(&mut self) {
         self.panel.session.last_ok_at = Some(Utc::now());
+    }
+
+    /// Whether this licence opens `module` in the app. Without a panel, or
+    /// before the panel said, every module is open.
+    pub fn module_enabled(&self, module: crate::Module) -> bool {
+        if !kg_brand::has_server() {
+            return true;
+        }
+        self.panel
+            .session
+            .modules
+            .as_ref()
+            .is_none_or(|modules| modules.iter().any(|m| m == module.id()))
     }
 
     /// The brand downloaded from the panel at an earlier start.
@@ -705,6 +747,9 @@ impl crate::Engine {
         let activation = result?;
         self.store_license(key)?;
         self.keep_token(&activation);
+        if let Some(modules) = activation.license.modules.clone() {
+            self.panel.session.modules = Some(modules);
+        }
         self.panel.session.last_ok_at = Some(Utc::now());
         self.panel.session.refused = None;
         self.save_session();
@@ -782,6 +827,9 @@ impl crate::Engine {
                         Err(err) => tracing::warn!(%err, "could not keep the panel brand"),
                     }
                 }
+                if let Some(modules) = check.modules {
+                    self.panel.session.modules = Some(modules);
+                }
                 self.panel.session.last_ok_at = Some(now);
                 self.panel.session.refused = None;
                 self.panel.next_check = Some(Instant::now() + CHECK_EVERY);
@@ -809,7 +857,7 @@ mod tests {
     /// A scripted panel that records the calls it gets.
     #[derive(Default)]
     struct FakePanel {
-        current: Option<Result<(), PanelError>>,
+        current: Option<Result<LicenseInfo, PanelError>>,
         activate: Option<Result<Activation, PanelError>>,
         calls: RefCell<Vec<String>>,
     }
@@ -823,9 +871,9 @@ mod tests {
                 .clone()
                 .unwrap_or(Err(PanelError::Unreachable("none".into())))
         }
-        fn current(&self, token: &str) -> Result<(), PanelError> {
+        fn current(&self, token: &str) -> Result<LicenseInfo, PanelError> {
             self.calls.borrow_mut().push(format!("current {token}"));
-            self.current.clone().unwrap_or(Ok(()))
+            self.current.clone().unwrap_or(Ok(LicenseInfo::default()))
         }
         fn brand(
             &self,
@@ -863,6 +911,9 @@ mod tests {
         Activation {
             token: "new".into(),
             token_expires_at: now() + Duration::days(days),
+            license: LicenseInfo {
+                modules: Some(vec!["lessons".into()]),
+            },
         }
     }
 
@@ -1040,10 +1091,17 @@ mod tests {
                     etag: Some("v2".into()),
                     images: vec![("mark.svg", b"<svg/>".to_vec())],
                 }),
+                modules: Some(vec!["content".into()]),
             }),
             now(),
         );
         assert_eq!(engine.panel.token.as_deref(), Some("new"));
+        assert!(engine.module_enabled(crate::Module::Content));
+        assert!(!engine.module_enabled(crate::Module::Lessons));
+        assert!(matches!(
+            engine.handle(crate::Command::StartLesson(crate::TopicId(1))),
+            Err(crate::EngineError::ModuleDisabled(crate::Module::Lessons))
+        ));
         assert_eq!(engine.panel.session.brand_etag.as_deref(), Some("v2"));
         // Kept for the next start, not applied to this one.
         assert_eq!(engine.panel_brand(), None);

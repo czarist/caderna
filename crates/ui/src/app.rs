@@ -34,6 +34,27 @@ pub enum Screen {
 }
 
 impl Screen {
+    /// The licence module this screen belongs to; `None` for screens every
+    /// plan has.
+    pub(crate) fn module(self) -> Option<kg_engine::Module> {
+        use kg_engine::Module;
+        match self {
+            Self::Lesson => Some(Module::Lessons),
+            Self::Reader
+            | Self::Board
+            | Self::Quiz
+            | Self::Review
+            | Self::Discursive
+            | Self::Mock => Some(Module::Content),
+            _ => None,
+        }
+    }
+
+    /// The licence opens this screen.
+    pub(crate) fn open_in(self, engine: &Engine) -> bool {
+        self.module().is_none_or(|m| engine.module_enabled(m))
+    }
+
     const ALL: [Self; 13] = [
         Self::Today,
         Self::Edital,
@@ -383,6 +404,10 @@ impl KnowGiverApp {
                 // Thirteen entries must fit a 760-pixel window with the plan's name.
                 ui.spacing_mut().item_spacing.y = 2.0;
                 for screen in Screen::ALL {
+                    // Only what the licence's plan opens.
+                    if !engine_badges.open(screen) {
+                        continue;
+                    }
                     // Written answers only when the notice describes a written test.
                     if screen == Screen::Discursive
                         && !engine_badges.writing
@@ -594,19 +619,22 @@ pub(crate) fn open_url(url: &str) {
 
 /// Counts shown next to sidebar entries.
 #[derive(Debug, Default)]
-struct Badges {
+pub(crate) struct Badges {
     due_reviews: usize,
     quiz_active: bool,
     lesson_active: bool,
     /// A mock exam's clock is running.
     mock_running: bool,
     /// The active plan's notice describes a written test.
-    writing: bool,
+    pub(crate) writing: bool,
     plan_title: Option<String>,
     /// Topics prepared so far and in total, while preparing the plan.
     preparing: Option<(usize, usize)>,
     /// Demonstration builds: how long is left.
     demo: kg_engine::DemoStatus,
+    /// Modules the licence opens.
+    lessons: bool,
+    content: bool,
 }
 
 impl Badges {
@@ -623,6 +651,17 @@ impl Badges {
             plan_title: engine.active_plan().map(|p| p.title.clone()),
             preparing: engine.prepare_job().map(|job| (job.done(), job.total)),
             demo: engine.demo(),
+            lessons: engine.module_enabled(kg_engine::Module::Lessons),
+            content: engine.module_enabled(kg_engine::Module::Content),
+        }
+    }
+
+    /// The licence opens this screen.
+    pub(crate) fn open(&self, screen: Screen) -> bool {
+        match screen.module() {
+            Some(kg_engine::Module::Lessons) => self.lessons,
+            Some(kg_engine::Module::Content) => self.content,
+            None => true,
         }
     }
 
@@ -917,6 +956,17 @@ impl eframe::App for KnowGiverApp {
                 ui.set_opacity(fade);
                 // Keep line length readable on wide monitors.
                 ui.set_max_width(860.0);
+                // A screen the licence does not open says so, with the contact.
+                let locked = self.engine.as_ref().ok().and_then(|engine| {
+                    self.ui
+                        .screen
+                        .module()
+                        .filter(|m| !engine.module_enabled(*m))
+                });
+                if let Some(module) = locked {
+                    screens::demo::module_locked(ui, module);
+                    return;
+                }
                 match self.ui.screen {
                     Screen::Today => screens::today::show(self, ui),
                     Screen::Setup => screens::setup::show(self, ui),
@@ -936,7 +986,7 @@ impl eframe::App for KnowGiverApp {
                 }
             });
         if needs_tour && !demo_over {
-            crate::tour::show(self, ui.ctx(), badges.writing);
+            crate::tour::show(self, ui.ctx(), &badges);
         }
     }
 }

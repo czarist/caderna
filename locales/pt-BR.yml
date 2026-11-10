@@ -1509,3 +1509,11 @@ panel:
   error:
     unreachable: "Não foi possível falar com o painel de %{company}. Confira a internet e tente de novo."
     unexpected: "O painel respondeu de um jeito inesperado. Tente de novo mais tarde."
+
+modules:
+  lessons: "Videoaula"
+  content: "Criação de conteúdos"
+  locked_title: "Não incluído no seu plano"
+  locked_body: "%{module} não faz parte da sua licença. Fale com %{company} para liberar."
+  contact: "Falar com %{company}"
+  disabled: "%{module} não está incluído no seu plano. Fale com %{company} para liberar."

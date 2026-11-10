@@ -119,6 +119,8 @@ A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
       texts at runtime, from the next start, after checking them.
 - [x] Panel address per build: `[server] dev_url` (localhost) for `cargo run` and tests,
       `[server] url` or `KG_SERVER_URL` for releases; never read on the student's computer.
+- [x] Modules per licence from the panel (Videoaula, Criação de conteúdos): hidden in the
+      sidebar and tour, refused by the engine.
 - [ ] The online panel's `https://` address in `[server] url` of `branding/caderna/brand.toml`
       (or `KG_SERVER_URL` in CI) before the first Caderna release.
 

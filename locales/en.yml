@@ -1509,3 +1509,11 @@ panel:
   error:
     unreachable: "Could not reach %{company}'s panel. Check the internet connection and try again."
     unexpected: "The panel gave an unexpected answer. Try again later."
+
+modules:
+  lessons: "Video lessons"
+  content: "Content creation"
+  locked_title: "Not included in your plan"
+  locked_body: "%{module} is not part of your license. Contact %{company} to unlock it."
+  contact: "Contact %{company}"
+  disabled: "%{module} is not included in your plan. Contact %{company} to unlock it."
