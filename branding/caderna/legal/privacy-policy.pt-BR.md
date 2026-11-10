@@ -59,7 +59,7 @@ gravações temporárias de diagnóstico ficam só na pasta de dados.
 |---|---|---|
 | Painel da {{company}}, ou o endereço que ele indicar para as imagens da identidade visual | Pedidos de download das imagens, que mostram o seu endereço IP (sem a chave nem o token) | Quando a identidade visual muda no painel |
 | Painel da {{company}} | A chave de licença; um código deste computador (o identificador do sistema operacional passado por hash, que não revela o identificador original); a versão do app; o sistema operacional (Windows, macOS ou Linux); o endereço IP | Ao ativar a licença, ao abrir o app e a cada hora com o app aberto |
-| Painel da {{company}}, que repassa ao fornecedor de IA contratado por ela | Trechos do edital e dos materiais, tópicos, suas mensagens e respostas transcritas, seu nome (para o tutor chamar você), textos das apostilas | Em cada tarefa de IA |
+| Painel da {{company}}, que repassa ao fornecedor de IA contratado por ela | Trechos do programa da prova e dos materiais, tópicos, suas mensagens e respostas transcritas, seu nome (para o tutor chamar você), textos das apostilas | Em cada tarefa de IA |
 | PaddleOCR-VL rodando localmente pelo `llama-server` v0.8.0 do llama.cpp | Fotos das respostas discursivas | Por padrão; processadas no computador, não enviadas ao painel |
 | Painel da {{company}}, para o modelo de visão do fornecedor de IA | Fotos das respostas discursivas e páginas de PDFs escaneados | Fotos de respostas só se você escolher explicitamente o OCR externo; páginas de PDFs escaneados só quando você pedir a leitura |
 | Wikipédia | O termo de busca de uma imagem do quadro | Se a opção de imagens estiver ligada |
