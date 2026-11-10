@@ -348,8 +348,10 @@ pub(crate) struct BrandDownload {
     pub images: Vec<(&'static str, Vec<u8>)>,
 }
 
-/// Downloads the brand's pictures; one that fails or is not safe fails the
-/// whole brand, which is tried again at the next check.
+/// Downloads the brand's pictures. A download that fails fails the whole
+/// brand, which is tried again at the next check; a picture that arrives but
+/// is not usable or not safe is left out (the app's own stays), so one bad
+/// file does not hold back the names, colours and texts.
 fn download_images(
     api: &dyn PanelApi,
     json: &serde_json::Value,
@@ -358,13 +360,14 @@ fn download_images(
     for (file, url) in panel_brand::image_urls(json) {
         let Some(url) = url else { continue };
         let bytes = api.download(&url)?;
-        if !panel_brand::image_ok(file, &bytes) {
-            return Err(PanelError::Unexpected {
-                status: 200,
-                detail: format!("{file} is not a usable picture"),
-            });
+        if panel_brand::image_ok(file, &bytes) {
+            images.push((file, bytes));
+        } else {
+            tracing::warn!(
+                file,
+                "the brand's picture is not usable; keeping the app's own"
+            );
         }
-        images.push((file, bytes));
     }
     Ok(images)
 }
@@ -859,6 +862,8 @@ mod tests {
     struct FakePanel {
         current: Option<Result<LicenseInfo, PanelError>>,
         activate: Option<Result<Activation, PanelError>>,
+        /// The brand also names an icon, which arrives as an unusable file.
+        bad_icon: bool,
         calls: RefCell<Vec<String>>,
     }
 
@@ -886,7 +891,10 @@ mod tests {
                     serde_json::json!({
                         "app_name": "Escola",
                         "colors": {"accent_light": "#112233"},
-                        "images": {"mark": "https://cdn.example/mark.svg", "icon": null},
+                        "images": {
+                            "mark": "https://cdn.example/mark.svg",
+                            "icon": self.bad_icon.then_some("https://cdn.example/icon.png"),
+                        },
                     }),
                     Some("v1".into()),
                 )
@@ -932,6 +940,27 @@ mod tests {
         assert_eq!(check.renewed, None);
         assert_eq!(check.brand, None);
         assert_eq!(*panel.calls.borrow(), ["current old", "brand"]);
+    }
+
+    #[test]
+    fn an_unusable_picture_is_left_out_and_the_rest_of_the_brand_kept() {
+        let panel = FakePanel {
+            bad_icon: true,
+            ..FakePanel::default()
+        };
+        let check = check_in(
+            &panel,
+            "key",
+            "dev",
+            Some(("old", now() + Duration::days(5))),
+            None,
+            now(),
+        )
+        .unwrap();
+        let brand = check.brand.unwrap();
+        assert_eq!(brand.json["app_name"], "Escola");
+        let files: Vec<&str> = brand.images.iter().map(|(file, _)| *file).collect();
+        assert_eq!(files, ["mark.svg"]);
     }
 
     #[test]
