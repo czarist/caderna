@@ -9,6 +9,8 @@ repository.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-10
+
 ### Added
 - **Cebraspe-style quizzes (Certo/Errado).** Settings → *Quiz question style* offers
   *Like the exam* (default), *Multiple choice* and *True/false (Cebraspe)*. True/false
