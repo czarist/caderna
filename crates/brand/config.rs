@@ -37,11 +37,15 @@ pub const REGIONS: [&str; 10] = ["br", "us", "eu", "uk", "jp", "tw", "hk", "sg",
 #[derive(Debug, Default, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ServerSection {
-    /// The brand's panel (CADERNA-DASHBOARD), e.g. `https://painel.example.com`.
-    /// With it the app activates licences online, downloads the brand and
-    /// uses AI through the panel. Empty: offline licences only.
+    /// The brand's panel (CADERNA-DASHBOARD) for release builds, e.g.
+    /// `https://painel.example.com`. With it (or `dev_url`) the app activates
+    /// licences online, downloads the brand and uses AI through the panel.
     #[serde(default)]
     pub url: String,
+    /// The panel for development builds (`cargo run`, tests), e.g.
+    /// `http://localhost:8000`. Empty: the same as `url`.
+    #[serde(default)]
+    pub dev_url: String,
     /// The panel's model names for text tasks and for images (its AI aliases).
     #[serde(default)]
     pub text_model: String,
@@ -70,6 +74,46 @@ impl LocaleSection {
     }
 }
 
+impl ServerSection {
+    /// The brand works with a panel (in some build).
+    pub fn has_panel(&self) -> bool {
+        !self.url.is_empty() || !self.dev_url.is_empty()
+    }
+
+    /// The panel address this build talks to. `override_url` is
+    /// `KG_SERVER_URL` (shell or CI; in development also the repository's
+    /// `.env`). Release builds never fall back to `dev_url` and need
+    /// `https://`, unless `KG_SERVER_URL` says otherwise.
+    pub fn url_for(&self, release: bool, override_url: Option<&str>) -> Result<String, String> {
+        if let Some(url) = override_url.map(str::trim).filter(|u| !u.is_empty()) {
+            let url = url.trim_end_matches('/');
+            if !server_url_ok(url) {
+                return Err(format!(
+                    "KG_SERVER_URL {url:?} must be https://host (http:// only for localhost)"
+                ));
+            }
+            return Ok(url.to_owned());
+        }
+        if !self.has_panel() {
+            return Ok(String::new());
+        }
+        if release {
+            if !self.url.starts_with("https://") {
+                return Err(
+                    "brand.toml: a release build needs [server] url with the panel's https:// address, or KG_SERVER_URL"
+                        .into(),
+                );
+            }
+            return Ok(self.url.clone());
+        }
+        Ok(if self.dev_url.is_empty() {
+            self.url.clone()
+        } else {
+            self.dev_url.clone()
+        })
+    }
+}
+
 /// `https://…`, or `http://` only for this computer (development).
 pub fn server_url_ok(url: &str) -> bool {
     let local = ["http://localhost", "http://127.0.0.1", "http://[::1]"]
@@ -93,6 +137,14 @@ pub struct AppSection {
     pub data_dir: String,
     /// GUID that tells the Windows installer this product from others.
     pub installer_guid: String,
+    /// The program's file name without extension (`Caderna` → `Caderna.exe`).
+    /// Default `know-giver`, which existing installs and shortcuts use.
+    #[serde(default = "default_executable")]
+    pub executable: String,
+}
+
+fn default_executable() -> String {
+    "know-giver".into()
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -282,6 +334,15 @@ impl Brand {
         {
             return fail("app.data_dir must use only letters, digits, - and _");
         }
+        if f.app.executable.is_empty()
+            || !f
+                .app
+                .executable
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+        {
+            return fail("app.executable must use only letters, digits, - and _");
+        }
         if !is_guid(&f.app.installer_guid) {
             return fail("app.installer_guid must look like 6C1F3F7E-8E0B-4C55-9B7A-3B1E8A4D2F10");
         }
@@ -307,12 +368,16 @@ impl Brand {
         if !f.server.url.is_empty() && !server_url_ok(&f.server.url) {
             return fail("server.url must be https://host (http:// only for localhost), without a trailing /");
         }
-        if !f.server.url.is_empty()
+        if !f.server.dev_url.is_empty() && !server_url_ok(&f.server.dev_url) {
+            return fail("server.dev_url must be https:// or http://localhost…, without a trailing /");
+        }
+        let panel = f.server.has_panel();
+        if panel
             && (f.server.text_model.trim().is_empty() || f.server.vision_model.trim().is_empty())
         {
             return fail("server.url needs text_model and vision_model (the panel's AI aliases)");
         }
-        if !f.server.url.is_empty() && f.licensing.public_key.is_empty() {
+        if panel && f.licensing.public_key.is_empty() {
             return fail("server.url needs licensing.public_key");
         }
         if let Some(bad) = f.locale.languages.iter().find(|l| !LANGUAGES.contains(&l.as_str())) {

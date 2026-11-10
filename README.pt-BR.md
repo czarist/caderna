@@ -343,7 +343,7 @@ Aqui não há releases públicos; cada build é feito para um cliente.
 
 | Seção | O que define |
 | --- | --- |
-| `[app]` | nome do produto, `slug` (id da janela, nome do banco), `data_dir` (pasta de dados e de instalação), GUID do instalador |
+| `[app]` | nome do produto, `slug` (id da janela, nome do banco), `data_dir` (pasta de dados e de instalação), `executable` (nome do arquivo do programa), GUID do instalador |
 | `[company]` | nome da empresa, site, crédito "Desenvolvido por …" ligado ou não, licença da marca |
 | `[colors]` | destaque e realce (temas claro e escuro), cor do crédito nas apostilas |
 | `[assets]` | ícone do app (PNG e ICO), arte de capa, arte do lembrete, marca (SVG) e marca d'água das apostilas (SVG) |
@@ -391,7 +391,8 @@ português do Brasil (`[locale]`), e funciona com o seu painel: avaliações e l
 vêm de lá. Os
 textos legais são rascunhos (`[legal] reviewed = false`), então o empacotamento para
 venda continua bloqueado até a revisão. Para rodar:
-`$env:KG_BRAND_DIR = "branding/caderna"; cargo run --release`; cada marca tem a sua pasta
+`$env:KG_BRAND_DIR = "branding/caderna"; cargo run` (fala com o painel em `[server] dev_url`, `http://localhost:8000`; um build de release
+precisa do painel online em `[server] url` ou em `KG_SERVER_URL`); cada marca tem a sua pasta
 de dados, então nunca se mistura com um Know Giver instalado.
 
 **Emitir licenças.** As chaves são criadas uma vez por marca, e a chave privada nunca

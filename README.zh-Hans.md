@@ -227,13 +227,13 @@ Know Giver 在新加坡、巴西、美国、欧盟、英国、日本、台湾和
 powershell -ExecutionPolicy Bypass -File scripts\package.ps1 -Brand branding\<客户>
 ```
 
-会生成 `dist\<data_dir>-<版本>-windows-x64.zip`，安装了 [Inno Setup 6](https://jrsoftware.org/isinfo.php) 时还会生成安装程序。
+会生成 `dist\<data_dir>-<版本>-windows-x64.zip`，安装了 [Inno Setup 6](https://jrsoftware.org/isinfo.php) 时还会生成安装程序。程序文件名取自 `[app] executable`（例如 `Caderna.exe`，默认 `know-giver.exe`）。
 
 **试用版**：设置 `[demo] enabled = true` 后，应用从首次启动起可用 `days` 天，或用到 `expires` 当天（以先到者为准）。侧边栏显示剩余天数；到期后只会打开"试用期已结束"页面，并提供联系客户的按钮。学习计划和进度仍保存在电脑上。
 
 **按品牌的许可证与法律文本：** 品牌可以包含 Ed25519 公钥；客户的学生随后可在设置或“演示已结束”页面激活许可证密钥（离线验证，绑定品牌、客户、席位和日期，不会动到学习数据）。品牌也可以自带使用条款和隐私政策、支持链接、老师肖像和贴纸。在品牌的法律和商业审查标记设置之前，销售用打包不会运行。详见 [branding/README.md](branding/README.md)，未完成的部分见 [ROADMAP](ROADMAP.md)。出售前请检查致谢中的许可证。
 
-**Caderna**：`branding/caderna` 是第一个客户品牌：纸张、石墨和橄榄色，独立的图标、封面和标志，以及 Ed25519 公钥。它只在巴西以巴西葡萄牙语提供（`[locale]`），并与管理面板配合使用：试用和许可证都由面板签发。其法律文本仍是草稿（`[legal] reviewed = false`），审查完成前无法打包销售。运行：`$env:KG_BRAND_DIR = "branding/caderna"; cargo run --release`；每个品牌有自己的数据文件夹，不会与已安装的 Know Giver 混在一起。
+**Caderna**：`branding/caderna` 是第一个客户品牌：纸张、石墨和橄榄色，独立的图标、封面和标志，以及 Ed25519 公钥。它只在巴西以巴西葡萄牙语提供（`[locale]`），并与管理面板配合使用：试用和许可证都由面板签发。其法律文本仍是草稿（`[legal] reviewed = false`），审查完成前无法打包销售。运行：`$env:KG_BRAND_DIR = "branding/caderna"; cargo run`（开发构建连接 `[server] dev_url` 的面板 `http://localhost:8000`；发布构建需要在 `[server] url` 或 `KG_SERVER_URL` 中设置在线面板）；每个品牌有自己的数据文件夹，不会与已安装的 Know Giver 混在一起。
 
 **签发许可证**：每个品牌只生成一次密钥，私钥绝不进入仓库：
 

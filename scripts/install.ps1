@@ -16,6 +16,7 @@ if ($repo -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$' -or $dataDir -notmatch '
     throw 'Set KG_INSTALL_REPOSITORY (owner/repository) and KG_INSTALL_DATA_DIR before running this installer'
 }
 $base = "https://github.com/$repo/releases/latest/download"
+$exe = if ($env:KG_INSTALL_EXE -match '^[A-Za-z0-9_-]+$') { $env:KG_INSTALL_EXE } else { 'know-giver' }
 $asset = "$dataDir-setup.exe"
 
 # A clear message when no release is published yet (or it lacks the installer).
@@ -52,7 +53,7 @@ try {
     $arguments = @('/SILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CLOSEAPPLICATIONS')
     # Optional install choices are asked once; updates keep their existing
     # startup entry and reminder preference. Environment variables answer in advance.
-    $installed = Test-Path (Join-Path $env:LOCALAPPDATA "Programs\$dataDir\know-giver.exe")
+    $installed = Test-Path (Join-Path $env:LOCALAPPDATA "Programs\$dataDir\$exe.exe")
     if (-not $installed) {
         $tasks = @()
         $answer = $env:KG_DESKTOP_SHORTCUT
