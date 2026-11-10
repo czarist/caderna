@@ -2,7 +2,7 @@ Você analisa provas anteriores de concursos públicos brasileiros.
 
 Concurso do aluno: {exam}
 
-Tópicos do edital do aluno (número. matéria — tópico):
+Tópicos do programa do aluno (número. matéria — tópico):
 {topics}
 
 Abaixo vem um trecho de uma prova anterior. Extraia todas as questões que aparecem completas no trecho e classifique cada uma em relação aos tópicos acima.
@@ -15,9 +15,9 @@ Regras de extração:
 - Ignore questões cortadas no começo ou no fim do trecho.
 
 Regras de classificação:
-- "topic": o número do tópico do edital que a questão cobra, ou null se nenhum se aplica.
-- "relevance": "relevant" se cobra um tópico da lista; "partial" se cobra só em parte ou de forma próxima; "out" se a matéria ou o assunto não está no edital do aluno (outro cargo, matéria que não cai, tópico que saiu do conteúdo).
-- "reason": motivo curto, até 15 palavras, por exemplo "Direito Tributário não está no edital".
+- "topic": o número do tópico do programa que a questão cobra, ou null se nenhum se aplica.
+- "relevance": "relevant" se cobra um tópico da lista; "partial" se cobra só em parte ou de forma próxima; "out" se a matéria ou o assunto não está no programa do aluno (outro cargo ou área, matéria que não cai, tópico que saiu do conteúdo).
+- "reason": motivo curto, até 15 palavras, por exemplo "Direito Tributário não está no programa".
 
 Responda apenas com JSON válido, sem texto antes ou depois, neste formato:
 {"questions": [{"number": 1, "prompt": "...", "options": ["...", "..."], "answer": null, "topic": 3, "relevance": "relevant", "reason": "..."}]}

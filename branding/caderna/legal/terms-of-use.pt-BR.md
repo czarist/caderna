@@ -2,7 +2,7 @@
 
 Rascunho para revisão do cliente. Prestadora do serviço aos alunos: {{provider}}. Licenciadora do software: {{licensor}}. Contato da prestadora: {{contact}}. Este texto deve ser revisado com o contrato entre a prestadora e a licenciadora antes da distribuição.
 
-Versão de 9 de novembro de 2026 ({{version}}). O {{app}} é oferecido apenas no Brasil.
+Versão de 10 de novembro de 2026 ({{version}}). O {{app}} é oferecido apenas no Brasil.
 
 ## 1. Quem somos
 
@@ -11,8 +11,8 @@ O {{app}} é oferecido aos alunos por {{provider}} ("{{company}}", "nós"). Cont
 
 ## 2. O que é o {{app}}
 
-O {{app}} é um aplicativo de estudo instalado no seu computador. Ele lê o edital que você
-envia, monta um plano de estudo e oferece aulas por voz, quizzes, revisões, apostilas e
+O {{app}} é um aplicativo de estudo instalado no seu computador. Ele lê o programa da prova que você
+envia (edital, matriz de referência ou manual), monta um plano de estudo e oferece aulas por voz, quizzes, revisões, apostilas e
 correção formativa de respostas discursivas.
 
 ## 3. Onde o aplicativo é oferecido
@@ -45,19 +45,34 @@ aplicativo pedirá um novo aceite.
 - Quando a licença ou a avaliação termina, as funções do aplicativo param, mas os seus
   estudos continuam guardados no computador.
 
+## 5-A. Turmas: professores e alunos
+
+- A sua escola pode cadastrar você como **professor** ou **aluno** na área do cliente do
+  painel e organizar as turmas.
+- O **professor** cria os planos, as apostilas e as questões no {{app}} e os publica para as
+  turmas. Ele é responsável por conferir o que publica e por ter o direito de usar os
+  materiais que envia.
+- O **aluno** usa o que as turmas dele recebem (aulas, quizzes, apostilas e leituras) e não
+  cria nem altera matérias. O progresso do aluno fica guardado no painel e pode ser visto
+  pelos professores da escola.
+- O {{app}} reaproveita materiais de uma **base comum** feita pela IA para todas as escolas.
+  Esses materiais também podem conter erros (veja a seção 6).
+
 ## 6. A inteligência artificial pode errar
 
 - As respostas do tutor, os planos, as apostilas, as questões, as explicações, as
   transcrições de fotos e as notas das discursivas são geradas por inteligência
   artificial e **podem conter erros**: informações incorretas, desatualizadas ou
-  incompletas, leitura errada do edital ou da sua letra, e avaliações diferentes das de
+  incompletas, leitura errada do programa da prova ou da sua letra, e avaliações diferentes das de
   uma banca.
 - **A qualidade depende dos limites da IA usada pela {{company}}**: capacidade do modelo,
   tamanho de contexto, desempenho em português, leitura de imagens, limites de uso e
   disponibilidade do serviço.
 - O aplicativo confere parte das respostas da IA (por exemplo, citações e somas das
   notas), mas essas verificações não eliminam todos os erros.
-- Confira sempre o edital oficial, a legislação e as fontes oficiais. As notas das
+- As **referências bibliográficas** das apostilas são sugeridas pela IA e conferidas por
+  outra etapa de IA, mas podem estar incompletas ou erradas. Confira-as antes de citar.
+- Confira sempre o programa oficial da prova, a legislação e as fontes oficiais. As notas das
   discursivas são estimativas para estudo, não resultados oficiais. O {{app}} não
   substitui professores, a banca organizadora nem orientação profissional.
 

@@ -63,5 +63,6 @@ fn labels() -> HandoutLabels {
         answers: t!("handout.label.answers").into_owned(),
         picture_source: t!("handout.label.picture_source").into_owned(),
         answer_grid: t!("handout.label.answer_grid").into_owned(),
+        references: t!("handout.label.references").into_owned(),
     }
 }

@@ -2,7 +2,8 @@
 
 ## Current Status
 
-Version 0.1.0 of the white-label base, forked from Know Giver 0.39.3 on 2026-11-08.
+Version 0.2.0 of the white-label base, forked from Know Giver 0.39.3 on 2026-11-08; 0.2.0
+adds classes in the cloud (Phase W7).
 Everything Know Giver does is here (edital → plan, voice lessons with whiteboard,
 handouts and reader, quizzes and reviews, mock exams, written answers with local OCR,
 challenges, five UI languages, account sign-ins, tray and reminders). Know Giver's own
@@ -119,8 +120,62 @@ A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
       texts at runtime, from the next start, after checking them.
 - [x] Panel address per build: `[server] dev_url` (localhost) for `cargo run` and tests,
       `[server] url` or `KG_SERVER_URL` for releases; never read on the student's computer.
+- [x] Modules per licence from the panel (Videoaula, Criação de conteúdos): hidden in the
+      sidebar and tour, refused by the engine.
+- [x] Panel: client area (`/cliente`) where a school enrols its students, each with a
+      one-seat licence by email, and picks their plan, within the limits set by the admins.
+- [x] Panel: charges. The admins bill a client for anything; the client pays in its area by
+      Pix or credit card (up to 3 instalments without interest) through Asaas, with the
+      Asaas webhook and Caderna-themed emails.
+- [x] Charges tested on the Asaas sandbox: Pix, card in 3 instalments, refusal, webhook,
+      cancelling.
+- [ ] Charges: the production Asaas key and webhook token before the first real charge.
 - [ ] The online panel's `https://` address in `[server] url` of `branding/caderna/brand.toml`
       (or `KG_SERVER_URL` in CI) before the first Caderna release.
+
+## Phase W7 — Classes in the cloud (done in 0.2.0)
+
+Needs a brand with a panel (`[server]`); without one the app works as before.
+
+- [x] Teachers and students: the panel's client area enrols each person as a teacher or a
+      student (`students.role`), sent to the app with the licence (`license.role`).
+      A licence without an enrolment keeps today's behaviour (`ClassRole::Owner`).
+- [x] Students only use: the engine refuses creating, deleting or reading plans, preparing
+      content and importing board material (`Command::creates_plans`); the UI hides those
+      actions and the board screen, and shows "your plans come from your class".
+- [x] Classrooms (turmas) in the client area: name, students and courses; a "Desempenho"
+      view per classroom (topics mastered, quiz accuracy, lessons, study time, last activity).
+- [x] Teachers publish a plan to classrooms from the new Classes screen (`POST`/`PUT
+      /api/v1/courses`): subjects, topics with stable keys, the syllabus, handouts and quiz
+      banks. Republishing bumps the version; students keep progress on topics that stay.
+- [x] Students' apps download their courses at every check (read-only plans with the
+      teacher's handouts and questions) and remove courses taken away from their classrooms.
+- [x] Progress in the cloud (`/api/v1/progress`): topic status and review schedule,
+      quizzes, lesson recaps, reviews, mistakes notebook and study time, merged without
+      duplicates when two computers studied offline (`kg_study::sync`); restored on a new
+      computer.
+- [x] Shared base (`/api/v1/shared-materials`): before asking the AI for a plan, a
+      handout or a quiz bank, the app looks up a hash of the request; what the AI makes is
+      shared with every school. Only AI output; board material, edits and student data stay
+      out. Admins list and remove items in the panel ("Base comum").
+- [x] Purpose of the plan (ENEM, vestibular, concurso, OAB/certification, other), asked
+      every time a plan is created; a note per purpose goes to every teaching prompt
+      (`kg_ai::ExamPurpose`, Portuguese and English).
+- [x] Handouts end with bibliographic references (all five prompt languages), checked by
+      the handout reviewer and shown in the PDF.
+- [x] Caderna privacy policy and terms describe classes, the cloud progress and the shared
+      base; legal version `2026-11-10.1`.
+- [ ] Teachers' own progress and plans across their computers (today only students sync).
+- [ ] Moderation flow for the shared base beyond removal (reports from schools).
+- [ ] Check references against a bibliographic database before showing them.
+
+## Voice programs per system
+
+- [x] Voice programs download on Windows, Linux (x86_64, aarch64) and macOS, pinned
+      with checksums: Piper 2023.11.14-2 and sherpa-onnx v1.12.20 (Kokoro, Parakeet)
+- [ ] Piper on macOS: its official macOS archives are broken (an Intel binary without
+      its libraries), so macOS uses the Kokoro voices; Settings says so. Revisit when a
+      working build exists
 
 ## Licences to check before selling
 

@@ -104,6 +104,21 @@ pub enum PanelStatus {
 pub(crate) struct Activation {
     pub token: String,
     pub token_expires_at: DateTime<Utc>,
+    #[serde(default)]
+    pub license: LicenseInfo,
+}
+
+/// What the panel says about the licence (`data.license`).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
+pub(crate) struct LicenseInfo {
+    /// The app's modules the licence opens (`lessons`, `content`); `None`
+    /// from a panel that does not send them yet.
+    #[serde(default)]
+    pub modules: Option<Vec<String>>,
+    /// "teacher" or "student" for people enrolled in the client area; `None`
+    /// for licences without an enrolment.
+    #[serde(default)]
+    pub role: Option<String>,
 }
 
 /// The panel's API. A trait so the check-in logic can be tested without a network.
@@ -111,7 +126,8 @@ pub(crate) trait PanelApi {
     /// `renew`: an automatic renewal, which the panel refuses for a computer
     /// signed out there.
     fn activate(&self, key: &str, device: &str, renew: bool) -> Result<Activation, PanelError>;
-    fn current(&self, token: &str) -> Result<(), PanelError>;
+    /// Confirms the token; returns the licence's modules.
+    fn current(&self, token: &str) -> Result<LicenseInfo, PanelError>;
     /// `None` when the brand did not change since `etag`.
     fn brand(
         &self,
@@ -200,6 +216,67 @@ fn platform() -> &'static str {
     }
 }
 
+impl HttpPanel {
+    /// A JSON call with the device token: the status and the body.
+    pub(crate) fn call(
+        &self,
+        method: &str,
+        path: &str,
+        token: &str,
+        body: Option<&serde_json::Value>,
+    ) -> Result<(u16, String), PanelError> {
+        let url = self.url(path);
+        let auth = format!("Bearer {token}");
+        let result = match (method, body) {
+            ("POST", Some(body)) => self
+                .agent
+                .post(&url)
+                .header("Accept", "application/json")
+                .header("Authorization", &auth)
+                .send_json(body),
+            ("PUT", Some(body)) => self
+                .agent
+                .put(&url)
+                .header("Accept", "application/json")
+                .header("Authorization", &auth)
+                .send_json(body),
+            ("DELETE", _) => self
+                .agent
+                .delete(&url)
+                .header("Accept", "application/json")
+                .header("Authorization", &auth)
+                .call(),
+            _ => self
+                .agent
+                .get(&url)
+                .header("Accept", "application/json")
+                .header("Authorization", &auth)
+                .call(),
+        };
+        let (status, _, text) = read(result)?;
+        if (200..300).contains(&status) {
+            Ok((status, text))
+        } else {
+            Err(failure(status, &text))
+        }
+    }
+
+    /// Like [`Self::new`], with the longer timeout of course uploads.
+    pub(crate) fn for_content() -> Self {
+        let agent = ureq::Agent::config_builder()
+            .http_status_as_error(false)
+            .timeout_connect(Some(StdDuration::from_secs(15)))
+            .timeout_global(Some(StdDuration::from_secs(180)))
+            .user_agent(kg_brand::user_agent("classes"))
+            .build()
+            .into();
+        Self {
+            base: format!("{}/api/v1", kg_brand::SERVER_URL),
+            agent,
+        }
+    }
+}
+
 impl PanelApi for HttpPanel {
     fn activate(&self, key: &str, device: &str, renew: bool) -> Result<Activation, PanelError> {
         let body = serde_json::json!({
@@ -230,7 +307,7 @@ impl PanelApi for HttpPanel {
             })
     }
 
-    fn current(&self, token: &str) -> Result<(), PanelError> {
+    fn current(&self, token: &str) -> Result<LicenseInfo, PanelError> {
         let (status, _, text) = read(
             self.agent
                 .get(&self.url("activations/current"))
@@ -238,11 +315,14 @@ impl PanelApi for HttpPanel {
                 .header("Authorization", &format!("Bearer {token}"))
                 .call(),
         )?;
-        if status == 200 {
-            Ok(())
-        } else {
-            Err(failure(status, &text))
+        if status != 200 {
+            return Err(failure(status, &text));
         }
+        Ok(serde_json::from_str::<serde_json::Value>(&text)
+            .ok()
+            .and_then(|v| v.pointer("/data/license").cloned())
+            .and_then(|license| serde_json::from_value(license).ok())
+            .unwrap_or_default())
     }
 
     fn brand(
@@ -321,6 +401,10 @@ pub(crate) struct CheckIn {
     pub renewed: Option<Activation>,
     /// The brand with its pictures, when it changed.
     pub brand: Option<BrandDownload>,
+    /// The licence's modules, when the panel sent them.
+    pub modules: Option<Vec<String>>,
+    /// The person's role; meaningful only when `modules` is `Some`.
+    pub role: Option<String>,
 }
 
 /// A changed brand, its pictures already checked.
@@ -331,8 +415,10 @@ pub(crate) struct BrandDownload {
     pub images: Vec<(&'static str, Vec<u8>)>,
 }
 
-/// Downloads the brand's pictures; one that fails or is not safe fails the
-/// whole brand, which is tried again at the next check.
+/// Downloads the brand's pictures. A download that fails fails the whole
+/// brand, which is tried again at the next check; a picture that arrives but
+/// is not usable or not safe is left out (the app's own stays), so one bad
+/// file does not hold back the names, colours and texts.
 fn download_images(
     api: &dyn PanelApi,
     json: &serde_json::Value,
@@ -341,13 +427,14 @@ fn download_images(
     for (file, url) in panel_brand::image_urls(json) {
         let Some(url) = url else { continue };
         let bytes = api.download(&url)?;
-        if !panel_brand::image_ok(file, &bytes) {
-            return Err(PanelError::Unexpected {
-                status: 200,
-                detail: format!("{file} is not a usable picture"),
-            });
+        if panel_brand::image_ok(file, &bytes) {
+            images.push((file, bytes));
+        } else {
+            tracing::warn!(
+                file,
+                "the brand's picture is not usable; keeping the app's own"
+            );
         }
-        images.push((file, bytes));
     }
     Ok(images)
 }
@@ -364,10 +451,16 @@ pub(crate) fn check_in(
     now: DateTime<Utc>,
 ) -> Result<CheckIn, PanelError> {
     let usable = token.filter(|(_, expires)| *expires > now + RENEW_BEFORE);
-    let mut renewed = None;
+    let mut renewed: Option<Activation> = None;
+    let mut modules = None;
+    let mut role = None;
     let token = match usable {
         Some((token, _)) => match api.current(token) {
-            Ok(()) => token.to_owned(),
+            Ok(license) => {
+                modules = license.modules;
+                role = license.role;
+                token.to_owned()
+            }
             Err(PanelError::Unauthenticated) => {
                 let fresh = api.activate(key, device, true)?;
                 let token = fresh.token.clone();
@@ -397,7 +490,18 @@ pub(crate) fn check_in(
             None
         }
     };
-    Ok(CheckIn { renewed, brand })
+    if modules.is_none()
+        && let Some(activation) = &renewed
+    {
+        modules.clone_from(&activation.license.modules);
+        role.clone_from(&activation.license.role);
+    }
+    Ok(CheckIn {
+        renewed,
+        brand,
+        modules,
+        role,
+    })
 }
 
 /// This computer's id for the panel: the operating system's machine id,
@@ -474,6 +578,12 @@ struct Session {
     last_ok_at: Option<DateTime<Utc>>,
     refused: Option<Refusal>,
     brand_etag: Option<String>,
+    /// The licence's modules from the last check; `None` opens all of them.
+    #[serde(default)]
+    modules: Option<Vec<String>>,
+    /// The person's role from the last check (see [`crate::ClassRole`]).
+    #[serde(default)]
+    role: Option<String>,
 }
 
 /// The engine's panel state.
@@ -546,6 +656,53 @@ impl crate::Engine {
     #[cfg(test)]
     pub(crate) fn confirm_panel_for_test(&mut self) {
         self.panel.session.last_ok_at = Some(Utc::now());
+    }
+
+    /// Whether this licence opens `module` in the app. Without a panel, or
+    /// before the panel said, every module is open.
+    pub fn module_enabled(&self, module: crate::Module) -> bool {
+        if !kg_brand::has_server() {
+            return true;
+        }
+        self.panel
+            .session
+            .modules
+            .as_ref()
+            .is_none_or(|modules| modules.iter().any(|m| m == module.id()))
+    }
+
+    /// The person's role from the panel. Without a panel, or for a licence
+    /// with no enrolment, the app works as it always did ([`crate::ClassRole::Owner`]).
+    pub fn role(&self) -> crate::ClassRole {
+        if !kg_brand::has_server() {
+            return crate::ClassRole::Owner;
+        }
+        match self.panel.session.role.as_deref() {
+            Some("teacher") => crate::ClassRole::Teacher,
+            Some("student") => crate::ClassRole::Student,
+            _ => crate::ClassRole::Owner,
+        }
+    }
+
+    /// The device token, when the panel lets this computer in.
+    pub(crate) fn panel_token(&self) -> Option<String> {
+        if !kg_brand::has_server() || !self.panel_allows_use() {
+            return None;
+        }
+        self.panel.token.clone()
+    }
+
+    /// Starts a check with the panel now (and so a cloud sync).
+    pub(crate) fn check_panel_now(&mut self) {
+        if kg_brand::has_server() && self.license.is_some() {
+            self.panel.next_check = Some(Instant::now());
+        }
+    }
+
+    /// Sets the role as if the panel had sent it, for tests.
+    #[cfg(test)]
+    pub(crate) fn set_role_for_test(&mut self, role: &str) {
+        self.panel.session.role = Some(role.to_owned());
     }
 
     /// The brand downloaded from the panel at an earlier start.
@@ -705,6 +862,10 @@ impl crate::Engine {
         let activation = result?;
         self.store_license(key)?;
         self.keep_token(&activation);
+        if let Some(modules) = activation.license.modules.clone() {
+            self.panel.session.modules = Some(modules);
+            self.panel.session.role.clone_from(&activation.license.role);
+        }
         self.panel.session.last_ok_at = Some(Utc::now());
         self.panel.session.refused = None;
         self.save_session();
@@ -782,9 +943,14 @@ impl crate::Engine {
                         Err(err) => tracing::warn!(%err, "could not keep the panel brand"),
                     }
                 }
+                if let Some(modules) = check.modules {
+                    self.panel.session.modules = Some(modules);
+                    self.panel.session.role = check.role;
+                }
                 self.panel.session.last_ok_at = Some(now);
                 self.panel.session.refused = None;
                 self.panel.next_check = Some(Instant::now() + CHECK_EVERY);
+                self.after_panel_check();
             }
             Err(PanelError::Refused(refusal)) => {
                 tracing::warn!(?refusal, "the panel refused this computer");
@@ -809,8 +975,10 @@ mod tests {
     /// A scripted panel that records the calls it gets.
     #[derive(Default)]
     struct FakePanel {
-        current: Option<Result<(), PanelError>>,
+        current: Option<Result<LicenseInfo, PanelError>>,
         activate: Option<Result<Activation, PanelError>>,
+        /// The brand also names an icon, which arrives as an unusable file.
+        bad_icon: bool,
         calls: RefCell<Vec<String>>,
     }
 
@@ -823,9 +991,9 @@ mod tests {
                 .clone()
                 .unwrap_or(Err(PanelError::Unreachable("none".into())))
         }
-        fn current(&self, token: &str) -> Result<(), PanelError> {
+        fn current(&self, token: &str) -> Result<LicenseInfo, PanelError> {
             self.calls.borrow_mut().push(format!("current {token}"));
-            self.current.clone().unwrap_or(Ok(()))
+            self.current.clone().unwrap_or(Ok(LicenseInfo::default()))
         }
         fn brand(
             &self,
@@ -838,7 +1006,10 @@ mod tests {
                     serde_json::json!({
                         "app_name": "Escola",
                         "colors": {"accent_light": "#112233"},
-                        "images": {"mark": "https://cdn.example/mark.svg", "icon": null},
+                        "images": {
+                            "mark": "https://cdn.example/mark.svg",
+                            "icon": self.bad_icon.then_some("https://cdn.example/icon.png"),
+                        },
                     }),
                     Some("v1".into()),
                 )
@@ -863,6 +1034,10 @@ mod tests {
         Activation {
             token: "new".into(),
             token_expires_at: now() + Duration::days(days),
+            license: LicenseInfo {
+                modules: Some(vec!["lessons".into()]),
+                role: None,
+            },
         }
     }
 
@@ -881,6 +1056,27 @@ mod tests {
         assert_eq!(check.renewed, None);
         assert_eq!(check.brand, None);
         assert_eq!(*panel.calls.borrow(), ["current old", "brand"]);
+    }
+
+    #[test]
+    fn an_unusable_picture_is_left_out_and_the_rest_of_the_brand_kept() {
+        let panel = FakePanel {
+            bad_icon: true,
+            ..FakePanel::default()
+        };
+        let check = check_in(
+            &panel,
+            "key",
+            "dev",
+            Some(("old", now() + Duration::days(5))),
+            None,
+            now(),
+        )
+        .unwrap();
+        let brand = check.brand.unwrap();
+        assert_eq!(brand.json["app_name"], "Escola");
+        let files: Vec<&str> = brand.images.iter().map(|(file, _)| *file).collect();
+        assert_eq!(files, ["mark.svg"]);
     }
 
     #[test]
@@ -1040,10 +1236,18 @@ mod tests {
                     etag: Some("v2".into()),
                     images: vec![("mark.svg", b"<svg/>".to_vec())],
                 }),
+                modules: Some(vec!["content".into()]),
+                role: Some("teacher".into()),
             }),
             now(),
         );
         assert_eq!(engine.panel.token.as_deref(), Some("new"));
+        assert!(engine.module_enabled(crate::Module::Content));
+        assert!(!engine.module_enabled(crate::Module::Lessons));
+        assert!(matches!(
+            engine.handle(crate::Command::StartLesson(crate::TopicId(1))),
+            Err(crate::EngineError::ModuleDisabled(crate::Module::Lessons))
+        ));
         assert_eq!(engine.panel.session.brand_etag.as_deref(), Some("v2"));
         // Kept for the next start, not applied to this one.
         assert_eq!(engine.panel_brand(), None);

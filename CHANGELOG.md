@@ -10,6 +10,50 @@ repository.
 ## [Unreleased]
 
 ### Added
+- **Cebraspe-style quizzes (Certo/Errado).** Settings → *Quiz question style* offers
+  *Like the exam* (default), *Multiple choice* and *True/false (Cebraspe)*. True/false
+  quizzes ask statements to judge, written by the model with a clear content error in
+  the wrong ones, and keep Certo before Errado. The result also shows Cebraspe's net
+  score, where each wrong answer cancels a right one. *Like the exam* asks Certo/Errado
+  when the exam format read from the notice is true/false, when the plan names
+  Cebraspe/CESPE, or when most of the plan's past exam questions are Certo/Errado.
+  Past exam questions follow the chosen style; the multiple-choice question bank
+  prepared in advance is skipped for true/false quizzes.
+
+### Fixed
+- **Voice downloads on Linux and macOS.** Piper could only be downloaded on Windows;
+  elsewhere the button failed with "This is not supported on this system". The app now
+  downloads the official builds for each system, checked against pinned SHA-256 sums:
+  - Piper on Windows and Linux (x86_64 and aarch64);
+  - sherpa-onnx v1.12.20, which runs the Kokoro voices and Parakeet, on Windows,
+    Linux (x86_64 and aarch64) and macOS (Apple silicon and Intel).
+
+  Piper's macOS archives are broken upstream, so on macOS the default voice is Kokoro,
+  a saved Piper voice switches to the Kokoro voice of the same gender, and Settings
+  shows "Not available on this system" instead of a button that fails. The welcome
+  screen downloads the program of the chosen voice, and the lesson hint no longer
+  names Piper.
+
+## [0.2.0] - 2026-11-10
+
+Classes in the cloud, for brands with a panel.
+
+### Added
+- Teachers and students: the panel's client area enrols each person as a teacher or a
+  student. Students use what their classes give them (lessons, quizzes, handouts,
+  readings) and cannot create or change subjects; teachers create plans and content.
+- Classes screen for teachers: publish a plan, with its handouts and quiz questions, to
+  classrooms, and see each student's topics mastered, quiz accuracy, lessons, study time
+  and last activity.
+- Students' progress kept in the cloud and merged across computers, so it comes back on a
+  new computer; "Sync now" on the Syllabus screen.
+- Shared base of AI-made material: the app looks for an equal plan, handout or quiz bank
+  made by any school before asking the AI, and shares what the AI makes, to save tokens.
+- The purpose of each plan (ENEM, university entrance exam, public-service exam, bar or
+  certification exam, other), asked when the plan is created; prompts adapt to it.
+- Bibliographic references at the end of every handout topic.
+- Panel: classrooms, courses and roles in the client area; the shared base for admins;
+  `/api/v1/classrooms`, `/courses`, `/progress` and `/shared-materials`.
 - Signed offline licences (Ed25519, public key in the brand): activation in Settings and
   on the "demonstration ended" screen, bound to brand, customer, seats and dates;
   `license_issue` example to create keys and licences. `[licensing] required` builds stop
@@ -18,10 +62,16 @@ repository.
   sticker art folders, review flags that gate commercial packaging.
 - Handouts from a demo or unlicensed build carry a "Demonstration" stamp.
 - Caderna sample brand.
+- CADERNA-DASHBOARD panel: a client area where schools enrol their students and set their
+  plans, and charges the client pays there by Pix or credit card (up to 3 instalments
+  without interest, through Asaas).
 - Per-brand macOS/Linux packages, installers and release workflow; signing scripts that
   read certificates from CI secrets.
 
 ### Changed
+- Caderna terms of use and privacy policy describe classes, the cloud progress and the
+  shared base (version `2026-11-10.1`; users agree again).
+- Handout prompts speak of any Brazilian exam, not only public-service exams.
 - The Dii voice (non-commercial licence) is no longer offered or downloaded.
 - READMEs in all five languages show the Caderna icon and screenshots rendered with the
   Caderna brand, the full brand.toml sections, licence issuing and the CADERNA-DASHBOARD

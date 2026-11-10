@@ -110,6 +110,7 @@ struct Item {
     source: HandoutSource,
     handout: Option<TopicHandout>,
     has_quiz_bank: bool,
+    shared: Option<crate::shared::SharedBase>,
 }
 
 /// What is ready for one topic while the job runs.
@@ -180,6 +181,7 @@ impl Engine {
                 source,
                 handout,
                 has_quiz_bank,
+                shared: self.shared_base(),
             });
         }
 
@@ -389,7 +391,13 @@ fn prepare_topic(
     let mut ok = true;
     if !has_handout {
         match with_retry(progress, || {
-            write_topic(client, &item.context, &item.source, seed(i))
+            write_topic(
+                client,
+                &item.context,
+                &item.source,
+                item.shared.as_ref(),
+                seed(i),
+            )
         }) {
             Ok((topic, json)) => {
                 if let Some(json) = json {
@@ -409,9 +417,31 @@ fn prepare_topic(
         }
     }
     if !has_quiz_bank && !progress.cancelled() {
-        let questions = with_retry(progress, || {
-            kg_ai::generate_quiz(client, &item.context, QUIZ_BANK_SIZE)
-        });
+        let questions = shared_quiz_bank(item).map_or_else(
+            || {
+                let made = with_retry(progress, || {
+                    kg_ai::generate_quiz(
+                        client,
+                        &item.context,
+                        QUIZ_BANK_SIZE,
+                        kg_ai::QuizFormat::Choice,
+                    )
+                });
+                if let (Ok(questions), Some(base)) = (&made, &item.shared)
+                    && let Ok(json) = serde_json::to_string(questions)
+                {
+                    base.give(
+                        &quiz_bank_key(base, item),
+                        crate::shared::SharedKind::QuizBank,
+                        &item.context.subject,
+                        &item.context.topic,
+                        &json,
+                    );
+                }
+                made
+            },
+            Ok,
+        );
         match questions.map(|q| serde_json::to_string(&q)) {
             Ok(Ok(json)) => {
                 send(PrepareEvent::QuizBank {
@@ -433,6 +463,35 @@ fn prepare_topic(
         }
     }
     ok
+}
+
+/// A topic's quiz questions in the shared base: same prompt, subject and
+/// topic (and exam, for exams with their own notice).
+fn quiz_bank_key(base: &crate::shared::SharedBase, item: &Item) -> String {
+    let exam = if base.exam_matters() {
+        item.context.exam.trim().to_lowercase()
+    } else {
+        String::new()
+    };
+    base.key(
+        crate::shared::SharedKind::QuizBank,
+        kg_ai::prompts_in(base.language()).quiz,
+        &[
+            &item.context.subject.trim().to_lowercase(),
+            &item.context.topic.trim().to_lowercase(),
+            &exam,
+            &QUIZ_BANK_SIZE.to_string(),
+        ],
+    )
+}
+
+/// The topic's quiz questions from the shared base, when they are usable.
+fn shared_quiz_bank(item: &Item) -> Option<Vec<QuestionDraft>> {
+    let base = item.shared.as_ref()?;
+    let json = base.fetch(&quiz_bank_key(base, item))?;
+    let questions: Vec<QuestionDraft> = serde_json::from_str(&json).ok()?;
+    let usable = !questions.is_empty() && questions.iter().all(|q| q.correct < q.options.len());
+    usable.then_some(questions)
 }
 
 /// Retries after a pause when the server cannot be reached.

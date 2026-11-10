@@ -21,7 +21,8 @@
 - "pitfalls"：3 到 5 個出題機構常見的陷阱，每個用一句話說明。
 - "summary"：4 到 6 句話，概括要點。
 - "exercises"：正好 5 道出題機構風格的選擇題，每題 4 個選項，只有一個正確。選項不要以字母開頭。"correct" 是正確選項的序號，從 0 開始。"explanation" 用最多 80 字說明正確選項為什麼對，引用選項的內容，而不是它的字母。
+- "references"：2 到 5 條支撐內容的真實參考文獻，採用學生所在地區通行的格式。優先引用法規和官方文件（註明編號和年份）以及廣為人知的教材和工具書。只引用你確定作者和書名都真實存在的文獻；不要編造頁碼、版次、連結或 DOI。拿不準時就少引。
 - 不使用 Markdown 或標記；JSON 中只寫純文字。
 
 只用有效的 JSON 回答，前後不要有任何文字，格式如下：
-{"introduction": "...", "sections": [{"heading": "...", "paragraphs": ["..."], "key_points": ["..."], "image": ""}], "examples": ["..."], "pitfalls": ["..."], "summary": ["..."], "exercises": [{"prompt": "...", "options": ["...", "...", "...", "..."], "correct": 0, "explanation": "..."}]}
+{"introduction": "...", "sections": [{"heading": "...", "paragraphs": ["..."], "key_points": ["..."], "image": ""}], "examples": ["..."], "pitfalls": ["..."], "summary": ["..."], "references": ["..."], "exercises": [{"prompt": "...", "options": ["...", "...", "...", "..."], "correct": 0, "explanation": "..."}]}

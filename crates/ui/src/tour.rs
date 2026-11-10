@@ -8,7 +8,7 @@ use crate::app::{KnowGiverApp, Screen};
 use crate::theme;
 
 /// Screens shown in the tour, in sidebar order.
-const STEPS: [Screen; 13] = [
+const STEPS: [Screen; 14] = [
     Screen::Today,
     Screen::Edital,
     Screen::Plan,
@@ -21,16 +21,18 @@ const STEPS: [Screen; 13] = [
     Screen::Mock,
     Screen::Progress,
     Screen::Challenges,
+    Screen::Classes,
     Screen::Settings,
 ];
 
 const CARD_WIDTH: f32 = 360.0;
 
-/// The tour's screens; written answers only when the plan has a written test.
-pub fn steps(writing: bool) -> Vec<Screen> {
+/// The tour's screens; written answers only when the plan has a written test,
+/// and only the screens the licence opens.
+pub fn steps(writing: bool, open: impl Fn(Screen) -> bool) -> Vec<Screen> {
     STEPS
         .into_iter()
-        .filter(|s| writing || *s != Screen::Discursive)
+        .filter(|s| (writing || *s != Screen::Discursive) && open(*s))
         .collect()
 }
 
@@ -48,6 +50,7 @@ fn text(screen: Screen) -> (String, String) {
         Screen::Mock => (t!("tour.mock.title"), t!("tour.mock.text")),
         Screen::Progress => (t!("tour.progress.title"), t!("tour.progress.text")),
         Screen::Challenges => (t!("tour.challenges.title"), t!("tour.challenges.text")),
+        Screen::Classes => (t!("tour.classes.title"), t!("tour.classes.text")),
         Screen::Settings | Screen::Welcome | Screen::Setup => {
             (t!("tour.settings.title"), t!("tour.settings.text"))
         }
@@ -56,8 +59,10 @@ fn text(screen: Screen) -> (String, String) {
 }
 
 /// Draws the tour card over the app and moves between screens.
-pub fn show(app: &mut KnowGiverApp, ctx: &egui::Context, writing: bool) {
-    let steps = steps(writing);
+pub(crate) fn show(app: &mut KnowGiverApp, ctx: &egui::Context, badges: &crate::app::Badges) {
+    let steps = steps(badges.writing, |s| {
+        badges.open(s) && badges.shows_for_role(s)
+    });
     let last = steps.len().saturating_sub(1);
     let index = app.ui.tour_step.min(last);
     let Some(&screen) = steps.get(index) else {
@@ -171,9 +176,16 @@ mod tests {
 
     #[test]
     fn written_answers_only_with_a_written_test() {
-        assert!(steps(true).contains(&Screen::Discursive));
-        assert!(!steps(false).contains(&Screen::Discursive));
-        assert_eq!(steps(false).first(), Some(&Screen::Today));
-        assert_eq!(steps(false).last(), Some(&Screen::Settings));
+        let all = |_| true;
+        assert!(steps(true, all).contains(&Screen::Discursive));
+        assert!(!steps(false, all).contains(&Screen::Discursive));
+        assert_eq!(steps(false, all).first(), Some(&Screen::Today));
+        assert_eq!(steps(false, all).last(), Some(&Screen::Settings));
+        // A plan with lessons only skips the content screens.
+        let lessons = steps(true, |s: Screen| {
+            s.module() != Some(kg_engine::Module::Content)
+        });
+        assert!(lessons.contains(&Screen::Lesson));
+        assert!(!lessons.contains(&Screen::Quiz) && !lessons.contains(&Screen::Reader));
     }
 }

@@ -33,8 +33,12 @@ impl License {
     pub fn claims(&self) -> &Claims {
         &self.0
     }
+    /// Valid from the day before `not_before`: the issuer's calendar day can
+    /// be ahead of the student's (a key issued at night in another time zone),
+    /// and a fresh key must work at once.
     pub fn valid_on(&self, today: NaiveDate) -> bool {
-        self.0.not_before <= today && today <= self.0.expires
+        let starts = self.0.not_before.pred_opt().unwrap_or(self.0.not_before);
+        starts <= today && today <= self.0.expires
     }
 }
 
@@ -221,7 +225,10 @@ pub(crate) mod tests {
         assert!(license.valid_on(claims.not_before));
         assert!(license.valid_on(claims.expires));
         assert!(!license.valid_on(claims.expires.succ_opt().unwrap()));
-        assert!(!license.valid_on(claims.not_before.pred_opt().unwrap()));
+        // One day early still works (time zones); two days early does not.
+        let day_before = claims.not_before.pred_opt().unwrap();
+        assert!(license.valid_on(day_before));
+        assert!(!license.valid_on(day_before.pred_opt().unwrap()));
         assert!(matches!(
             verify(&token, &key, "other"),
             Err(LicenseError::Brand)

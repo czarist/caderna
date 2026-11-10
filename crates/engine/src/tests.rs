@@ -66,6 +66,7 @@ fn prefs() -> PlanPrefs {
         weeks: 6,
         hours_per_week: 10,
         role: String::new(),
+        purpose: Default::default(),
     }
 }
 
@@ -221,6 +222,67 @@ fn quiz_flow_records_attempt_and_schedules_review() {
     let t = topic(&engine, id);
     assert_eq!(t.status, TopicStatus::Reviewing);
     assert!(t.review.due.is_some());
+}
+
+#[test]
+fn true_false_quiz_judges_statements_and_scores_like_cebraspe() {
+    let (mut engine, _dir) = engine_with_plan();
+    let id = first_topic(&engine);
+    // Nothing points to Cebraspe yet: "like the exam" means multiple choice.
+    assert!(!engine.quiz_true_false());
+    engine.settings.quiz_style = QuizStyle::TrueFalse;
+    assert!(engine.quiz_true_false());
+    engine.handle(Command::StartQuiz(id)).unwrap();
+    let session = engine.quiz().unwrap();
+    assert!(session.true_false);
+    let session = session.id;
+    let item = |correct| QuestionDraft {
+        prompt: format!("Afirmação {correct}."),
+        options: Vec::new(),
+        correct,
+        explanation: "Explicação.".into(),
+    };
+    engine
+        .events_tx
+        .send(Event::Practice(PracticeEvent::QuizReady {
+            session,
+            // The third one is broken (no such answer) and is dropped.
+            result: Ok(vec![item(0), item(1), item(5)]),
+        }))
+        .unwrap();
+    engine.poll();
+    let quiz = engine.quiz().unwrap();
+    assert_eq!(quiz.questions().len(), 2);
+    for (question, correct) in quiz.questions().iter().zip([0, 1]) {
+        assert_eq!(question.options, ["Certo", "Errado"]);
+        assert_eq!(question.correct, correct, "true/false is never shuffled");
+    }
+    engine.handle(Command::AnswerQuiz(0)).unwrap();
+    engine.handle(Command::NextQuestion).unwrap();
+    engine.handle(Command::AnswerQuiz(0)).unwrap();
+    engine.handle(Command::NextQuestion).unwrap();
+    let quiz = engine.quiz().unwrap();
+    assert_eq!(
+        quiz.step,
+        QuizStep::Finished {
+            correct: 1,
+            total: 2
+        }
+    );
+    assert_eq!(quiz.net_score(1, 2), Some(0));
+    assert_eq!(quiz.net_score(0, 2), Some(-2));
+}
+
+#[test]
+fn exam_style_follows_a_cebraspe_plan() {
+    let (mut engine, _dir) = engine_with_plan();
+    if let Some(plan) = engine.active.as_mut() {
+        plan.exam = "Polícia Federal – banca CEBRASPE".into();
+    }
+    assert_eq!(engine.settings.quiz_style, QuizStyle::Exam);
+    assert!(engine.quiz_true_false());
+    engine.settings.quiz_style = QuizStyle::Choice;
+    assert!(!engine.quiz_true_false());
 }
 
 #[test]
@@ -1784,4 +1846,121 @@ fn a_mock_exam_prints_with_its_answer_card() {
         .unwrap();
     poll_until(&mut engine, |e| !e.printing_mock());
     assert!(std::fs::read(&path).unwrap().starts_with(b"%PDF"));
+}
+
+fn course_json(version: i64, topics: serde_json::Value) -> serde_json::Value {
+    serde_json::json!({
+        "id": 42,
+        "title": "ENEM 2027",
+        "exam": "ENEM",
+        "purpose": "national_exam",
+        "version": version,
+        "content": {
+            "weeks": 6,
+            "syllabus": "Matriz de referência: funções e geometria.",
+            "subjects": [{"name": "Matemática", "topics": topics}]
+        },
+        "materials": [
+            {"topic": "t1", "kind": "handout", "content": "{\"topic\":\"Funções\",\"subject\":\"Matemática\",\"sections\":[{\"heading\":\"Ideia\",\"paragraphs\":[\"Uma regra.\"]}],\"references\":[\"IEZZI, G. Fundamentos de matemática elementar.\"]}"},
+            {"topic": "t1", "kind": "quiz_bank", "content": "[{\"prompt\":\"2+2?\",\"options\":[\"3\",\"4\"],\"correct\":1}]"},
+            {"topic": "t1", "kind": "quiz_bank", "content": "[{\"prompt\":\"bad\",\"options\":[\"a\"],\"correct\":5}]"}
+        ]
+    })
+}
+
+#[test]
+fn a_student_receives_courses_keeps_progress_and_creates_no_plans() {
+    let (mut engine, _dir) = engine();
+    engine.set_role_for_test("student");
+    // Roles come from a panel; a brand without one has none.
+    if kg_brand::has_server() {
+        assert_eq!(engine.role(), ClassRole::Student);
+        assert!(matches!(
+            engine.handle(Command::ImportEdital("x.pdf".into())),
+            Err(EngineError::TeachersOnly)
+        ));
+    } else {
+        assert_eq!(engine.role(), ClassRole::Owner);
+    }
+
+    let topics = serde_json::json!([
+        {"key": "t1", "title": "Funções", "difficulty": "medium", "week": 1},
+        {"key": "t2", "title": "Geometria", "difficulty": "hard", "week": 2}
+    ]);
+    let summary = serde_json::json!([{"id": 42, "title": "ENEM 2027", "version": 1}]);
+    let progress = serde_json::json!([
+        {"course_id": 42, "data": {
+            "topics": {"t2": {"status": "reviewing", "last_reviewed": "2026-11-08"}},
+            "quizzes": [{"topic": "t2", "taken_on": "2026-11-08", "correct": 3, "total": 4}]
+        }},
+        {"course_id": null, "data": {"study_millis": {"2026-11-08": 600000}}}
+    ]);
+    let uploads = engine
+        .apply_class_json(
+            summary.clone(),
+            serde_json::json!([course_json(1, topics)]),
+            progress,
+        )
+        .unwrap();
+
+    let plan = engine.active_plan().unwrap().clone();
+    assert_eq!(plan.title, "ENEM 2027");
+    assert_eq!(plan.purpose, "national_exam");
+    let link = engine.course_link(plan.id).unwrap();
+    assert!(link.assigned);
+    let geometry = plan.topics().nth(1).unwrap().1;
+    assert_eq!(geometry.status, TopicStatus::Reviewing, "progress restored");
+    let functions = plan.topics().next().unwrap().1.id;
+    let (context, _) = engine.topic_context(functions).unwrap();
+    let source = handouts::HandoutSource::new(&context, "anything", engine.prompt_language());
+    let cached = source
+        .cached(&engine.store.handout(functions).unwrap().unwrap())
+        .unwrap();
+    assert_eq!(
+        cached.references.len(),
+        1,
+        "the teacher's handout is used as it is"
+    );
+    assert_eq!(engine.quiz_bank(functions).len(), 1);
+    let day = chrono::NaiveDate::from_ymd_opt(2026, 11, 8).unwrap();
+    assert_eq!(engine.store.study_millis(day).unwrap(), 600_000);
+    // The merged copy goes back: every topic, and the quiz kept once.
+    let sent = uploads
+        .iter()
+        .find(|(course, _)| *course == Some(42))
+        .map(|(_, data)| data.clone())
+        .unwrap();
+    assert_eq!(sent["topics"]["t1"]["status"], "not_started");
+    assert_eq!(sent["quizzes"].as_array().map(Vec::len), Some(1));
+
+    // Version 2: a topic renamed, one added; Geometria keeps its progress.
+    let topics = serde_json::json!([
+        {"key": "t3", "title": "Estatística"},
+        {"key": "t2", "title": "Geometria plana"}
+    ]);
+    let summary2 = serde_json::json!([{"id": 42, "title": "ENEM 2027", "version": 2}]);
+    engine
+        .apply_class_json(
+            summary2,
+            serde_json::json!([course_json(2, topics)]),
+            serde_json::json!([]),
+        )
+        .unwrap();
+    let plan = engine.active_plan().unwrap();
+    let titles: Vec<&str> = plan.topics().map(|(_, t)| t.title.as_str()).collect();
+    assert_eq!(titles, ["Estatística", "Geometria plana"]);
+    assert_eq!(
+        plan.topics().nth(1).unwrap().1.status,
+        TopicStatus::Reviewing
+    );
+
+    // Taken away from the classroom: the plan leaves this computer.
+    engine
+        .apply_class_json(
+            serde_json::json!([]),
+            serde_json::json!([]),
+            serde_json::json!([]),
+        )
+        .unwrap();
+    assert!(engine.plans().is_empty());
 }

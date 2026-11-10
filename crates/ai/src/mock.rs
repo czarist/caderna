@@ -41,8 +41,8 @@ pub fn read_exam_format(
     let lang = client.language();
     let role = if role.trim().is_empty() {
         lang.pick(
-            "o cargo principal do edital",
-            "the main position of the notice",
+            "o cargo ou a área principal do programa",
+            "the main position or track of the syllabus",
         )
     } else {
         role.trim()
@@ -54,7 +54,10 @@ pub fn read_exam_format(
     );
     let messages = [
         ChatMessage::system(system),
-        ChatMessage::user(format!("EDITAL:\n{edital}")),
+        ChatMessage::user(format!(
+            "{}:\n{edital}",
+            lang.pick("PROGRAMA DA PROVA", "EXAM SYLLABUS")
+        )),
     ];
     chat_json(client, Task::StudyPlan, &messages, 4_000)
 }

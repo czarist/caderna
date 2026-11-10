@@ -3,6 +3,7 @@
 
 pub mod board;
 pub mod challenges;
+pub mod classes;
 pub mod demo;
 pub mod discursive;
 pub mod edital;

@@ -36,6 +36,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             weeks: 6,
             hours_per_week: 10,
             role: String::new(),
+            purpose: Default::default(),
         },
     )?;
     println!("plan ({:?}): {} / {}", t.elapsed(), plan.title, plan.exam);
@@ -77,7 +78,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let t = std::time::Instant::now();
-    let quiz = generate_quiz(&client, &ctx, 3)?;
+    let quiz = generate_quiz(&client, &ctx, 3, kg_ai::QuizFormat::Choice)?;
     println!("\nquiz ({:?}):", t.elapsed());
     for q in &quiz {
         println!("  {} -> {:?} correct={}", q.prompt, q.options, q.correct);

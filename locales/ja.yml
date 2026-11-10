@@ -103,6 +103,7 @@ demo:
   expired_body: "%{app} の体験期間は終了しました。学習計画と進捗はこのコンピューターに保存されたままで、製品版で引き続き使えます。"
   contact: "%{company} に問い合わせる"
 nav:
+  classes: "クラス"
   mock: "模擬試験"
   discursive: "記述・小論文"
   preparing: "%{done}/%{total}"
@@ -141,6 +142,9 @@ grade:
   easy: "簡単"
 
 edital:
+  pick_purpose_first: "計画を作るには目的を選んでください。"
+  purpose_hint: "計画、テキスト、授業、問題が目的に合わせて変わります。"
+  purpose_title: "この計画はどの試験のためですか？"
   revalidate: "要項を読み直す"
   revalidate_hint: "このプランの試験要項（新しいPDFや改訂版）をもう一度読み込みます。トピック、進捗、テキスト、記述答案はそのまま残ります。"
   title: "試験要項"
@@ -295,7 +299,7 @@ lesson:
   keys: "スペース長押しで話す · Esc で先生を止める"
   open_settings: "設定を開く"
   need_stt: "先生と話すには、設定で音声認識モデルをダウンロードしてください。"
-  need_tts: "先生の声を聞くには、設定で Piper と音声をダウンロードしてください。"
+  need_tts: "先生の声を聞くには、設定で音声とそのプログラムをダウンロードしてください。"
   voice_language: "この言語の音声レッスンはまだ使えません。答えを入力すると、先生は文字で答えます。"
   phase:
     idle: "準備完了"
@@ -306,7 +310,7 @@ lesson:
 
 quiz:
   title: "クイズ"
-  subtitle: "試験の出題形式に合わせた選択式問題。"
+  subtitle: "出題機関のスタイルの問題：選択式または正誤式。"
   none: "進行中のクイズはありません。プランのトピックから始めましょう。"
   go_to_plan: "プランへ"
   loading: "問題を準備中…"
@@ -325,6 +329,8 @@ quiz:
   retry_badge: "前に間違えた問題です"
   your_answer: "あなたの答え"
   right_answer: "正しい答え"
+  judge: "この記述は正しいか、誤りか？"
+  net_score: "Cebraspe 方式の純得点（誤答1つで正答1つが相殺）：%{total} 問中 %{score}"
   missed_on: "%{date} に間違えた · %{count} 回"
   remove_mistake: "削除"
   result:
@@ -514,6 +520,9 @@ update:
   downloading: "バージョン %{version} をダウンロード中… %{percent}%"
   installing: "バージョン %{version} をインストールしています。アプリはいったん閉じて、また開きます。"
 tour:
+  classes:
+    title: "クラス"
+    text: "計画と、それを受け取るクラスを選びます。各生徒の進み具合もここで見られます。"
   mock:
     title: "模擬試験"
     text: "要項の形式どおりの試験を、時間を計って解きます。画面で解くことも、解答用紙と作文用紙付きで印刷することもできます。"
@@ -618,6 +627,7 @@ handout:
   pdf_filter: "PDF文書"
   generated: "%{date} 作成"
   label:
+    references: "参考文献"
     handout: "学習テキスト"
     contents: "目次"
     key_points: "要点"
@@ -645,6 +655,14 @@ settings:
   discard: "変更を取り消す"
   data_dir: "データの保存先：%{path}"
   quiz_size: "1回のクイズの問題数"
+  quiz_style:
+    title: "クイズの出題形式"
+    hint: "正誤式は Cebraspe の形式です。記述の正誤を判定し、本番では誤答1つで正答1つが相殺されます。"
+    exam: "本番と同じ"
+    choice: "選択式"
+    true_false: "正誤式（Cebraspe）"
+    now_true_false: "この試験では：正誤式。"
+    now_choice: "この試験では：選択式。"
   study_reminders:
     title: "学習リマインダー"
     enabled: "アプリから離れている間（トレイ、最小化、背面）に通知する"
@@ -760,6 +778,8 @@ settings:
     download: "ダウンロード"
     remove: "削除"
     piper_note: "Piper はプロジェクト公式の GitHub ページ（rhasspy/piper）からダウンロードします。"
+    piper_unavailable: "Piper には macOS で動作する公式ビルドがありません。sherpa-onnx で動く Kokoro の音声を使ってください。"
+    unavailable: "このシステムでは利用できません"
 
 models:
   kokoro_runtime: "Sherpa-ONNX（Kokoro と Parakeet）"
@@ -801,6 +821,8 @@ working:
   minutes: "%{minutes}分"
 
 notice:
+  courses_updated: "クラスから新しい・更新されたコースが %{count} 件届きました。"
+  plan_published: "計画を %{count} クラスに公開しました。"
   exam_format_read: "要項から試験の形式を読み取りました。作成前に数字を確認してください。"
   exam_format_missing: "要項に科目ごとの問題数が書かれていません。形式を手で調整してください。"
   mock_created: "模擬試験ができました。画面で解くか、印刷してください。"
@@ -1509,3 +1531,55 @@ panel:
   error:
     unreachable: "%{company}のパネルに接続できませんでした。インターネット接続を確認してもう一度お試しください。"
     unexpected: "パネルから予期しない応答がありました。しばらくしてからもう一度お試しください。"
+
+modules:
+  lessons: "ビデオ授業"
+  content: "教材作成"
+  locked_title: "ご利用のプランに含まれていません"
+  locked_body: "%{module}はライセンスに含まれていません。利用するには%{company}にご連絡ください。"
+  contact: "%{company}に連絡する"
+  disabled: "%{module}はご利用のプランに含まれていません。利用するには%{company}にご連絡ください。"
+
+purpose:
+  national_exam: "共通テスト"
+  university_entrance: "大学の個別入試"
+  civil_service: "公務員試験"
+  professional: "資格試験"
+  general: "その他の試験"
+
+classes:
+  title: "クラス"
+  subtitle: "クラスに計画を公開し、生徒を見守る"
+  teachers_only: "計画や教材を作れるのは先生だけです。計画はクラスから届きます。"
+  panel_offline: "パネルに接続できません。インターネットを確認してもう一度試してください。"
+  classrooms: "あなたのクラス"
+  refresh: "更新"
+  not_loaded: "クラスをまだ読み込めていません。接続を確認して「更新」を押してください。"
+  no_classrooms: "まだクラスがありません。学校がパネルの管理画面でクラスを作り、生徒を登録します。"
+  publish_title: "計画をクラスに公開"
+  publish_hint: "生徒は作成済みのテキストと問題付きで計画を受け取り、変更はできません。"
+  no_plans: "公開するには「出題範囲」で計画を作ってください。"
+  published: "公開済み・バージョン %{version}"
+  published_short: "公開済み"
+  publish_note: "再公開すると現在の版が送られ、残るトピックの生徒の進み具合は保たれます。生徒が AI を使わずに済むよう、先にテキストを準備してください。"
+  publishing: "公開中…"
+  publish: "公開"
+  classroom_header: "%{name}・生徒 %{count} 人"
+  no_students: "このクラスには生徒がいません。"
+  no_courses: "このクラスはまだ計画を受け取っていません。"
+  time: "%{hours}時間%{minutes}分"
+  course_number: "コース %{number}"
+  from_teacher: "クラスから"
+  student_title: "計画はクラスから届きます"
+  student_note: "何を学ぶかは先生が決めます。授業、クイズ、テキストはここにあり、進み具合はクラウドに保存されるので、別のパソコンでも戻ります。"
+  syncing: "同期中…"
+  sync_now: "今すぐ同期"
+  last_sync: "最終同期：%{date}"
+  col:
+    student: "生徒"
+    course: "計画"
+    topics: "習得トピック"
+    quizzes: "正答"
+    lessons: "授業"
+    time: "学習時間"
+    last: "最終活動"

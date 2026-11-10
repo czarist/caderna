@@ -14,7 +14,7 @@
 
 <p align="center">
   <b>A desktop app that builds study plans for exams, built in pure Rust.</b><br>
-  Drop in the exam notice or syllabus PDF, get a week-by-week plan, and study out loud with a tutor that listens, explains and quizzes you.
+  Drop in the exam syllabus PDF (public exam or bar exam notice, entrance exam guide, content outline), get a week-by-week plan, and study out loud with a tutor that listens, explains and quizzes you.
 </p>
 
 <p align="center">
@@ -60,8 +60,12 @@
 
 ## From syllabus to plan
 
-The exam notice is read on your machine; only its syllabus goes to the AI.
+The exam syllabus is read on your machine; only its content outline goes to the AI.
 
+- **What exam it is for.** When you create the plan you choose its purpose (national
+  exam such as the ENEM, university entrance exam, public-service exam, bar or
+  certification exam, other), and the plan, lessons, handouts and questions adapt to it.
+  Each handout topic ends with bibliographic references.
 - **Pick your role.** Some exams cover several positions. Caderna finds them and
   asks which one you are applying for, so the plan has the shared subjects plus only
   *your* position's specific ones.
@@ -70,7 +74,7 @@ The exam notice is read on your machine; only its syllabus goes to the AI.
 - **Scanned PDFs.** Pages without text can be transcribed by a vision model you configure.
 
 <p align="center">
-  <img src="docs/images/edital-roles.png" alt="Choosing the position from an exam notice that covers several" width="80%">
+  <img src="docs/images/edital-roles.png" alt="Choosing the position from an exam syllabus that covers several" width="80%">
 </p>
 
 ## Voice lessons
@@ -120,7 +124,8 @@ Ink portraits that breathe, blink, nod while you talk and move their lips with t
 human enough to talk to, drawn enough to stay out of the uncanny valley.
 
 Ten voices, half of them female, from **Piper** and **Kokoro**, all running locally,
-plus four English voices for English passages (US and UK accents).
+plus four English voices for English passages (US and UK accents). On macOS only the
+Kokoro voices are available: Piper has no official build that works there.
 
 <p align="center">
   <img src="docs/images/teachers.png" alt="The four teachers in their states: resting, listening, thinking and speaking" width="70%">
@@ -142,7 +147,8 @@ highlights when you want one.
 ## Practice, review, handouts
 
 - **Quizzes** in the style of the exam, with explanations; real past questions
-  when you upload past exams.
+  when you upload past exams. Multiple choice, or Cebraspe-style true/false items
+  scored the Cebraspe way (each wrong answer cancels a right one).
 - **Mistakes notebook**: every question you miss is kept until you get it right; it
   opens the next quiz on the topic and the teacher goes over it in the lesson.
 - **Spaced review (SM-2)**: topics come back right before you would forget them, as
@@ -156,26 +162,26 @@ highlights when you want one.
 
 ## Mock exams
 
-A whole exam in the notice's format, against the clock. **Read from the notice** finds how
+A whole exam in your exam's format, against the clock. **Read from the syllabus** finds how
 many questions each subject has, the time, multiple choice or true/false, whether a wrong
 answer cancels a right one and whether there is an essay; the app checks those numbers
-against the notice's text and you can adjust any of them. **Generate a mock exam** writes
+against the syllabus text and you can adjust any of them. **Generate a mock exam** writes
 new questions in the exam board's style for every section, spread over the plan's topics
-(past exams you added guide the style), and an essay proposal when the notice has a written
+(past exams you added guide the style), and an essay proposal when the syllabus has a written
 test.
 
 Take it **on screen**, with the clock in the corner, or **print it**: a PDF with the
 question booklet in two columns, a numbered essay sheet and an answer card with corner
 markers. Doing it on paper, you copy your marks into the app's answer card and hand in. The
 clock keeps going if you leave or close the app, and only one sitting runs at a time. The
-grade is plain arithmetic on the saved key, per subject and with the notice's points: right,
+grade is plain arithmetic on the saved key, per subject and with the syllabus's points: right,
 wrong, blank, time used and whether you went over time. Missed questions go to your mistakes
 notebook, the essay goes to Written answers to be photographed and graded, and the answer key
 with explanations opens below. Ten new challenges come with it.
 
 <table>
   <tr>
-    <td><img src="docs/images/mock.png" alt="Mock exams: the format read from the notice, a button to generate one and past results"></td>
+    <td><img src="docs/images/mock.png" alt="Mock exams: the format read from the syllabus, a button to generate one and past results"></td>
     <td><img src="docs/images/mock-sitting.png" alt="A sitting: the clock in the corner, the questions on screen and the answer card"></td>
     <td><img src="docs/images/mock-result.png" alt="A result: points per subject, right, wrong and blank, and the time used"></td>
   </tr>
@@ -186,8 +192,8 @@ with explanations opens below. Ten new challenges come with it.
 The **Achievements** screen has **164 challenges** in 36 families, each level worth an
 original achievement badge (jade, crescent moon, engraved like the app's mark). In each plan: lessons,
 quizzes, right answers and perfect scores, missed questions won back, topics studied and
-the share of the notice, plan weeks on track, topics and subjects mastered, reviews, past
-exams, handouts and highlights, written answers when the notice has them, and mock exams. Across every
+the share of the syllabus, plan weeks on track, topics and subjects mastered, reviews, past
+exams, handouts and highlights, written answers when the syllabus has them, and mock exams. Across every
 plan: study hours and days, plans made and the collection itself. First Step, Comeback, Plan in
 Motion and Week on Track keep their own names.
 
@@ -209,13 +215,13 @@ no ranking, no streak to lose.
 
 ## Written answers
 
-When the exam notice has an essay or a discursive test, a **Written answers** area
-appears. It never appears for a notice without one. A plan made before can have its
-notice read again (**Re-read notice**) without losing topics, progress or handouts.
+When the exam syllabus has an essay or a discursive test, a **Written answers** area
+appears. It never appears for a syllabus without one. A plan made before can have its
+syllabus read again (**Re-read syllabus**) without losing topics, progress or handouts.
 
 - **Prompts from your plan**: an argumentative essay, a technical discursive question or
   a case study, on topics you pick or on what you studied and missed. The criteria and
-  points are shown before you write: the notice's own (with the passage quoted), yours,
+  points are shown before you write: the syllabus's own (with the passage quoted), yours,
   or Caderna's generic ones, clearly labelled. The answer outline stays hidden until
   you hand in.
 - **Write by hand, send photos**: JPEG or PNG pages, rotated, reordered, replaced or
@@ -249,14 +255,14 @@ reasoning.
 <table>
   <tr>
     <td><img src="docs/images/writing-check.png" alt="Checking the transcript: the photographed page beside the editable text, with uncertain words listed"></td>
-    <td><img src="docs/images/writing.png" alt="A graded essay: criteria from the notice, estimated score per criterion with quotes, problems and suggestions"></td>
+    <td><img src="docs/images/writing.png" alt="A graded essay: criteria from the syllabus, estimated score per criterion with quotes, problems and suggestions"></td>
   </tr>
 </table>
 
 <table>
   <tr>
     <td><img src="docs/images/today.png" alt="Today: streak, reviews due and next step"></td>
-    <td><img src="docs/images/board.png" alt="Exam board: past questions matched to the plan, with the ones out of scope set aside"></td>
+    <td><img src="docs/images/board.png" alt="Past exams: past questions matched to the plan, with the ones out of scope set aside"></td>
   </tr>
 </table>
 
@@ -291,7 +297,7 @@ how people prepare for exams where you live: in Brazil, Cebraspe true/false item
 five-option questions from FCC and FGV, and an essay counted in lines; in Japan, five-option
 questions and a 小論文 counted in characters; in mainland China, the 行测 and the 申论; in
 Taiwan and Hong Kong, their civil service formats; in the US and UK, standardized tests, the
-bar and mark schemes. The exam notice and past exams always come first.
+bar and mark schemes. The exam syllabus and past exams always come first.
 
 <p align="center">
   <img src="docs/images/setup-ai-free.png" alt="The AI step's Free tab: services with a free plan, the model each covers and what it does with your data" width="60%">
@@ -399,6 +405,8 @@ cargo run -p kg-engine --example license_issue -- sign private.pk8 claims.json l
 **CADERNA-DASHBOARD.** A separate Laravel and Filament project is the Caderna panel:
 clients are validated there, each client's colours, images and texts are set, and
 evaluation tokens and licences are issued in the same format the app verifies offline.
+Schools get a client area there to enrol their students and to pay the panel's charges by
+Pix or credit card (up to 3 instalments without interest, through Asaas).
 It also runs an OpenAI-compatible AI gateway whose provider keys stay on the server, and
 runs with Docker or a local PHP install ([czarist/caderna-dashboard](https://github.com/czarist/caderna-dashboard)).
 With `[server] url` set, the app activates the licence there (one seat per computer, a
@@ -408,6 +416,17 @@ client's name, colours, links, pictures and texts, and sends AI requests through
 student needs no AI key. The panel receives the licence key, a hash of the computer's id,
 the app version, the operating system and the AI requests, never the computer's name;
 the Caderna privacy policy says so. See [branding/README.md](branding/README.md).
+
+**Classes in the cloud.** In the client area the school enrols each person as a teacher
+or a student and builds the classes. Teachers create a plan in Caderna and publish it to
+classes on the Classes screen, with the handouts and questions already made; there they
+see, per student, topics mastered, correct answers, lessons, study time and last activity.
+Students only use what their class receives (lessons, quizzes, handouts and readings) and
+create no subjects. A student's progress is kept in the panel and comes back on another
+computer; when two computers studied offline, the app merges both without duplicates.
+Before asking the AI for a plan, a handout or questions, the app looks in a **shared base**
+for the same request made by any school, and shares what the AI makes, to spend less AI;
+only AI-made material goes there, never student data or the exams a school uploaded.
 
 ## Quick start
 

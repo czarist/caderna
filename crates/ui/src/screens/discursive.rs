@@ -63,7 +63,7 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
             crate::icons::Icon::Edital,
             &t!("discursive.no_test_title"),
             &t!("discursive.no_test"),
-            (!revalidating).then_some(label.as_ref()),
+            (!revalidating && engine.role().creates_plans()).then_some(label.as_ref()),
         ) && let Some(path) = rfd::FileDialog::new()
             .set_title(t!("edital.revalidate"))
             .add_filter(t!("edital.pdf_filter"), &["pdf"])

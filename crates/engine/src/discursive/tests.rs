@@ -54,6 +54,7 @@ fn engine_with(notice: &str) -> (Engine, tempfile::TempDir) {
                 weeks: 4,
                 hours_per_week: 10,
                 role: String::new(),
+                purpose: Default::default(),
             },
             result: Ok(draft),
         })

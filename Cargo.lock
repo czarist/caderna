@@ -3941,7 +3941,7 @@ dependencies = [
 
 [[package]]
 name = "kg-ai"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "base64 0.22.1",
  "dotenvy",
@@ -3962,19 +3962,21 @@ dependencies = [
 
 [[package]]
 name = "kg-audio"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "bzip2",
  "candle-core",
  "candle-nn",
  "candle-transformers",
  "cpal",
+ "flate2",
  "hound",
  "libloading 0.8.9",
  "regex",
  "rodio",
  "serde",
  "serde_json",
+ "sha2 0.10.9",
  "tar",
  "tempfile",
  "thiserror 2.0.21",
@@ -3987,7 +3989,7 @@ dependencies = [
 
 [[package]]
 name = "kg-brand"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "toml 0.9.12+spec-1.1.0",
@@ -3995,7 +3997,7 @@ dependencies = [
 
 [[package]]
 name = "kg-engine"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "base64 0.22.1",
  "chrono",
@@ -4026,7 +4028,7 @@ dependencies = [
 
 [[package]]
 name = "kg-handout"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "image",
  "kg-brand",
@@ -4042,7 +4044,7 @@ dependencies = [
 
 [[package]]
 name = "kg-pdf"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "hayro",
  "pdf-extract",
@@ -4053,7 +4055,7 @@ dependencies = [
 
 [[package]]
 name = "kg-study"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "rusqlite",
@@ -4066,7 +4068,7 @@ dependencies = [
 
 [[package]]
 name = "kg-ui"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "eframe",
@@ -4114,7 +4116,7 @@ dependencies = [
 
 [[package]]
 name = "know-giver"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "dotenvy",
  "embed-resource",

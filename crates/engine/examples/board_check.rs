@@ -32,6 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         weeks: 10,
         hours_per_week: 15,
         role: "Técnico Judiciário – Área Judiciária".into(),
+        purpose: Default::default(),
     }))?;
     wait(&mut engine, "plan", |e| e.generating_since().is_none())?;
     let topics = engine.active_plan().ok_or("no plan")?.topic_count();

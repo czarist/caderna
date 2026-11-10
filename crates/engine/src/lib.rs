@@ -9,6 +9,7 @@ mod accounts;
 mod board;
 mod challenges;
 mod child_job;
+mod classes;
 mod demo;
 mod discursive;
 mod documents;
@@ -18,6 +19,7 @@ mod lesson;
 pub mod license;
 mod mock;
 mod models;
+mod modules;
 mod ocr;
 mod panel_brand;
 mod paths;
@@ -29,6 +31,7 @@ mod reader;
 mod server;
 mod settings;
 mod setup;
+mod shared;
 mod stt;
 mod study_time;
 mod teacher;
@@ -43,6 +46,7 @@ use chrono::NaiveDate;
 
 pub use accounts::AccountAction;
 pub use board::{BoardItem, BoardJob};
+pub use classes::{ClassRole, ClassStudent, Classroom, CourseSummary, StudentCourse};
 pub use demo::DemoStatus;
 pub use discursive::{
     AttemptProblems, EvolutionGroup, EvolutionRow, ImageProblem, NOTE_INTERRUPTED, NOTE_UNREADABLE,
@@ -51,7 +55,9 @@ pub use discursive::{
 pub use handouts::{HandoutJob, HandoutRequest, HandoutScope};
 pub use illustrations::{BoardImage, Illustration, illustration_key};
 pub use kg_ai::{AccountKind, AccountState, LoginPages};
-pub use kg_ai::{AiConfig, AiError, LessonLength, ModelSet, PlanPrefs, ReviewFeedback};
+pub use kg_ai::{
+    AiConfig, AiError, ExamPurpose, LessonLength, ModelSet, PlanPrefs, ReviewFeedback,
+};
 pub use kg_ai::{
     FreeData, FreeTier, ModelChoice, PROVIDERS, Provider, ProviderKind, Recommendation,
     provider as ai_provider, provider_for_url,
@@ -66,6 +72,7 @@ pub use kg_handout::{
     Labels as HandoutLabels, Section as HandoutSection, TextBox, TopicHandout, cjk_font,
 };
 pub use kg_pdf::{Edital, EditalText, PdfError, Role};
+pub use kg_study::CourseLink;
 pub use kg_study::discursive::{REWRITE_RATIO, change_ratio, marks as transcript_marks};
 pub use kg_study::{
     AnswerStyle, ExamFormat, ExamSection, FormatError, FormatSource, MockAttempt, MockAttemptId,
@@ -85,14 +92,15 @@ pub use kg_study::{
     Scope,
 };
 pub use kg_study::{
-    Difficulty, PlanId, PlanSummary, QuizQuestion, QuizStats, ReviewGrade, StoreError, StudyError,
-    StudyPlan, Subject, SubjectId, Topic, TopicId, TopicStatus,
+    Difficulty, PlanId, PlanSummary, QuizQuestion, QuizStats, QuizStyle, ReviewGrade, StoreError,
+    StudyError, StudyPlan, Subject, SubjectId, Topic, TopicId, TopicStatus,
 };
 pub use kg_study::{Highlight, HighlightColor, HighlightId, Reading, ReadingId};
 pub use kg_study::{LessonRecap, Mistake, MistakeId};
 pub use lesson::{LessonPhase, LessonSession, LessonTurn, Speaker};
 pub use mock::{MockJob, MockPrint, mock_code};
 pub use models::ModelStatus;
+pub use modules::Module;
 pub use ocr::{OcrError, OcrModelStatus};
 pub use panel_brand::{PanelBrand, load_panel_brand};
 pub use paths::AppPaths;
@@ -177,6 +185,15 @@ pub enum Command {
     ReactivateDevice,
     /// Frees this computer's seat in the panel and forgets the licence here.
     SignOutDevice,
+    /// Publishes a plan to classrooms (teachers), or updates its course.
+    PublishPlan {
+        plan: PlanId,
+        classrooms: Vec<i64>,
+    },
+    /// Asks the panel for the school's classrooms and how students do (teachers).
+    LoadClassrooms,
+    /// Brings courses and progress up to date with the panel now.
+    SyncClasses,
     TestConnection,
     /// Tests settings not saved yet (first-run setup).
     TestAiConfig(Box<AiConfig>),
@@ -349,6 +366,12 @@ pub enum EngineError {
     License(#[from] license::LicenseError),
     #[error(transparent)]
     Panel(#[from] server::PanelError),
+    #[error("the licence does not include the {0:?} module")]
+    ModuleDisabled(Module),
+    #[error("only teachers create plans and content")]
+    TeachersOnly,
+    #[error("the panel is not connected")]
+    PanelOffline,
     #[error(transparent)]
     Study(#[from] StudyError),
     #[error(transparent)]
@@ -456,6 +479,12 @@ pub enum Notice {
         found: bool,
     },
     MockCreated,
+    /// A plan was published to `classrooms` classrooms.
+    PlanPublished {
+        classrooms: usize,
+    },
+    /// New or changed courses arrived from the student's classrooms.
+    CoursesUpdated(usize),
 }
 
 /// State of the edital import on the Edital screen.
@@ -520,6 +549,14 @@ pub(crate) enum Event {
     },
     PanelChecked(Result<server::CheckIn, server::PanelError>),
     PanelSignedOut(Result<(), server::PanelError>),
+    ClassesDownloaded(Result<classes::SyncDownload, server::PanelError>),
+    ProgressUploaded(Result<(), server::PanelError>),
+    PlanPublished {
+        plan: PlanId,
+        classrooms: usize,
+        result: Result<classes::CourseSummary, server::PanelError>,
+    },
+    ClassroomsLoaded(Result<Vec<classes::Classroom>, server::PanelError>),
 }
 
 /// Called by workers after sending an event, so the UI wakes up.
@@ -594,6 +631,7 @@ pub struct Engine {
     demo: Option<(demo::DemoLimit, demo::DemoClock)>,
     license: Option<license::License>,
     panel: server::Panel,
+    classes: classes::Classes,
 }
 
 impl std::fmt::Debug for Engine {
@@ -687,7 +725,7 @@ impl Engine {
         env_ai: AiConfig,
         mut notices: Vec<Notice>,
     ) -> Self {
-        let settings = Settings::load(&store, &env_ai).unwrap_or_else(|err| {
+        let mut settings = Settings::load(&store, &env_ai).unwrap_or_else(|err| {
             notices.push(Notice::Error(err.into()));
             Settings {
                 ai: env_ai.clone(),
@@ -696,6 +734,7 @@ impl Engine {
         });
         let (events_tx, events_rx) = mpsc::channel();
         let models = ModelStore::new(paths.models_dir());
+        settings.voice = settings.voice.runnable(|id| models.is_installed(id));
         let mut engine = Self {
             store,
             paths,
@@ -752,6 +791,7 @@ impl Engine {
             demo: None,
             license: None,
             panel: server::Panel::default(),
+            classes: classes::Classes::default(),
         };
         engine.restore_chatgpt_session();
         engine.recover_writing();
@@ -888,6 +928,16 @@ impl Engine {
     }
 
     pub fn handle(&mut self, command: Command) -> Result<(), EngineError> {
+        // The licence's plan, set in the brand's panel.
+        if let Some(module) = command.module()
+            && !self.module_enabled(module)
+        {
+            return Err(EngineError::ModuleDisabled(module));
+        }
+        // Students use what their classrooms give them.
+        if command.creates_plans() && !self.role().creates_plans() {
+            return Err(EngineError::TeachersOnly);
+        }
         match command {
             Command::ImportEdital(path) => self.import_edital(path),
             Command::ClearEdital => {
@@ -1015,6 +1065,12 @@ impl Engine {
             Command::ReactivateDevice => self.reactivate_device(),
             Command::SignOutDevice => {
                 self.sign_out_device();
+                Ok(())
+            }
+            Command::PublishPlan { plan, classrooms } => self.publish_plan(plan, classrooms),
+            Command::LoadClassrooms => self.load_classrooms(),
+            Command::SyncClasses => {
+                self.sync_classes_now();
                 Ok(())
             }
             Command::InstallOcrModel => self.install_ocr_model(),
@@ -1245,6 +1301,17 @@ impl Engine {
                     Ok(())
                 }
                 Event::PanelSignedOut(result) => self.on_panel_signed_out(result),
+                Event::ClassesDownloaded(result) => self.on_classes_downloaded(result),
+                Event::ProgressUploaded(result) => {
+                    self.on_progress_uploaded(result);
+                    Ok(())
+                }
+                Event::PlanPublished {
+                    plan,
+                    classrooms,
+                    result,
+                } => self.on_plan_published(plan, classrooms, result),
+                Event::ClassroomsLoaded(result) => self.on_classrooms_loaded(result),
             };
             if let Err(err) = result {
                 tracing::warn!(%err, "background task failed");
@@ -1339,6 +1406,11 @@ impl Engine {
                 self.settings
                     .region
                     .and_then(settings::Region::exam_culture),
+            )
+            .with_purpose(
+                self.active
+                    .as_ref()
+                    .map(|plan| kg_ai::ExamPurpose::from_id(&plan.purpose)),
             )
     }
 

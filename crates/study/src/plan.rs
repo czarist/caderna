@@ -158,6 +158,8 @@ pub struct StudyPlan {
     pub exam: String,
     pub weeks: u32,
     pub created_on: NaiveDate,
+    /// What the plan prepares for (`kg_ai::ExamPurpose` id).
+    pub purpose: String,
     pub subjects: Vec<Subject>,
 }
 
@@ -241,6 +243,7 @@ pub struct NewPlan {
     title: String,
     exam: String,
     weeks: u32,
+    purpose: String,
     subjects: Vec<NewSubject>,
 }
 
@@ -281,8 +284,19 @@ impl NewPlan {
             title: title.into(),
             exam: exam.into(),
             weeks,
+            purpose: "general".to_owned(),
             subjects,
         })
+    }
+
+    /// What the plan prepares for (`kg_ai::ExamPurpose` id).
+    pub fn with_purpose(mut self, purpose: &str) -> Self {
+        purpose.trim().clone_into(&mut self.purpose);
+        self
+    }
+
+    pub fn purpose(&self) -> &str {
+        &self.purpose
     }
 
     pub fn title(&self) -> &str {
@@ -359,6 +373,7 @@ mod tests {
             exam: String::new(),
             weeks: 4,
             created_on: NaiveDate::default(),
+            purpose: String::new(),
             subjects: vec![Subject {
                 id: SubjectId(1),
                 name: "Português".into(),
