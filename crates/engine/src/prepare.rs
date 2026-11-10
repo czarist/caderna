@@ -420,7 +420,12 @@ fn prepare_topic(
         let questions = shared_quiz_bank(item).map_or_else(
             || {
                 let made = with_retry(progress, || {
-                    kg_ai::generate_quiz(client, &item.context, QUIZ_BANK_SIZE)
+                    kg_ai::generate_quiz(
+                        client,
+                        &item.context,
+                        QUIZ_BANK_SIZE,
+                        kg_ai::QuizFormat::Choice,
+                    )
                 });
                 if let (Ok(questions), Some(base)) = (&made, &item.shared)
                     && let Ok(json) = serde_json::to_string(questions)
