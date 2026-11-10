@@ -14,7 +14,7 @@
 
 <p align="center">
   <b>Um app de desktop que monta planos de estudo para provas, feito em Rust puro.</b><br>
-  Envie o PDF do edital, receba um plano semana a semana e estude em voz alta com um tutor que escuta, explica e faz perguntas.
+  Envie o programa da prova (edital de concurso ou da OAB, matriz do ENEM, manual do vestibular), receba um plano semana a semana e estude em voz alta com um tutor que escuta, explica e faz perguntas.
 </p>
 
 <p align="center">
@@ -43,7 +43,7 @@
 </p>
 
 <p align="center">
-  <a href="#do-edital-ao-plano">Edital → plano</a> ·
+  <a href="#do-programa-ao-plano">Programa → plano</a> ·
   <a href="#aulas-por-voz">Aulas por voz</a> ·
   <a href="#um-quadro-que-mostra-não-só-fala">Quadro</a> ·
   <a href="#professores-e-vozes">Professores</a> ·
@@ -58,20 +58,20 @@
 
 <br>
 
-## Do edital ao plano
+## Do programa ao plano
 
-O edital é lido no seu computador; só o conteúdo programático vai para a IA.
+O programa da prova é lido no seu computador; só o conteúdo programático vai para a IA.
 
 - **Escolha o cargo.** Alguns editais têm vários cargos. O Caderna encontra todos e
   pergunta para qual você vai concorrer, então o plano traz as matérias comuns e só as
   específicas do *seu* cargo.
 - **Sua rotina.** O número de semanas e de horas por semana define um plano por semana,
-  matéria e tópico. Dá para manter vários concursos lado a lado.
+  matéria e tópico. Dá para manter várias provas lado a lado.
 - **PDF escaneado.** Páginas sem texto podem ser transcritas por um modelo de visão que
   você configura.
 
 <p align="center">
-  <img src="docs/images/pt-BR/edital-roles.png" alt="Escolha do cargo num edital com vários cargos" width="80%">
+  <img src="docs/images/pt-BR/edital-roles.png" alt="Escolha do cargo num programa com vários cargos" width="80%">
 </p>
 
 ## Aulas por voz
@@ -162,25 +162,25 @@ você quiser.
 
 ## Simulados
 
-Uma prova inteira no formato do edital, com tempo marcado. **Ler do edital** encontra
+Uma prova inteira no formato da sua, com tempo marcado. **Ler do programa** encontra
 quantas questões cada matéria tem, o tempo, se é múltipla escolha ou certo/errado, se uma
-errada anula uma certa e se há redação; o app confere esses números no texto do edital e você
+errada anula uma certa e se há redação; o app confere esses números no texto do programa e você
 pode ajustar qualquer um. **Gerar simulado** escreve questões novas no estilo da banca para
 cada matéria, distribuídas pelos tópicos do plano (as provas anteriores que você adicionou
-guiam o estilo), e um tema de redação quando o edital prevê prova discursiva.
+guiam o estilo), e um tema de redação quando o programa prevê prova discursiva.
 
 Faça **na tela**, com o relógio no canto, ou **imprima**: um PDF com o caderno de questões em
 duas colunas, a folha de redação com linhas numeradas e o cartão-resposta com marcadores nos
 cantos. Fazendo no papel, você passa as marcações para o cartão-resposta do app e entrega. O
 relógio continua se você sair da tela ou fechar o app, e só uma prova corre por vez. A nota é
-conta simples sobre o gabarito salvo, por matéria e com os pesos do edital: certas, erradas,
+conta simples sobre o gabarito salvo, por matéria e com os pesos do programa: certas, erradas,
 em branco, tempo usado e se passou do tempo. As erradas vão para o caderno de erros, a redação
 vai para as Discursivas para ser fotografada e corrigida, e o gabarito comentado abre logo
 abaixo. Vêm junto dez desafios novos.
 
 <table>
   <tr>
-    <td><img src="docs/images/pt-BR/mock.png" alt="Simulados: o formato lido do edital, o botão para gerar e os resultados anteriores"></td>
+    <td><img src="docs/images/pt-BR/mock.png" alt="Simulados: o formato lido do programa, o botão para gerar e os resultados anteriores"></td>
     <td><img src="docs/images/pt-BR/mock-sitting.png" alt="Prova em andamento: o relógio no canto, as questões na tela e o cartão-resposta"></td>
     <td><img src="docs/images/pt-BR/mock-result.png" alt="Resultado: pontos por matéria, certas, erradas e em branco, e o tempo usado"></td>
   </tr>
@@ -191,8 +191,8 @@ abaixo. Vêm junto dez desafios novos.
 A tela **Conquistas** tem **164 desafios** em 36 famílias, e cada nível vale uma conquista
 original (jade, lua crescente, gravura como a marca do app). Em cada plano: aulas, quizzes,
 acertos e gabaritos perfeitos, questões erradas recuperadas, tópicos estudados e a parte do
-edital coberta, semanas do plano em dia, tópicos e matérias dominados, revisões, provas da
-banca, apostilas e destaques, e discursivas quando o edital tem. Somando todos os planos:
+programa coberta, semanas do plano em dia, tópicos e matérias dominados, revisões, provas
+anteriores, apostilas e destaques, e discursivas quando o programa tem. Somando todos os planos:
 horas e dias de estudo, planos criados e a própria coleção. Primeiro Passo, Volta por Cima,
 Plano em Movimento e Semana em Dia têm nome próprio.
 
@@ -214,13 +214,13 @@ pontos, sem ranking, sem sequência a perder.
 
 ## Discursivas
 
-Quando o edital tem redação ou prova discursiva, aparece a área **Discursivas**. Ela nunca
-aparece para um edital sem essa prova. Um plano criado antes pode ter o edital lido de novo
-(**Revalidar edital**) sem perder tópicos, progresso ou apostilas.
+Quando o programa da prova tem redação ou prova discursiva, aparece a área **Discursivas**. Ela nunca
+aparece para um programa sem essa prova. Um plano criado antes pode ter o programa lido de novo
+(**Reler o programa**) sem perder tópicos, progresso ou apostilas.
 
 - **Propostas a partir do seu plano**: redação dissertativa, questão discursiva técnica ou
   estudo de caso, sobre tópicos que você escolhe ou sobre o que você estudou e errou. Os
-  critérios e a pontuação aparecem antes de você escrever: os do edital (com o trecho
+  critérios e a pontuação aparecem antes de você escrever: os do programa (com o trecho
   citado), os seus ou os genéricos do Caderna, sempre identificados. O padrão de
   resposta fica escondido até a entrega.
 - **Escreva à mão e envie fotos**: páginas em JPEG ou PNG, que podem ser giradas,
@@ -252,14 +252,14 @@ O instalador do Windows inclui as bibliotecas C++ e o carregador Vulkan; para us
 <table>
   <tr>
     <td><img src="docs/images/pt-BR/writing-check.png" alt="Conferência da transcrição: a página fotografada ao lado do texto editável, com as palavras incertas listadas"></td>
-    <td><img src="docs/images/pt-BR/writing.png" alt="Uma redação avaliada: critérios do edital, nota estimada por critério com citações, problemas e sugestões"></td>
+    <td><img src="docs/images/pt-BR/writing.png" alt="Uma redação avaliada: critérios do programa, nota estimada por critério com citações, problemas e sugestões"></td>
   </tr>
 </table>
 
 <table>
   <tr>
     <td><img src="docs/images/pt-BR/today.png" alt="Hoje: sequência de dias, revisões pendentes e próximo passo"></td>
-    <td><img src="docs/images/pt-BR/board.png" alt="Banca: questões de provas anteriores ligadas ao plano, com as fora do escopo separadas"></td>
+    <td><img src="docs/images/pt-BR/board.png" alt="Provas anteriores: questões ligadas ao plano, com as fora do escopo separadas"></td>
   </tr>
 </table>
 
@@ -294,7 +294,7 @@ estuda para provas onde você mora: no Brasil, itens certo/errado do Cebraspe e 
 cinco alternativas da FCC e da FGV, e redação contada em linhas; no Japão, cinco
 alternativas e o 小論文 contado em caracteres; na China continental, o 行测 e o 申论; em
 Taiwan e Hong Kong, os formatos dos concursos de lá; nos EUA e no Reino Unido, testes
-padronizados, o bar exam e os mark schemes. O edital e as provas anteriores sempre vêm
+padronizados, o bar exam e os mark schemes. O programa da prova e as provas anteriores sempre vêm
 primeiro.
 
 <p align="center">
@@ -450,7 +450,7 @@ crates/
   study/    # planos, revisões (SM-2), quizzes, armazenamento SQLite
   ai/       # cliente compatível com OpenAI + prompts (crates/ai/prompts/{pt,en})
   audio/    # captura do microfone, STT Parakeet/Whisper, TTS Piper/Kokoro, reprodução, downloads
-  pdf/      # extração do texto do edital, cargos
+  pdf/      # extração do texto do programa da prova, cargos
   handout/  # apostilas renderizadas em PDF com Typst
 locales/    # traduções da interface (pt-BR, en, ja, zh-Hans, zh-Hant)
 branding/   # pastas de marca: default (Know Giver), example (modelo), caderna (cliente)

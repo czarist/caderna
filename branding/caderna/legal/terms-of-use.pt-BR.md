@@ -11,8 +11,8 @@ O {{app}} é oferecido aos alunos por {{provider}} ("{{company}}", "nós"). Cont
 
 ## 2. O que é o {{app}}
 
-O {{app}} é um aplicativo de estudo instalado no seu computador. Ele lê o edital que você
-envia, monta um plano de estudo e oferece aulas por voz, quizzes, revisões, apostilas e
+O {{app}} é um aplicativo de estudo instalado no seu computador. Ele lê o programa da prova que você
+envia (edital, matriz de referência ou manual), monta um plano de estudo e oferece aulas por voz, quizzes, revisões, apostilas e
 correção formativa de respostas discursivas.
 
 ## 3. Onde o aplicativo é oferecido
@@ -50,14 +50,14 @@ aplicativo pedirá um novo aceite.
 - As respostas do tutor, os planos, as apostilas, as questões, as explicações, as
   transcrições de fotos e as notas das discursivas são geradas por inteligência
   artificial e **podem conter erros**: informações incorretas, desatualizadas ou
-  incompletas, leitura errada do edital ou da sua letra, e avaliações diferentes das de
+  incompletas, leitura errada do programa da prova ou da sua letra, e avaliações diferentes das de
   uma banca.
 - **A qualidade depende dos limites da IA usada pela {{company}}**: capacidade do modelo,
   tamanho de contexto, desempenho em português, leitura de imagens, limites de uso e
   disponibilidade do serviço.
 - O aplicativo confere parte das respostas da IA (por exemplo, citações e somas das
   notas), mas essas verificações não eliminam todos os erros.
-- Confira sempre o edital oficial, a legislação e as fontes oficiais. As notas das
+- Confira sempre o programa oficial da prova, a legislação e as fontes oficiais. As notas das
   discursivas são estimativas para estudo, não resultados oficiais. O {{app}} não
   substitui professores, a banca organizadora nem orientação profissional.
 

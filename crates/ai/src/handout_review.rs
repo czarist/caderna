@@ -95,8 +95,8 @@ pub fn review_handout(
         ChatMessage::user(format!(
             "{}\n{edital}\n\n{}\n{json}",
             client.language().pick(
-                "EDITAL (dados de referência):",
-                "EXAM NOTICE (reference data):"
+                "PROGRAMA DA PROVA (dados de referência):",
+                "EXAM SYLLABUS (reference data):"
             ),
             client
                 .language()

@@ -3,7 +3,7 @@
 Para: advogado(a) que revisará os Termos de Uso e a Política de Privacidade do Caderna, e
 para a prestadora (Caderna Educação), que precisa tomar as decisões de negócio marcadas abaixo.
 
-Textos em revisão (versão `2026-11-09.2`):
+Textos em revisão (versão `2026-11-09.3`):
 
 - `terms-of-use.pt-BR.md` (Termos de Uso)
 - `privacy-policy.pt-BR.md` (Política de Privacidade)

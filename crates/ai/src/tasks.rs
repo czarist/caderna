@@ -355,8 +355,8 @@ pub fn generate_plan(
     let lang = client.language();
     let role = if prefs.role.trim().is_empty() {
         lang.pick(
-            "o cargo principal do edital",
-            "the main position of the notice",
+            "o cargo ou a área principal do programa",
+            "the main position or track of the syllabus",
         )
     } else {
         prefs.role.trim()
@@ -371,7 +371,10 @@ pub fn generate_plan(
     );
     let messages = [
         client.cultured(system),
-        ChatMessage::user(format!("EDITAL:\n{edital}")),
+        ChatMessage::user(format!(
+            "{}:\n{edital}",
+            lang.pick("PROGRAMA DA PROVA", "EXAM SYLLABUS")
+        )),
     ];
     chat_json(client, Task::StudyPlan, &messages, 32_000)
 }
@@ -389,8 +392,8 @@ pub fn find_roles(client: &Client, edital: &str) -> Result<Vec<String>, AiError>
     let messages = [
         ChatMessage::system(prompts::get(client.language()).roles.trim()),
         ChatMessage::user(format!(
-            "EDITAL:
-{edital}"
+            "{}:\n{edital}",
+            client.language().pick("PROGRAMA DA PROVA", "EXAM SYLLABUS")
         )),
     ];
     let draft: RolesDraft = chat_json(client, Task::StudyPlan, &messages, 2_000)?;
@@ -810,10 +813,10 @@ fn handout_messages(
         ChatMessage::system(fill(prompts::get(lang).handout, &topic.values())),
         ChatMessage::user(match lang {
             PromptLanguage::Portuguese => format!(
-                "EDITAL (dados de referência):\n{edital}\n\nEscreva a apostila apenas para o tópico solicitado e dentro deste programa."
+                "PROGRAMA DA PROVA (dados de referência):\n{edital}\n\nEscreva a apostila apenas para o tópico solicitado e dentro deste programa."
             ),
             _ => format!(
-                "EXAM NOTICE (reference data):\n{edital}\n\nWrite the handout only for the requested topic and within this syllabus."
+                "EXAM SYLLABUS (reference data):\n{edital}\n\nWrite the handout only for the requested topic and within this syllabus."
             ),
         }),
     ])
