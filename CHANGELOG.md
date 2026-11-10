@@ -18,6 +18,9 @@ repository.
   sticker art folders, review flags that gate commercial packaging.
 - Handouts from a demo or unlicensed build carry a "Demonstration" stamp.
 - Caderna sample brand.
+- CADERNA-DASHBOARD panel: a client area where schools enrol their students and set their
+  plans, and charges the client pays there by Pix or credit card (up to 3 instalments
+  without interest, through Asaas).
 - Per-brand macOS/Linux packages, installers and release workflow; signing scripts that
   read certificates from CI secrets.
 

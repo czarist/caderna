@@ -399,6 +399,8 @@ cargo run -p kg-engine --example license_issue -- sign private.pk8 claims.json l
 **CADERNA-DASHBOARD.** A separate Laravel and Filament project is the Caderna panel:
 clients are validated there, each client's colours, images and texts are set, and
 evaluation tokens and licences are issued in the same format the app verifies offline.
+Schools get a client area there to enrol their students and to pay the panel's charges by
+Pix or credit card (up to 3 instalments without interest, through Asaas).
 It also runs an OpenAI-compatible AI gateway whose provider keys stay on the server, and
 runs with Docker or a local PHP install ([czarist/caderna-dashboard](https://github.com/czarist/caderna-dashboard)).
 With `[server] url` set, the app activates the licence there (one seat per computer, a
