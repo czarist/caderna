@@ -2,8 +2,9 @@
 
 ## Current Status
 
-Version 0.2.0 of the white-label base, forked from Know Giver 0.39.3 on 2026-11-08; 0.2.0
-adds classes in the cloud (Phase W7).
+Version 0.3.0 of the white-label base, forked from Know Giver 0.39.3 on 2026-11-08; 0.2.0
+added classes in the cloud (Phase W7); 0.3.0 adds voice downloads on Linux and macOS and
+Cebraspe-style true/false quizzes.
 Everything Know Giver does is here (edital → plan, voice lessons with whiteboard,
 handouts and reader, quizzes and reviews, mock exams, written answers with local OCR,
 challenges, five UI languages, account sign-ins, tray and reminders). Know Giver's own
