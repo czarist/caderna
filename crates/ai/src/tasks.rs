@@ -19,9 +19,11 @@ pub struct PlanPrefs {
     pub hours_per_week: u32,
     /// Role (cargo) to focus on when the edital covers several.
     pub role: String,
+    /// What the plan prepares for, chosen by the teacher.
+    pub purpose: crate::ExamPurpose,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub struct TopicDraft {
     pub title: String,
     #[serde(default)]
@@ -34,7 +36,7 @@ fn first_week() -> u32 {
     1
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub struct SubjectDraft {
     pub name: String,
     #[serde(default)]
@@ -42,7 +44,7 @@ pub struct SubjectDraft {
 }
 
 /// Plan as returned by the model, before validation.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub struct PlanDraft {
     #[serde(default)]
     pub title: String,
@@ -107,6 +109,9 @@ pub struct HandoutDraft {
     pub summary: Vec<String>,
     #[serde(default)]
     pub exercises: Vec<QuestionDraft>,
+    /// Bibliographic references behind the content.
+    #[serde(default)]
+    pub references: Vec<String>,
 }
 
 /// Markers of whiteboard lines at the end of a tutor answer. The first ones
@@ -352,6 +357,7 @@ pub fn generate_plan(
     edital: &str,
     prefs: &PlanPrefs,
 ) -> Result<PlanDraft, AiError> {
+    let client = &client.clone().with_purpose(Some(prefs.purpose));
     let lang = client.language();
     let role = if prefs.role.trim().is_empty() {
         lang.pick(

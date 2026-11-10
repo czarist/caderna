@@ -30,6 +30,8 @@ pub enum Screen {
     Progress,
     /// Challenges of the plan and the sticker showcase.
     Challenges,
+    /// Teachers: publish plans to classrooms and see the students.
+    Classes,
     Settings,
 }
 
@@ -55,7 +57,7 @@ impl Screen {
         self.module().is_none_or(|m| engine.module_enabled(m))
     }
 
-    const ALL: [Self; 13] = [
+    const ALL: [Self; 14] = [
         Self::Today,
         Self::Edital,
         Self::Plan,
@@ -68,6 +70,7 @@ impl Screen {
         Self::Mock,
         Self::Progress,
         Self::Challenges,
+        Self::Classes,
         Self::Settings,
     ];
 
@@ -86,6 +89,7 @@ impl Screen {
             Self::Mock => Icon::Timer,
             Self::Progress => Icon::Progress,
             Self::Challenges => Icon::Award,
+            Self::Classes => Icon::Users,
             Self::Settings => Icon::Settings,
         }
     }
@@ -106,6 +110,7 @@ impl Screen {
             Self::Mock => t!("nav.mock"),
             Self::Progress => t!("nav.progress"),
             Self::Challenges => t!("nav.challenges"),
+            Self::Classes => t!("nav.classes"),
             Self::Settings => t!("nav.settings"),
         }
         .into_owned()
@@ -155,6 +160,13 @@ pub struct UiState {
     pub plan_view: PlanView,
     /// Prepare handouts and quizzes right after the plan is created.
     pub prepare_all: bool,
+    /// The teacher picked the plan's purpose (it is asked every time).
+    pub purpose_chosen: bool,
+    /// Classes screen: the plan to publish and the classrooms chosen.
+    pub publish_plan: Option<kg_engine::PlanId>,
+    pub publish_to: std::collections::HashSet<i64>,
+    /// The classrooms were asked for on this visit to the Classes screen.
+    pub classes_requested: bool,
     /// Choices of the required first run, before they are saved.
     pub setup: crate::screens::setup::SetupUi,
     /// Step of the guided tour on screen.
@@ -264,6 +276,7 @@ impl KnowGiverApp {
                     weeks: 12,
                     hours_per_week: 15,
                     role: String::new(),
+                    purpose: Default::default(),
                 },
                 settings_draft: None,
                 lesson_input: String::new(),
@@ -275,6 +288,10 @@ impl KnowGiverApp {
                 board_choice: std::collections::HashMap::new(),
                 plan_view: PlanView::default(),
                 prepare_all: true,
+                purpose_chosen: false,
+                publish_plan: None,
+                publish_to: std::collections::HashSet::new(),
+                classes_requested: false,
                 setup: Default::default(),
                 tour_step: 0,
                 reader: Default::default(),
@@ -406,6 +423,10 @@ impl KnowGiverApp {
                 for screen in Screen::ALL {
                     // Only what the licence's plan opens.
                     if !engine_badges.open(screen) {
+                        continue;
+                    }
+                    // Classes only for teachers; students bring in no exams.
+                    if !engine_badges.shows_for_role(screen) {
                         continue;
                     }
                     // Written answers only when the notice describes a written test.
@@ -635,6 +656,8 @@ pub(crate) struct Badges {
     /// Modules the licence opens.
     lessons: bool,
     content: bool,
+    /// Teacher, student or neither (no classes).
+    role: kg_engine::ClassRole,
 }
 
 impl Badges {
@@ -653,6 +676,16 @@ impl Badges {
             demo: engine.demo(),
             lessons: engine.module_enabled(kg_engine::Module::Lessons),
             content: engine.module_enabled(kg_engine::Module::Content),
+            role: engine.role(),
+        }
+    }
+
+    /// Screens that depend on being a teacher or a student.
+    pub(crate) fn shows_for_role(&self, screen: Screen) -> bool {
+        match screen {
+            Screen::Classes => self.role == kg_engine::ClassRole::Teacher,
+            Screen::Board => self.role.creates_plans(),
+            _ => true,
         }
     }
 
@@ -982,6 +1015,7 @@ impl eframe::App for KnowGiverApp {
                     Screen::Mock => screens::mock::show(self, ui),
                     Screen::Progress => screens::progress::show(self, ui),
                     Screen::Challenges => screens::challenges::show(self, ui),
+                    Screen::Classes => screens::classes::show(self, ui),
                     Screen::Settings => screens::settings::show(self, ui),
                 }
             });

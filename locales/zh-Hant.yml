@@ -103,6 +103,7 @@ demo:
   expired_body: "%{app} 的試用期已結束。你的學習計畫和進度仍保存在這台電腦上，換成正式版後即可繼續使用。"
   contact: "聯絡 %{company}"
 nav:
+  classes: "班級"
   mock: "模擬考試"
   discursive: "主觀題與作文"
   preparing: "%{done}/%{total}"
@@ -141,6 +142,9 @@ grade:
   easy: "輕鬆"
 
 edital:
+  pick_purpose_first: "請先選擇目的再產生計畫。"
+  purpose_hint: "計畫、講義、課程和題目會根據目的調整。"
+  purpose_title: "這個計畫是為哪種考試準備的？"
   revalidate: "重新讀取大綱"
   revalidate_hint: "為這個計劃重新讀取考試大綱（新的或修訂後的 PDF）。知識點、進度、講義和主觀題作答都保持不變。"
   title: "考試大綱"
@@ -514,6 +518,9 @@ update:
   downloading: "正在下載版本 %{version}… %{percent}%"
   installing: "正在安裝版本 %{version}。程式會關閉並重新開啟。"
 tour:
+  classes:
+    title: "班級"
+    text: "選擇一個計畫以及接收它的班級。你也可以在這裡查看每個學生的進度。"
   mock:
     title: "模擬考試"
     text: "依簡章格式的一整場考試，限時作答。可以在螢幕上作答，也可以連同答案卡和作文紙印出來。"
@@ -618,6 +625,7 @@ handout:
   pdf_filter: "PDF 文件"
   generated: "%{date} 生成"
   label:
+    references: "參考文獻"
     handout: "學習講義"
     contents: "目錄"
     key_points: "要點"
@@ -801,6 +809,8 @@ working:
   minutes: "%{minutes} 分鐘"
 
 notice:
+  courses_updated: "你的班級有 %{count} 門新增或更新的課程。"
+  plan_published: "計畫已發布到 %{count} 個班級。"
   exam_format_read: "已從簡章讀取考試形式。產生前請核對數字。"
   exam_format_missing: "簡章沒有寫明每科的題數。請手動調整形式。"
   mock_created: "模擬考試已產生。可以在螢幕上作答或列印。"
@@ -1517,3 +1527,47 @@ modules:
   locked_body: "%{module}不在您的授權範圍內。如需開通，請聯絡 %{company}。"
   contact: "聯絡 %{company}"
   disabled: "%{module}不在您的方案內。如需開通，請聯絡 %{company}。"
+
+purpose:
+  national_exam: "學測・統測"
+  university_entrance: "大學個別入學考試"
+  civil_service: "公務人員考試"
+  professional: "專技證照考試"
+  general: "其他考試"
+
+classes:
+  title: "班級"
+  subtitle: "向班級發布計畫並追蹤學生"
+  teachers_only: "只有老師可以建立計畫和內容。你的計畫來自你的班級。"
+  panel_offline: "無法連線到管理面板。請檢查網路後再試一次。"
+  classrooms: "你的班級"
+  refresh: "重新整理"
+  not_loaded: "尚未載入班級。請檢查連線後點選「重新整理」。"
+  no_classrooms: "還沒有班級。學校會在管理面板的客戶區建立班級並加入學生。"
+  publish_title: "將計畫發布到班級"
+  publish_hint: "學生會收到附帶已完成講義和題目的計畫，且無法修改。"
+  no_plans: "請先在「大綱」中建立計畫再發布。"
+  published: "已發布 · 第 %{version} 版"
+  published_short: "已發布"
+  publish_note: "再次發布會傳送目前版本，學生在保留主題上的進度不受影響。請先準備好講義，學生就不必消耗 AI。"
+  publishing: "正在發布…"
+  publish: "發布"
+  classroom_header: "%{name} · %{count} 名學生"
+  no_students: "這個班級還沒有學生。"
+  no_courses: "這個班級還沒有收到任何計畫。"
+  time: "%{hours} 小時 %{minutes} 分鐘"
+  course_number: "課程 %{number}"
+  from_teacher: "來自你的班級"
+  student_title: "你的計畫來自你的班級"
+  student_note: "學習內容由老師決定。課程、測驗和講義都在這裡，你的進度儲存在雲端，換電腦也能恢復。"
+  syncing: "正在同步…"
+  sync_now: "立即同步"
+  last_sync: "上次同步：%{date}"
+  col:
+    student: "學生"
+    course: "計畫"
+    topics: "已掌握主題"
+    quizzes: "正確率"
+    lessons: "課程"
+    time: "學習時長"
+    last: "最近活動"

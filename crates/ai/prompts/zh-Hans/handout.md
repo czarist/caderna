@@ -21,7 +21,8 @@
 - "pitfalls"：3 到 5 个出题机构常见的陷阱，每个用一句话说明。
 - "summary"：4 到 6 句话，概括要点。
 - "exercises"：正好 5 道出题机构风格的选择题，每题 4 个选项，只有一个正确。选项不要以字母开头。"correct" 是正确选项的序号，从 0 开始。"explanation" 用最多 80 字说明正确选项为什么对，引用选项的内容，而不是它的字母。
+- "references"：2 到 5 条支撑内容的真实参考文献，采用学生所在地区通行的格式。优先引用法规和官方文件（注明编号和年份）以及广为人知的教材和工具书。只引用你确定作者和书名都真实存在的文献；不要编造页码、版次、链接或 DOI。拿不准时就少引。
 - 不使用 Markdown 或标记；JSON 中只写纯文本。
 
 只用有效的 JSON 回答，前后不要有任何文字，格式如下：
-{"introduction": "...", "sections": [{"heading": "...", "paragraphs": ["..."], "key_points": ["..."], "image": ""}], "examples": ["..."], "pitfalls": ["..."], "summary": ["..."], "exercises": [{"prompt": "...", "options": ["...", "...", "...", "..."], "correct": 0, "explanation": "..."}]}
+{"introduction": "...", "sections": [{"heading": "...", "paragraphs": ["..."], "key_points": ["..."], "image": ""}], "examples": ["..."], "pitfalls": ["..."], "summary": ["..."], "references": ["..."], "exercises": [{"prompt": "...", "options": ["...", "...", "...", "..."], "correct": 0, "explanation": "..."}]}

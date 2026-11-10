@@ -50,7 +50,7 @@ contact_url = "https://example.com/contato"   # https:// or mailto:
 # Editable drafts. Set reviewed only after review for the actual client.
 [legal]
 directory = "legal"
-version = "2026-11-09.3"
+version = "2026-11-10.1"
 provider = "Caderna Educação — empresa demonstrativa"
 licensor = "TRENTIN SOLUÇÕES EM SOFTWARE LTDA – ME, CNPJ 36.154.590/0001-54"
 contact = "https://example.com/suporte"

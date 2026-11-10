@@ -9,7 +9,26 @@ repository.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-10
+
+Classes in the cloud, for brands with a panel.
+
 ### Added
+- Teachers and students: the panel's client area enrols each person as a teacher or a
+  student. Students use what their classes give them (lessons, quizzes, handouts,
+  readings) and cannot create or change subjects; teachers create plans and content.
+- Classes screen for teachers: publish a plan, with its handouts and quiz questions, to
+  classrooms, and see each student's topics mastered, quiz accuracy, lessons, study time
+  and last activity.
+- Students' progress kept in the cloud and merged across computers, so it comes back on a
+  new computer; "Sync now" on the Syllabus screen.
+- Shared base of AI-made material: the app looks for an equal plan, handout or quiz bank
+  made by any school before asking the AI, and shares what the AI makes, to save tokens.
+- The purpose of each plan (ENEM, university entrance exam, public-service exam, bar or
+  certification exam, other), asked when the plan is created; prompts adapt to it.
+- Bibliographic references at the end of every handout topic.
+- Panel: classrooms, courses and roles in the client area; the shared base for admins;
+  `/api/v1/classrooms`, `/courses`, `/progress` and `/shared-materials`.
 - Signed offline licences (Ed25519, public key in the brand): activation in Settings and
   on the "demonstration ended" screen, bound to brand, customer, seats and dates;
   `license_issue` example to create keys and licences. `[licensing] required` builds stop
@@ -25,6 +44,9 @@ repository.
   read certificates from CI secrets.
 
 ### Changed
+- Caderna terms of use and privacy policy describe classes, the cloud progress and the
+  shared base (version `2026-11-10.1`; users agree again).
+- Handout prompts speak of any Brazilian exam, not only public-service exams.
 - The Dii voice (non-commercial licence) is no longer offered or downloaded.
 - READMEs in all five languages show the Caderna icon and screenshots rendered with the
   Caderna brand, the full brand.toml sections, licence issuing and the CADERNA-DASHBOARD

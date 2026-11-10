@@ -37,6 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         weeks: 10,
         hours_per_week: 15,
         role: "Técnico Judiciário – Área Judiciária".into(),
+        purpose: Default::default(),
     }))?;
     wait(&mut engine, "plan", |e| e.generating_since().is_none())?;
     let plan = engine.active_plan().ok_or("no plan created")?;
@@ -122,6 +123,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             answers: "Gabarito comentado".into(),
             picture_source: "Imagem: Wikipédia".into(),
             answer_grid: "Respostas rápidas".into(),
+            references: "Referências bibliográficas".into(),
         },
         regenerate: false,
     }))?;

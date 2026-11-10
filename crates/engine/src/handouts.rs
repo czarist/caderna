@@ -63,10 +63,12 @@ struct Item {
     context: TopicContext,
     cached: Option<TopicHandout>,
     source: HandoutSource,
+    /// Looked up before asking the AI; `None` when regenerating.
+    shared: Option<crate::shared::SharedBase>,
 }
 
 /// Exact inputs keep old or differently grounded text out of subsequent exports.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct HandoutSource {
     exam: String,
     subject: String,
@@ -94,14 +96,35 @@ impl HandoutSource {
 
     pub(crate) fn cached(&self, json: &str) -> Option<TopicHandout> {
         let cached: CachedHandout = serde_json::from_str(json).ok()?;
-        (cached.source == *self).then_some(cached.content)
+        (cached.from_teacher || cached.source == *self).then_some(cached.content)
     }
+}
+
+/// The handout itself (no notice text or board material) from a cached
+/// handout, for publishing to classrooms.
+pub(crate) fn handout_content(cached_json: &str) -> Option<String> {
+    let cached: CachedHandout = serde_json::from_str(cached_json).ok()?;
+    serde_json::to_string(&cached.content).ok()
+}
+
+/// A handout received from a teacher, cached so it is used as it is.
+pub(crate) fn teacher_handout(content_json: &str) -> Option<String> {
+    let content: TopicHandout = serde_json::from_str(content_json).ok()?;
+    serde_json::to_string(&CachedHandout {
+        source: HandoutSource::default(),
+        content: content.sanitized(),
+        from_teacher: true,
+    })
+    .ok()
 }
 
 #[derive(Serialize, Deserialize)]
 struct CachedHandout {
     source: HandoutSource,
     content: TopicHandout,
+    /// Published by the student's teacher: used whatever the inputs.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    from_teacher: bool,
 }
 
 impl Engine {
@@ -155,6 +178,11 @@ impl Engine {
                 context,
                 cached,
                 source,
+                shared: if request.regenerate {
+                    None
+                } else {
+                    self.shared_base()
+                },
             });
         }
 
@@ -316,7 +344,13 @@ fn build_handout(
                         break;
                     }
                     if item.cached.is_none() {
-                        match write_topic(client, &item.context, &item.source, seed(i)) {
+                        match write_topic(
+                            client,
+                            &item.context,
+                            &item.source,
+                            item.shared.as_ref(),
+                            seed(i),
+                        ) {
                             Ok((topic, json)) => {
                                 if let Some(json) = json {
                                     on_written(item.topic_id, json);
@@ -382,21 +416,73 @@ pub(crate) fn saved_handout(
 
 /// Writes and reviews one topic's handout. Returns the content and the JSON
 /// to cache (`None` only if it could not be serialized).
+/// The shared base is asked first; what the AI writes is shared after.
 pub(crate) fn write_topic(
     client: &kg_ai::Client,
     context: &TopicContext,
     source: &HandoutSource,
+    shared: Option<&crate::shared::SharedBase>,
     seed: u64,
 ) -> Result<(TopicHandout, Option<String>), kg_ai::AiError> {
-    let draft = kg_ai::generate_handout(client, context, &source.edital)?;
-    let reviewed = kg_ai::review_handout(client, context, &source.edital, draft)?;
-    let topic = topic_from_draft(reviewed.draft, context, seed);
+    let key = shared.map(|base| handout_key(base, context, source));
+    let reused = shared.zip(key.as_deref()).and_then(|(base, key)| {
+        let json = base.fetch(key)?;
+        serde_json::from_str::<TopicHandout>(&json)
+            .ok()
+            .map(TopicHandout::sanitized)
+            .filter(|topic| !topic.sections.is_empty())
+    });
+    let topic = match reused {
+        Some(topic) => topic,
+        None => {
+            let draft = kg_ai::generate_handout(client, context, &source.edital)?;
+            let reviewed = kg_ai::review_handout(client, context, &source.edital, draft)?;
+            let topic = topic_from_draft(reviewed.draft, context, seed);
+            if let (Some(base), Some(key), Ok(json)) =
+                (shared, key.as_deref(), serde_json::to_string(&topic))
+            {
+                base.give(
+                    key,
+                    crate::shared::SharedKind::Handout,
+                    &context.subject,
+                    &context.topic,
+                    &json,
+                );
+            }
+            topic
+        }
+    };
     let json = serde_json::to_string(&CachedHandout {
         source: source.clone(),
         content: topic.clone(),
+        from_teacher: false,
     })
     .ok();
     Ok((topic, json))
+}
+
+/// A topic's handout in the shared base: same prompts, subject and topic
+/// (and exam, for exams with their own notice). Board material and the
+/// notice text stay out, so schools with the same topic meet.
+fn handout_key(
+    base: &crate::shared::SharedBase,
+    context: &TopicContext,
+    source: &HandoutSource,
+) -> String {
+    let exam = if base.exam_matters() {
+        context.exam.trim()
+    } else {
+        ""
+    };
+    base.key(
+        crate::shared::SharedKind::Handout,
+        &source.prompt,
+        &[
+            &context.subject.trim().to_lowercase(),
+            &context.topic.trim().to_lowercase(),
+            &exam.to_lowercase(),
+        ],
+    )
 }
 
 /// Adds pictures (from `pictures`, the picture cache, or Wikipedia), then
@@ -475,6 +561,7 @@ fn topic_from_draft(draft: HandoutDraft, context: &TopicContext, seed: u64) -> T
         examples: draft.examples,
         pitfalls: draft.pitfalls,
         summary: draft.summary,
+        references: draft.references,
         exercises,
         picture: None,
     }
@@ -498,6 +585,7 @@ mod tests {
         let json = serde_json::to_string(&CachedHandout {
             source: source.clone(),
             content: content.clone(),
+            from_teacher: false,
         })
         .unwrap();
         assert_eq!(source.cached(&json), Some(content.clone()));

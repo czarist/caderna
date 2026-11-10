@@ -119,6 +119,11 @@ pub fn status(status: TopicStatus) -> String {
     .into_owned()
 }
 
+/// What a plan prepares for (ENEM, entrance exam, public-service exam…).
+pub fn purpose_name(purpose: kg_engine::ExamPurpose) -> String {
+    t!(format!("purpose.{}", purpose.id())).into_owned()
+}
+
 pub fn difficulty(difficulty: Difficulty) -> String {
     match difficulty {
         Difficulty::Easy => t!("difficulty.easy"),
@@ -287,6 +292,10 @@ pub fn notice(notice: &Notice) -> (String, bool) {
             return (t!("notice.exam_format_missing").into_owned(), true);
         }
         Notice::MockCreated => t!("notice.mock_created"),
+        Notice::PlanPublished { classrooms } => {
+            t!("notice.plan_published", count = classrooms)
+        }
+        Notice::CoursesUpdated(count) => t!("notice.courses_updated", count = count),
     };
     (text.into_owned(), false)
 }
@@ -320,6 +329,8 @@ pub fn error_message(err: &EngineError) -> String {
         }
         EngineError::Panel(kg_engine::PanelError::Unreachable(_)) => t!("panel.error.unreachable"),
         EngineError::Panel(_) => t!("panel.error.unexpected"),
+        EngineError::TeachersOnly => t!("classes.teachers_only"),
+        EngineError::PanelOffline => t!("classes.panel_offline"),
         EngineError::ModuleDisabled(module) => t!(
             "modules.disabled",
             module = crate::screens::demo::module_name(*module)

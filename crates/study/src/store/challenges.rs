@@ -562,6 +562,8 @@ mod tests {
                     "DROP TABLE mistake_recoveries; DROP TABLE review_log;
                      DROP TABLE challenge_unlocks; DROP TABLE mock_attempts;
                      DROP TABLE mock_exams; DROP TABLE exam_formats;
+                     DROP TABLE plan_courses; DROP TABLE topic_keys;
+                     ALTER TABLE plans DROP COLUMN purpose;
                      PRAGMA user_version = 9;",
                 )
                 .unwrap();

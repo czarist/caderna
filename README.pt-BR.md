@@ -62,6 +62,9 @@
 
 O programa da prova é lido no seu computador; só o conteúdo programático vai para a IA.
 
+- **Para qual prova.** Ao criar o plano, você escolhe a finalidade (ENEM, vestibular,
+  concurso público, OAB ou certificação, outra) e o plano, as aulas, as apostilas e as
+  questões se adaptam a ela. Cada tópico da apostila termina com referências bibliográficas.
 - **Escolha o cargo.** Alguns editais têm vários cargos. O Caderna encontra todos e
   pergunta para qual você vai concorrer, então o plano traz as matérias comuns e só as
   específicas do *seu* cargo.
@@ -419,6 +422,17 @@ não precisa de chave de IA. O painel recebe a chave de licença, um hash do ide
 do computador, a versão do app, o sistema operacional e as tarefas de IA, nunca o nome do
 computador; a política de privacidade da Caderna diz isso. Veja
 [branding/README.md](branding/README.md).
+
+**Turmas na nuvem.** Na área do cliente, a escola cadastra cada pessoa como professor ou
+aluno e monta as turmas. O professor cria o plano no Caderna e o publica para as turmas na
+tela Turmas, com as apostilas e as questões prontas; lá ele vê, por aluno, os tópicos
+dominados, os acertos, as aulas, o tempo de estudo e a última atividade. O aluno só usa o
+que a turma recebe (aulas, quizzes, apostilas e leituras) e não cria matérias. O progresso
+do aluno fica no painel e volta num outro computador; quando dois computadores estudaram
+sem internet, o app junta os dois sem duplicar. Antes de pedir à IA um plano, uma apostila
+ou questões, o app procura numa **base comum** o mesmo pedido feito por qualquer escola e
+compartilha o que a IA fizer, para gastar menos IA; só entra material feito pela IA, nunca
+dados de alunos nem as provas que a escola enviou.
 
 ## Começo rápido
 

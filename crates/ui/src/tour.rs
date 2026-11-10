@@ -8,7 +8,7 @@ use crate::app::{KnowGiverApp, Screen};
 use crate::theme;
 
 /// Screens shown in the tour, in sidebar order.
-const STEPS: [Screen; 13] = [
+const STEPS: [Screen; 14] = [
     Screen::Today,
     Screen::Edital,
     Screen::Plan,
@@ -21,6 +21,7 @@ const STEPS: [Screen; 13] = [
     Screen::Mock,
     Screen::Progress,
     Screen::Challenges,
+    Screen::Classes,
     Screen::Settings,
 ];
 
@@ -49,6 +50,7 @@ fn text(screen: Screen) -> (String, String) {
         Screen::Mock => (t!("tour.mock.title"), t!("tour.mock.text")),
         Screen::Progress => (t!("tour.progress.title"), t!("tour.progress.text")),
         Screen::Challenges => (t!("tour.challenges.title"), t!("tour.challenges.text")),
+        Screen::Classes => (t!("tour.classes.title"), t!("tour.classes.text")),
         Screen::Settings | Screen::Welcome | Screen::Setup => {
             (t!("tour.settings.title"), t!("tour.settings.text"))
         }
@@ -58,7 +60,9 @@ fn text(screen: Screen) -> (String, String) {
 
 /// Draws the tour card over the app and moves between screens.
 pub(crate) fn show(app: &mut KnowGiverApp, ctx: &egui::Context, badges: &crate::app::Badges) {
-    let steps = steps(badges.writing, |s| badges.open(s));
+    let steps = steps(badges.writing, |s| {
+        badges.open(s) && badges.shows_for_role(s)
+    });
     let last = steps.len().saturating_sub(1);
     let index = app.ui.tour_step.min(last);
     let Some(&screen) = steps.get(index) else {

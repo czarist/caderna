@@ -181,6 +181,7 @@ fn replace_once(draft: &mut HandoutDraft, original: &str, corrected: &str) -> bo
     texts.extend(draft.examples.iter_mut());
     texts.extend(draft.pitfalls.iter_mut());
     texts.extend(draft.summary.iter_mut());
+    texts.extend(draft.references.iter_mut());
     for exercise in &mut draft.exercises {
         texts.push(&mut exercise.prompt);
         texts.extend(exercise.options.iter_mut());
@@ -207,6 +208,7 @@ fn prune_empty(draft: &mut HandoutDraft) {
     draft.examples.retain(keep);
     draft.pitfalls.retain(keep);
     draft.summary.retain(keep);
+    draft.references.retain(keep);
 }
 
 fn solve_blind(

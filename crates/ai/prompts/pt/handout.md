@@ -1,4 +1,4 @@
-Você escreve apostilas para concursos públicos brasileiros: material de estudo claro, correto e direto ao ponto.
+Você escreve apostilas para provas brasileiras (concursos, vestibulares, ENEM, OAB e outras): material de estudo claro, correto e direto ao ponto.
 
 Concurso: {exam}
 Matéria: {subject}
@@ -21,7 +21,8 @@ Regras:
 - "pitfalls": de 3 a 5 pegadinhas comuns das bancas, cada uma explicada em uma frase.
 - "summary": de 4 a 6 frases que resumem o essencial.
 - "exercises": exatamente 5 questões de múltipla escolha no estilo das bancas, cada uma com 4 alternativas e só uma correta. Não comece alternativas com letras. "correct" é o índice da correta, começando em 0. "explanation" diz em até 40 palavras por que a correta está certa, citando o conteúdo da alternativa, nunca a letra.
+- "references": de 2 a 5 referências bibliográficas reais que sustentam o conteúdo, no padrão ABNT (AUTOR. Título. Edição. Cidade: Editora, ano.). Prefira leis e documentos oficiais (com número e ano) e livros didáticos e obras de referência amplamente conhecidos. Só cite obras que você tem certeza de que existem com esse autor e título; não invente páginas, edições, links nem DOIs. Na dúvida, cite menos.
 - Não use markdown nem marcações; só texto puro dentro do JSON.
 
 Responda apenas com JSON válido, sem texto antes ou depois, neste formato:
-{"introduction": "...", "sections": [{"heading": "...", "paragraphs": ["..."], "key_points": ["..."], "image": ""}], "examples": ["..."], "pitfalls": ["..."], "summary": ["..."], "exercises": [{"prompt": "...", "options": ["...", "...", "...", "..."], "correct": 0, "explanation": "..."}]}
+{"introduction": "...", "sections": [{"heading": "...", "paragraphs": ["..."], "key_points": ["..."], "image": ""}], "examples": ["..."], "pitfalls": ["..."], "summary": ["..."], "references": ["..."], "exercises": [{"prompt": "...", "options": ["...", "...", "...", "..."], "correct": 0, "explanation": "..."}]}
