@@ -134,6 +134,30 @@ Para começar do zero, apague a pasta de `KG_DATA_DIR`.
    Asaas: a fatura da Asaas mostra o total com juros; o webhook marca como paga e o email
    de confirmação mostra o valor pago.
 
+### Assinatura (mensalidade)
+
+Para testar sem esperar dias, rode a rotina diária na mão:
+`docker compose exec app php artisan caderna:billing`.
+
+1. Admin → Escola Teste → **Assinatura** → Nova assinatura (título, descrição, valor,
+   mensal, primeiro vencimento daqui a 5 dias). Rodar a rotina: a cobrança do mês aparece
+   em Cobranças, com email no Mailpit. Rodar de novo: não duplica.
+2. Área do cliente → **Assinatura**: trocar o dia do vencimento; a próxima cobrança ainda
+   não gerada vai para o dia novo.
+3. Pagar a cobrança com cartão (sandbox) marcando "Pagar automaticamente as próximas
+   cobranças com este cartão": a tela Assinatura mostra "Ligado" com o final do cartão.
+   **Desligar e esquecer o cartão** volta a "Desligado".
+4. Sem pagamento automático: com a cobrança vencendo em até 3 dias, a rotina manda o
+   lembrete; no dia do vencimento, outro lembrete. Cada um só uma vez.
+5. Com pagamento automático: no dia do vencimento (mude a data da cobrança no banco para
+   hoje), a rotina cobra o cartão salvo sem pedir nada. Com cartão recusado no sandbox,
+   chega o email "Pagamento automático não aprovado".
+6. Deixar uma cobrança da assinatura vencida há 3 dias e rodar a rotina: email "Acesso
+   pausado"; o app de um aluno da escola mostra "O acesso ao Caderna está pausado… Entre
+   em contato com o suporte", com o botão de suporte; os estudos continuam lá.
+7. Pagar a cobrança (Pix no sandbox): em até 10 minutos o app volta sozinho (ou clique em
+   "Tentar de novo"). O admin também pode **Liberar acesso** na aba Assinatura.
+
 ## 8. Painel admin (`/admin`)
 
 1. Admin precisa de código por email; operador entra sem obrigatoriedade.

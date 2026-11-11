@@ -1521,6 +1521,7 @@ panel:
   sign_out_hint: "Libera a vaga da licença para usar o %{app} em outro computador. Seus estudos ficam neste."
   reactivate: "Ativar de novo"
   retry: "Tentar de novo"
+  billing_paused_hint: "Seus estudos continuam guardados neste computador. Quando o acesso for liberado, o %{app} volta sozinho em alguns minutos."
   refused:
     license_invalid: "O painel não reconhece este código de acesso ou chave de licença."
     license_revoked: "A licença foi cancelada por %{company}."
@@ -1529,6 +1530,7 @@ panel:
     no_seats_left: "Todas as vagas da licença já estão em uso. Desconecte outro computador ou fale com %{company}."
     device_revoked: "Este computador foi desconectado da licença. Ative de novo para continuar."
     device_blocked: "Este computador foi bloqueado por %{company}. Fale com o suporte."
+    billing_paused: "O acesso ao %{app} está pausado no momento. Entre em contato com o suporte de %{company}."
   error:
     unreachable: "Não foi possível falar com o painel de %{company}. Confira a internet e tente de novo."
     unexpected: "O painel respondeu de um jeito inesperado. Tente de novo mais tarde."

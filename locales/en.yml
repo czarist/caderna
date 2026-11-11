@@ -1521,6 +1521,7 @@ panel:
   sign_out_hint: "Frees the license's seat so %{app} can be used on another computer. Your studies stay on this one."
   reactivate: "Activate again"
   retry: "Try again"
+  billing_paused_hint: "Your studies stay saved on this computer. When access is restored, %{app} opens again by itself within a few minutes."
   refused:
     license_invalid: "The panel does not recognize this access code or license key."
     license_revoked: "The license was cancelled by %{company}."
@@ -1529,6 +1530,7 @@ panel:
     no_seats_left: "Every seat of the license is in use. Sign out another computer or contact %{company}."
     device_revoked: "This computer was signed out of the license. Activate again to continue."
     device_blocked: "This computer was blocked by %{company}. Contact support."
+    billing_paused: "Access to %{app} is paused for now. Please contact %{company}'s support."
   error:
     unreachable: "Could not reach %{company}'s panel. Check the internet connection and try again."
     unexpected: "The panel gave an unexpected answer. Try again later."

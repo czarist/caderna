@@ -1521,6 +1521,7 @@ panel:
   sign_out_hint: "释放许可证席位，以便在另一台电脑上使用 %{app}。学习数据保留在这台电脑上。"
   reactivate: "重新激活"
   retry: "重试"
+  billing_paused_hint: "您的学习记录仍保存在这台电脑上。访问恢复后，%{app} 会在几分钟内自动重新开启。"
   refused:
     license_invalid: "管理面板无法识别此访问码或许可证密钥。"
     license_revoked: "许可证已被 %{company} 取消。"
@@ -1529,6 +1530,7 @@ panel:
     no_seats_left: "许可证的所有席位都已占用。请断开另一台电脑，或联系 %{company}。"
     device_revoked: "这台电脑已从许可证断开。请重新激活以继续使用。"
     device_blocked: "这台电脑已被 %{company} 封锁。请联系支持人员。"
+    billing_paused: "%{app} 的访问目前已暂停。请联系 %{company} 的客服。"
   error:
     unreachable: "无法连接 %{company} 的管理面板。请检查网络后重试。"
     unexpected: "管理面板返回了意外的响应。请稍后重试。"

@@ -26,6 +26,9 @@ pub const OFFLINE_GRACE_DAYS: i64 = 14;
 const RENEW_BEFORE: Duration = Duration::hours(24);
 const CHECK_EVERY: StdDuration = StdDuration::from_secs(60 * 60);
 const RETRY_AFTER_FAILURE: StdDuration = StdDuration::from_secs(5 * 60);
+/// While the client's payment is overdue, the app asks again this often, so
+/// it opens by itself minutes after the payment is confirmed.
+const RETRY_WHILE_BILLING_PAUSED: StdDuration = StdDuration::from_secs(10 * 60);
 
 const SESSION_SETTING: &str = "panel_session";
 const FALLBACK_ID_SETTING: &str = "panel_device_fallback";
@@ -45,6 +48,8 @@ pub enum Refusal {
     DeviceRevoked,
     /// Blocked in the panel until it is unblocked there.
     DeviceBlocked,
+    /// The school's payment is overdue; lifts itself once it is paid.
+    BillingPaused,
 }
 
 impl Refusal {
@@ -57,8 +62,14 @@ impl Refusal {
             "no_seats_left" => Self::NoSeatsLeft,
             "device_revoked" => Self::DeviceRevoked,
             "device_blocked" => Self::DeviceBlocked,
+            "billing_paused" => Self::BillingPaused,
             _ => return None,
         })
+    }
+
+    /// The panel lifts it by itself, so the app keeps its token and asks again.
+    pub fn lifts_by_itself(self) -> bool {
+        matches!(self, Self::BillingPaused)
     }
 }
 
@@ -937,7 +948,12 @@ impl crate::Engine {
     /// Starts a background check when one is due. Call once per frame.
     pub(crate) fn tick_panel(&mut self) {
         let due = self.panel.next_check.is_some_and(|at| Instant::now() >= at);
-        if !due || self.panel.busy || self.panel.session.refused.is_some() {
+        let refused = self
+            .panel
+            .session
+            .refused
+            .is_some_and(|refusal| !refusal.lifts_by_itself());
+        if !due || self.panel.busy || refused {
             return;
         }
         let Some(key) = self.license_key().filter(|_| self.license.is_some()) else {
@@ -1006,6 +1022,14 @@ impl crate::Engine {
                 self.panel.session.refused = None;
                 self.panel.next_check = Some(Instant::now() + CHECK_EVERY);
                 self.after_panel_check();
+            }
+            Err(PanelError::Refused(refusal)) if refusal.lifts_by_itself() => {
+                tracing::info!(
+                    ?refusal,
+                    "the panel paused this computer; asking again later"
+                );
+                self.panel.session.refused = Some(refusal);
+                self.panel.next_check = Some(Instant::now() + RETRY_WHILE_BILLING_PAUSED);
             }
             Err(PanelError::Refused(refusal)) => {
                 tracing::warn!(?refusal, "the panel refused this computer");
@@ -1286,6 +1310,47 @@ pqrs "
 
     fn engine(dir: &std::path::Path) -> crate::Engine {
         crate::Engine::in_memory(crate::AppPaths::new(dir), crate::AiConfig::default()).unwrap()
+    }
+
+    #[test]
+    fn an_overdue_payment_pauses_the_app_and_it_opens_again_by_itself() {
+        if !kg_brand::has_server() {
+            return;
+        }
+        let dir = tempfile::tempdir().unwrap();
+        let mut engine = engine(dir.path());
+        engine.license = Some(crate::license::tests::sample_license());
+        engine.panel.token = Some("tok".into());
+        engine.panel.session.last_ok_at = Some(now());
+
+        assert_eq!(
+            failure(403, r#"{"error":{"code":"billing_paused"}}"#),
+            PanelError::Refused(Refusal::BillingPaused)
+        );
+        engine.apply_check(Err(PanelError::Refused(Refusal::BillingPaused)), now());
+        assert_eq!(
+            engine.panel_status_at(now()),
+            PanelStatus::Refused(Refusal::BillingPaused)
+        );
+        assert!(!engine.panel_allows_use());
+        // The token stays and the app asks again on its own.
+        assert_eq!(engine.panel.token.as_deref(), Some("tok"));
+        assert!(engine.panel.next_check.is_some());
+
+        engine.apply_check(
+            Ok(CheckIn {
+                renewed: None,
+                brand: None,
+                modules: None,
+                role: None,
+            }),
+            now(),
+        );
+        assert_eq!(engine.panel.session.refused, None);
+        assert_eq!(
+            engine.panel_status_at(now()),
+            PanelStatus::Connected { last_ok: now() }
+        );
     }
 
     #[test]
