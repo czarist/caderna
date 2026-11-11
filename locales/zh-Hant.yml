@@ -1521,6 +1521,7 @@ panel:
   sign_out_hint: "釋出授權席位，以便在另一台電腦上使用 %{app}。學習資料保留在這台電腦上。"
   reactivate: "重新啟用"
   retry: "重試"
+  billing_paused_hint: "您的學習紀錄仍保存在這台電腦上。存取恢復後，%{app} 會在幾分鐘內自動重新開啟。"
   refused:
     license_invalid: "管理面板無法辨識此存取碼或授權金鑰。"
     license_revoked: "授權已被 %{company} 取消。"
@@ -1529,6 +1530,7 @@ panel:
     no_seats_left: "授權的所有席位都已占用。請中斷另一台電腦，或聯絡 %{company}。"
     device_revoked: "這台電腦已從授權中斷。請重新啟用以繼續使用。"
     device_blocked: "這台電腦已被 %{company} 封鎖。請聯絡支援人員。"
+    billing_paused: "%{app} 的存取目前已暫停。請聯絡 %{company} 的客服。"
   error:
     unreachable: "無法連線 %{company} 的管理面板。請檢查網路後重試。"
     unexpected: "管理面板傳回了非預期的回應。請稍後重試。"

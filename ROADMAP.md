@@ -134,6 +134,13 @@ A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
       Asaas webhook and Caderna-themed emails.
 - [x] Charges tested on the Asaas sandbox: Pix, card in 3 instalments, refusal, webhook,
       cancelling.
+- [x] Subscriptions: a recurring fee per client, issued 10 days before each due date by a
+      daily run; the client picks the due day and automatic card payment (Asaas card
+      token) in its area; Pix reminders 3 days before and on the day; unpaid 2 days after
+      the due date, the client's apps are refused with `billing_paused` (contact support)
+      and open again by themselves once it is paid.
+- [ ] Subscriptions: card tokenization enabled on the production Asaas account, and the
+      `scheduler` service (or a cron running `schedule:run`) on the production server.
 - [ ] Charges: the production Asaas key and webhook token before the first real charge.
 - [ ] The online panel's `https://` address in `[server] url` of `branding/caderna/brand.toml`
       (or `KG_SERVER_URL` in CI) before the first Caderna release.

@@ -161,6 +161,20 @@ fn panel_status(ui: &mut egui::Ui, engine: &kg_engine::Engine, command: &mut Opt
         }
         PanelStatus::Refused(refusal) => {
             ui.label(RichText::new(refusal_message(refusal)).color(p.danger));
+            if refusal == Refusal::BillingPaused {
+                ui.label(t!("panel.billing_paused_hint"));
+                let support = crate::brand::support_url();
+                let url = if support.is_empty() {
+                    crate::brand::contact_url()
+                } else {
+                    support
+                };
+                if !url.is_empty()
+                    && widgets::primary_button(ui, &t!("licensing.support")).clicked()
+                {
+                    crate::app::open_url(url);
+                }
+            }
             let again = match refusal {
                 Refusal::DeviceRevoked => Some(t!("panel.reactivate")),
                 Refusal::LicenseInvalid => None,
@@ -220,6 +234,7 @@ pub fn refusal_message(refusal: Refusal) -> String {
         Refusal::NoSeatsLeft => t!("panel.refused.no_seats_left"),
         Refusal::DeviceRevoked => t!("panel.refused.device_revoked"),
         Refusal::DeviceBlocked => t!("panel.refused.device_blocked"),
+        Refusal::BillingPaused => t!("panel.refused.billing_paused"),
     }
     .into_owned()
 }
