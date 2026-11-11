@@ -1591,4 +1591,8 @@ classes:
 restrictions:
   export_handouts: "A sua escola não permite levar as apostilas para fora do %{app}: exportar ou abrir o PDF em outro programa."
   screen_capture: "A sua escola bloqueou capturas e gravações de tela: a janela do %{app} aparece preta nelas."
-  screen_capture_unsupported: "A sua escola pediu para bloquear capturas e gravações de tela, mas este sistema ainda não permite; só o Windows bloqueia por enquanto."
+  screen_capture_unsupported: "A sua escola bloqueou capturas e gravações de tela. Este sistema não deixa o %{app} sair das capturas, então o conteúdo fica coberto quando a janela sai de foco ou quando um programa de gravação de tela está aberto."
+  watermark: "As apostilas mostram o seu nome e o seu email em marca d’água clara enquanto a sua escola bloqueia capturas de tela."
+  covered_unfocused: "Conteúdo oculto enquanto a janela do %{app} está fora de foco. Clique aqui para continuar."
+  covered_recording: "Conteúdo oculto enquanto %{program} está aberto. Feche o programa para continuar."
+  covered_system_capture: "Conteúdo oculto durante a captura de tela do sistema."

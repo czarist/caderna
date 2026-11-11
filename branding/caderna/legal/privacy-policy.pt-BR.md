@@ -2,7 +2,7 @@
 
 Rascunho para revisão do cliente. Prestadora do serviço aos alunos: {{provider}}. Licenciadora do software: {{licensor}}. Contato da prestadora: {{contact}}. Este texto deve ser revisado com o contrato entre a prestadora e a licenciadora antes da distribuição.
 
-Versão de 10 de novembro de 2026 ({{version}}), de acordo com a Lei Geral de Proteção de
+Versão de 11 de novembro de 2026 ({{version}}), de acordo com a Lei Geral de Proteção de
 Dados (Lei nº 13.709/2018, LGPD). O {{app}} é oferecido apenas no Brasil.
 
 ## 1. Resumo
@@ -56,8 +56,17 @@ definida em `KG_DATA_DIR`):
 - fotos das respostas discursivas, suas transcrições e avaliações;
 - arquivos do modelo PaddleOCR-VL, baixados para a pasta local de modelos se você instalar
   o OCR local;
+- se a sua escola bloquear capturas de tela para os alunos: o seu nome e o seu email,
+  recebidos do painel, que aparecem em marca-d'água clara nas páginas das apostilas para
+  identificar de quem é a cópia; deixam de ser usados quando a escola libera as capturas;
 - a data e a hora do seu aceite destes documentos;
 - um arquivo de registro técnico (log), que não guarda imagens, respostas nem chaves.
+
+Com as capturas de tela bloqueadas pela escola, no macOS e no Linux o app confere cerca de
+uma vez por segundo os nomes dos programas abertos no computador, para encobrir o conteúdo
+enquanto um programa de gravação de tela estiver aberto. Essa lista é lida no próprio
+computador e não é guardada nem enviada a ninguém. No Windows, o próprio sistema deixa a
+janela fora das capturas.
 
 O áudio do microfone é transcrito no próprio computador e não é enviado a ninguém. As
 gravações temporárias de diagnóstico ficam só na pasta de dados.
@@ -71,7 +80,7 @@ gravações temporárias de diagnóstico ficam só na pasta de dados.
 | Painel da {{company}}, que repassa ao fornecedor de IA contratado por ela | Trechos do programa da prova e dos materiais, tópicos, suas mensagens e respostas transcritas, seu nome (para o tutor chamar você), textos das apostilas | Em cada tarefa de IA |
 | PaddleOCR-VL rodando localmente pelo `llama-server` v0.8.0 do llama.cpp | Fotos das respostas discursivas | Por padrão; processadas no computador, não enviadas ao painel |
 | Painel da {{company}}, para o modelo de visão do fornecedor de IA | Fotos das respostas discursivas e páginas de PDFs escaneados | Fotos de respostas só se você escolher explicitamente o OCR externo; páginas de PDFs escaneados só quando você pedir a leitura |
-| Wikipédia | O termo de busca de uma imagem do quadro | Se a opção de imagens estiver ligada |
+| Wikipédia e Wikimedia Commons | O termo de busca de uma imagem do quadro ou da apostila e, para dar o crédito, o nome do arquivo de imagem que a própria Wikipédia indicou | Se a opção de imagens estiver ligada |
 | Hugging Face, GitHub e sites das vozes | Pedidos de download, que mostram o seu endereço IP | Quando você baixa modelos de voz, fala ou OCR |
 | GitHub | Um pedido da versão mais recente, que mostra o seu endereço IP e a versão do app; o pacote da nova versão, se você escolher atualizar | Cada vez que o app abre, se a busca de atualizações estiver ligada |
 | Serviço de voz na nuvem | O texto que o tutor vai falar | Só se você ativar a voz na nuvem |
@@ -119,6 +128,11 @@ garantias previstas no contrato entre a prestadora e o fornecedor.
 - **Turmas:** entregar aos alunos os planos dos professores, guardar o progresso de cada
   aluno para outro computador e mostrar aos professores como a turma está indo. Base legal:
   execução do contrato entre você (ou a sua escola) e a {{company}}.
+- **Restrições da escola:** quando a escola bloqueia a exportação das apostilas ou as
+  capturas de tela para os alunos, aplicar esse bloqueio e marcar as apostilas com o nome e
+  o email do aluno, para proteger o material da escola e identificar cópias vazadas. Base
+  legal: execução do contrato entre você (ou a sua escola) e a {{company}}, e o legítimo
+  interesse da escola em proteger o seu material (art. 7º, V e IX, da LGPD).
 - **Base comum:** reaproveitar materiais já feitos pela IA, gastando menos IA e entregando
   mais rápido. Não envolve dados pessoais.
 

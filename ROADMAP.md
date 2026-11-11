@@ -151,11 +151,16 @@ A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
       exporting handouts and screen capture, sent with the licence as `restrictions`,
       never for teachers. The engine refuses blocked exports and the reader disables them;
       on Windows the window is left out of screenshots and recordings.
-- [ ] Screen capture blocking on macOS (`NSWindow.sharingType = none`, which newer
-      ScreenCaptureKit versions may ignore) and Linux (X11 and Wayland offer no way to
-      block); today Settings says these systems cannot block. The handout PDFs also stay
-      readable in the data folder: the restriction covers the app's buttons, not copying
-      files by hand.
+- [x] Capture deterrents where the system cannot block: the student's name and email as a
+      faint watermark on every handout page (all systems, sent by the panel only while
+      capture is blocked); macOS marks the window as not shared; macOS and Linux cover the
+      content while the window is out of focus or a known recorder or screenshot tool runs.
+- [ ] Try the macOS and Linux capture deterrents on real machines: whether
+      `sharingType = none` still hides the window from Cmd+Shift+3/5 and QuickTime on
+      macOS 15 and later, and which screenshot tools take the focus on GNOME and KDE.
+      Linux (X11, Wayland) offers no way to leave a window out of captures. The handout
+      PDFs also stay readable in the data folder: the restrictions cover the app, not
+      copying files by hand.
 - [x] Development test accounts (`DevTestSeeder`) and the pt-BR MVP test plan
       (`docs/mvp-test-plan.md`).
 - [ ] Production email for the panel (SMTP and a sender domain with SPF/DKIM) before the

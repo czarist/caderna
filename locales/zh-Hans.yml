@@ -1591,4 +1591,8 @@ classes:
 restrictions:
   export_handouts: "你的学校不允许将讲义带出 %{app}：导出或在其他程序中打开 PDF。"
   screen_capture: "你的学校已阻止截屏和录屏：%{app} 窗口在其中显示为黑色。"
-  screen_capture_unsupported: "你的学校要求阻止截屏和录屏，但此系统暂不支持；目前只有 Windows 可以阻止。"
+  screen_capture_unsupported: "你的学校已阻止截屏和录屏。此系统无法让 %{app} 不被捕获，因此当窗口失去焦点或录屏程序打开时，内容会被遮盖。"
+  watermark: "在学校阻止截屏期间，讲义会以浅色水印显示你的姓名和邮箱。"
+  covered_unfocused: "%{app} 窗口失去焦点时内容已隐藏。点击此处继续。"
+  covered_recording: "%{program} 打开期间内容已隐藏。关闭该程序以继续。"
+  covered_system_capture: "系统截屏期间内容已隐藏。"

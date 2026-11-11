@@ -844,6 +844,7 @@ fn generated_handout_opens_in_the_reader_with_progress_and_highlights() {
         }],
         files: Vec::new(),
         marks: Vec::new(),
+        holder: String::new(),
     };
     let saved =
         crate::handouts::saved_handout(document, &dir.path().join("crase.pdf"), None).unwrap();

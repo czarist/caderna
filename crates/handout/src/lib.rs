@@ -224,6 +224,11 @@ pub struct Document {
     /// The reader's highlights, drawn over the pages.
     #[serde(default)]
     pub marks: Vec<Mark>,
+    /// Who is reading, repeated faintly across every page when the school
+    /// blocks screen capture (e.g. "Ana Souza · ana@escola.example"). Set
+    /// when the pages are drawn, never saved with the document.
+    #[serde(skip_deserializing)]
+    pub holder: String,
 }
 
 /// Rendering errors.
@@ -433,6 +438,45 @@ mod tests {
     const PICTURE: &str = "<svg xmlns='http://www.w3.org/2000/svg' width='40' height='30'><rect width='40' height='30' fill='teal'/></svg>";
 
     #[test]
+    fn the_readers_name_marks_every_page_but_not_the_text() {
+        let mut document = Document {
+            title: "Plano".into(),
+            subtitle: "Português".into(),
+            generated: String::new(),
+            lang: "pt".into(),
+            labels: labels(),
+            topics: vec![topic().sanitized()],
+            files: vec![("/img/1.svg".into(), PICTURE.as_bytes().to_vec())],
+            marks: Vec::new(),
+            holder: String::new(),
+        };
+        let plain = render_pdf(&document).unwrap();
+        document.holder = "Ana Souza · ana@escola.example".into();
+        let marked = render_pdf(&document).unwrap();
+        assert!(marked.len() > plain.len());
+        let pages = paginate(&document).unwrap();
+        for page in 0..pages.len() {
+            let all = pages.text_of(page, 0..pages.text(page).len());
+            assert!(!all.contains("ana@escola.example"), "{all}");
+        }
+        if let Some(path) = std::env::var_os("KG_HANDOUT_HOLDER_PNG") {
+            let page = pages.render(1, 1.5).unwrap();
+            image::save_buffer(
+                path,
+                &page.rgba,
+                page.width,
+                page.height,
+                image::ExtendedColorType::Rgba8,
+            )
+            .unwrap();
+        }
+        // Never kept with the saved document.
+        let json = serde_json::to_string(&document).unwrap();
+        let back: Document = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.holder, "");
+    }
+
+    #[test]
     fn renders_a_pdf() {
         let document = Document {
             title: "Plano TJCE".into(),
@@ -443,6 +487,7 @@ mod tests {
             topics: vec![topic().sanitized()],
             files: vec![("/img/1.svg".into(), PICTURE.as_bytes().to_vec())],
             marks: Vec::new(),
+            holder: String::new(),
         };
         let pdf = render_pdf(&document).unwrap();
         assert!(pdf.starts_with(b"%PDF"));
@@ -559,6 +604,7 @@ mod tests {
             topics: vec![],
             files: Vec::new(),
             marks: Vec::new(),
+            holder: String::new(),
         };
         assert!(matches!(render_pdf(&document), Err(HandoutError::Empty)));
     }

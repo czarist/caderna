@@ -57,7 +57,7 @@ Para começar do zero, apague a pasta de `KG_DATA_DIR`.
 
 1. Abrir com a pasta limpa: aparece a configuração inicial (idioma pt-BR, nome,
    professor, termos). A escolha de IA **não** aparece (a IA vem do painel).
-2. Os termos e a política mostram a versão `2026-11-10.1` e falam do painel, da nuvem
+2. Os termos e a política mostram a versão `2026-11-11.1` e falam do painel, da nuvem
    de progresso e da base comum.
 3. Sem licença o app fica na tela de licença. Digitar um código inválido
    (`AAAA-BBBB-CCCC-DDDD`): mensagem clara.
@@ -111,7 +111,13 @@ Para começar do zero, apague a pasta de `KG_DATA_DIR`.
      aparece ao passar o mouse;
    - em Configurações aparece o aviso das duas restrições;
    - no Windows, o print (Win+Shift+S, PrtSc) e a gravação (Win+Alt+R, OBS) mostram a
-     janela preta ou sem a janela.
+     janela preta ou sem a janela;
+   - abrir uma apostila (ou gerar uma nova): o nome e o email do aluno aparecem claros,
+     repetidos na diagonal, e não são selecionáveis no leitor;
+   - no macOS e no Linux: trocar de janela ou abrir a ferramenta de captura (Cmd+Shift+5;
+     PrtSc no GNOME/KDE) cobre o conteúdo com o aviso; abrir o OBS cobre o conteúdo com o
+     nome do programa, e fechá-lo libera em cerca de 1 segundo. No macOS, testar também o
+     Cmd+Shift+3 (tela inteira) em mais de uma versão do sistema.
 5. Ativar a conta da professora: nada fica bloqueado. Religar as permissões: o aluno
    volta a exportar e a tirar print ao reabrir, ou em até uma hora.
 

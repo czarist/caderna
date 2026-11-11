@@ -660,6 +660,7 @@ fn reader_snapshots(
         }],
         files: Vec::new(),
         marks: Vec::new(),
+        holder: String::new(),
     };
     if let Ok(engine) = harness.state_mut().engine.as_mut() {
         engine.simulate_handout(document, dir).unwrap();
