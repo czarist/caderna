@@ -29,6 +29,9 @@ concurrency:
 env:
   KG_BRAND_DIR: ${{ inputs.brand || 'branding/default' }}
   KG_COMMERCIAL: ${{ inputs.publish && '1' || '0' }}
+  # Debug info and incremental caches fill the runner's disk when the workspace tests link.
+  CARGO_INCREMENTAL: '0'
+  CARGO_PROFILE_DEV_DEBUG: '0'
 jobs:
   package:
     outputs:
@@ -39,6 +42,9 @@ jobs:
         os: [windows-latest, ubuntu-24.04, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Free disk space
+        if: runner.os == 'Linux'
+        run: sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL && df -h /
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
