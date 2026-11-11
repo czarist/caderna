@@ -10,6 +10,11 @@ repository.
 ## [Unreleased]
 
 ### Added
+- **Snapshot options for the website.** The screen snapshots take `KG_SNAPSHOT_SIZE`
+  (for example `1920x1080`), `KG_SNAPSHOT_LOCALE` (one language) and
+  `KG_SNAPSHOT_BOARD_SCALE` (pixel density of the whiteboard); without them nothing
+  changes. A new `quiz_snapshots` renders a quiz question before and after the answer,
+  and the written-answer snapshots no longer show sticker notices.
 - **Build channels.** Brands with a panel build for production, homologation or
   development (`KG_CHANNEL`, from the branch in CI: `main`, `hom`, `dev`), each talking to
   its own panel (`[server] url`, `hom_url`, `dev_url`). Homologation and development
