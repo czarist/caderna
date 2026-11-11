@@ -1586,3 +1586,7 @@ classes:
     lessons: "Aulas"
     time: "Tempo de estudo"
     last: "Última atividade"
+restrictions:
+  export_handouts: "A sua escola não permite levar as apostilas para fora do %{app}: exportar ou abrir o PDF em outro programa."
+  screen_capture: "A sua escola bloqueou capturas e gravações de tela: a janela do %{app} aparece preta nelas."
+  screen_capture_unsupported: "A sua escola pediu para bloquear capturas e gravações de tela, mas este sistema ainda não permite; só o Windows bloqueia por enquanto."

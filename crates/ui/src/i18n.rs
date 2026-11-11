@@ -331,6 +331,12 @@ pub fn error_message(err: &EngineError) -> String {
         EngineError::Panel(_) => t!("panel.error.unexpected"),
         EngineError::TeachersOnly => t!("classes.teachers_only"),
         EngineError::PanelOffline => t!("classes.panel_offline"),
+        EngineError::Restricted(kg_engine::Restriction::ExportHandouts) => {
+            t!("restrictions.export_handouts")
+        }
+        EngineError::Restricted(kg_engine::Restriction::ScreenCapture) => {
+            t!("restrictions.screen_capture")
+        }
         EngineError::ModuleDisabled(module) => t!(
             "modules.disabled",
             module = crate::screens::demo::module_name(*module)

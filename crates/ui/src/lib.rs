@@ -38,6 +38,7 @@ mod accounts;
 mod app;
 mod art;
 mod brand;
+mod capture;
 mod export;
 mod i18n;
 mod icon;

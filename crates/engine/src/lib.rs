@@ -28,6 +28,7 @@ mod practice;
 mod prepare;
 mod progress;
 mod reader;
+mod restrictions;
 mod server;
 mod settings;
 mod setup;
@@ -108,6 +109,7 @@ pub use practice::{QuizSession, QuizStep, REVIEW_ROUNDS, ReviewSession, ReviewSt
 pub use prepare::{PrepareJob, PrepareRequest, PrepareSummary, slug};
 pub use progress::Milestone;
 pub use reader::{ContentsEntry, ReaderState};
+pub use restrictions::Restriction;
 pub use server::{OFFLINE_GRACE_DAYS, PanelError, PanelStatus, Refusal};
 pub use settings::{
     DEFAULT_REMINDER_MINUTES, DEFAULT_TURN_PAUSE, ManuscriptOcr, Region, SETUP_VERSION, Settings,
@@ -368,6 +370,8 @@ pub enum EngineError {
     Panel(#[from] server::PanelError),
     #[error("the licence does not include the {0:?} module")]
     ModuleDisabled(Module),
+    #[error("the school does not allow {0:?}")]
+    Restricted(Restriction),
     #[error("only teachers create plans and content")]
     TeachersOnly,
     #[error("the panel is not connected")]
@@ -933,6 +937,12 @@ impl Engine {
             && !self.module_enabled(module)
         {
             return Err(EngineError::ModuleDisabled(module));
+        }
+        // What the school blocks for its students, set in its panel area.
+        if let Some(restriction) = command.restriction()
+            && self.restricted(restriction)
+        {
+            return Err(EngineError::Restricted(restriction));
         }
         // Students use what their classrooms give them.
         if command.creates_plans() && !self.role().creates_plans() {

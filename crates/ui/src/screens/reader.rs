@@ -132,15 +132,17 @@ fn library(ui: &mut egui::Ui, engine: &Engine, actions: &mut Actions) {
         }
         return;
     }
+    let exports = !engine.restricted(kg_engine::Restriction::ExportHandouts);
     egui::ScrollArea::vertical().show(ui, |ui| {
         for reading in engine.readings() {
-            reading_card(ui, reading, actions);
+            reading_card(ui, reading, exports, actions);
             ui.add_space(8.0);
         }
     });
 }
 
-fn reading_card(ui: &mut egui::Ui, reading: &Reading, actions: &mut Actions) {
+/// `exports`: the school lets its students take handouts out of the app.
+fn reading_card(ui: &mut egui::Ui, reading: &Reading, exports: bool, actions: &mut Actions) {
     let p = theme::palette(ui.ctx());
     egui::Frame::new()
         .fill(p.surface)
@@ -183,7 +185,10 @@ fn reading_card(ui: &mut egui::Ui, reading: &Reading, actions: &mut Actions) {
                     if ui.button(t!("reader.delete")).clicked() {
                         actions.send(Command::DeleteReading(reading.id));
                     }
-                    if ui.button(t!("reader.export_pdf")).clicked()
+                    if ui
+                        .add_enabled(exports, egui::Button::new(t!("reader.export_pdf")))
+                        .on_disabled_hover_text(t!("restrictions.export_handouts"))
+                        .clicked()
                         && let Some(path) = rfd::FileDialog::new()
                             .set_title(t!("reader.export_pdf_title"))
                             .set_file_name(format!(
@@ -199,7 +204,11 @@ fn reading_card(ui: &mut egui::Ui, reading: &Reading, actions: &mut Actions) {
                             path,
                         });
                     }
-                    if ui.button(t!("reader.open_pdf")).clicked() {
+                    if ui
+                        .add_enabled(exports, egui::Button::new(t!("reader.open_pdf")))
+                        .on_disabled_hover_text(t!("restrictions.export_handouts"))
+                        .clicked()
+                    {
                         crate::app::open_file(std::path::Path::new(&reading.path));
                     }
                     let label = if reading.page_count == 0 {
@@ -238,9 +247,14 @@ fn reader_view(
     ui.horizontal(|ui| {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             let ready = reader.pages.is_some();
-            if ui
-                .add_enabled(ready, egui::Button::new(t!("reader.export")))
-                .clicked()
+            let exports = !engine.restricted(kg_engine::Restriction::ExportHandouts);
+            let export = ui.add_enabled(ready && exports, egui::Button::new(t!("reader.export")));
+            let export = if exports {
+                export
+            } else {
+                export.on_disabled_hover_text(t!("restrictions.export_handouts"))
+            };
+            if export.clicked()
                 && let Some(path) = rfd::FileDialog::new()
                     .set_title(t!("reader.export_title"))
                     .set_file_name(format!(
@@ -253,7 +267,11 @@ fn reader_view(
             {
                 actions.send(Command::ExportReading(path));
             }
-            if ui.button(t!("reader.open_pdf")).clicked() {
+            if ui
+                .add_enabled(exports, egui::Button::new(t!("reader.open_pdf")))
+                .on_disabled_hover_text(t!("restrictions.export_handouts"))
+                .clicked()
+            {
                 crate::app::open_file(std::path::Path::new(&reading.path));
             }
             ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
