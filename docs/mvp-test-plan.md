@@ -127,8 +127,12 @@ Para começar do zero, apague a pasta de `KG_DATA_DIR`.
 4. Reenviar o email; mudar plano; tornar professor; remover (a licença é revogada, o app
    desse aluno trava na próxima checagem e o link mostra "licença cancelada").
 5. Passar do limite de alunos (baixar o limite no admin para testar): mensagem clara.
-6. Cobranças: o admin cria uma cobrança; o cliente paga por Pix e cartão no sandbox
-   Asaas; o webhook marca como paga.
+6. Cobranças: o admin cria uma cobrança com título e descrição (caixa de texto com
+   várias linhas); não há escolha de parcelamento no admin. O cliente vê o título e a
+   descrição, e no cartão escolhe de 1x a 3x sem juros ou de 4x a 10x com juros
+   (o total com juros aparece na opção). Pagar por Pix e por cartão em 10x no sandbox
+   Asaas: a fatura da Asaas mostra o total com juros; o webhook marca como paga e o email
+   de confirmação mostra o valor pago.
 
 ## 8. Painel admin (`/admin`)
 
