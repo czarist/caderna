@@ -502,6 +502,8 @@ cargo run -p kg-ai --example live_check                          # todas as tare
 cargo run -p kg-engine --example e2e -- edital.pdf                # importar → plano → quiz → revisão → apostila
 cargo run --release -p kg-audio --example parakeet_check -- <pasta-dos-modelos> fala.wav
 KG_SNAPSHOT_DIR=shots cargo test -p kg-ui snapshots -- --ignored  # gera um PNG de cada tela
+KG_SNAPSHOT_SIZE=1920x1080 KG_SNAPSHOT_LOCALE=pt-BR KG_SNAPSHOT_BOARD_SCALE=1.92 KG_SNAPSHOT_DIR=shots \
+  cargo test -p kg-ui snapshots -- --ignored --test-threads=1   # Full HD, um idioma (site)
 ```
 
 Mais: [builds nativos/CUDA](docs/builds.md), [avaliação do Kokoro](docs/kokoro-evaluation.md),
