@@ -506,8 +506,10 @@ More: [native/CUDA builds](docs/builds.md), [Kokoro evaluation](docs/kokoro-eval
 - Teacher portraits (`crates/ui/assets/teachers`): "Lorelei" by Lisa Wischofsky,
   CC0 1.0, through [DiceBear](https://www.dicebear.com/styles/lorelei/); rebuilt with
   `python tools/teachers.py`.
-- Whiteboard pictures are shown from [Wikipedia](https://pt.wikipedia.org); the
-  caption names the article, where each picture's author and license are listed.
+- Whiteboard and handout pictures are shown from [Wikipedia](https://pt.wikipedia.org);
+  the caption names the article, where each picture's author and license are listed. In
+  handouts the caption also gives the author and license read from Wikimedia, and the
+  topic's bibliography lists the article and the picture file.
 - Icons: [Lucide](https://lucide.dev), ISC license (`crates/ui/assets/icons`).
 - Achievement badges (`crates/ui/assets/stickers`): original SVGs made for Know Giver,
   under the project's license.

@@ -51,7 +51,9 @@ If a machine overheats, limit it for that run with `-j N` or `CARGO_BUILD_JOBS`.
       `TERMS_VERSION`, so each brand asks its students to agree on its own schedule.
 - [x] Release gate: `[legal] reviewed` and `commercial_reviewed` must be `true` before a
       commercial package (`metadata release-ready` in the packaging scripts and CI).
-- [ ] A licence agreement template between Trentin and the client (outside the app).
+- [x] A licence agreement template between Trentin and the client (outside the app):
+      drafted for Caderna in Claude Docs (parties, LLMs, allowance and overage, LGPD
+      roles, Anexo I with prices), waiting for the lawyer's review below.
 - [ ] Lawyer review of each client's texts before its first sale (Caderna: drafts only).
 
 ## Phase W3 — Remaining art and names
@@ -142,6 +144,22 @@ A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
 - [x] LLM overage: past the monthly allowance the apps keep going up to an optional cap,
       the client is emailed once a month, and last month's extra tokens become one charge
       (price per million, tied to the subscription) on the 1st.
+- [x] Short access codes (`XXXX-XXXX-XXXX-XXXX`) instead of the long key: the student
+      types the code, the panel answers with the signed key, which the app keeps and
+      checks offline; the email carries a link to the code with a copy button.
+- [x] Student restrictions per school (*Permissões dos alunos* in the client area):
+      exporting handouts and screen capture, sent with the licence as `restrictions`,
+      never for teachers. The engine refuses blocked exports and the reader disables them;
+      on Windows the window is left out of screenshots and recordings.
+- [ ] Screen capture blocking on macOS (`NSWindow.sharingType = none`, which newer
+      ScreenCaptureKit versions may ignore) and Linux (X11 and Wayland offer no way to
+      block); today Settings says these systems cannot block. The handout PDFs also stay
+      readable in the data folder: the restriction covers the app's buttons, not copying
+      files by hand.
+- [x] Development test accounts (`DevTestSeeder`) and the pt-BR MVP test plan
+      (`docs/mvp-test-plan.md`).
+- [ ] Production email for the panel (SMTP and a sender domain with SPF/DKIM) before the
+      first school, so access-code links and charges do not land in spam.
 - [ ] Subscriptions: card tokenization enabled on the production Asaas account, and the
       `scheduler` service (or a cron running `schedule:run`) on the production server.
 - [ ] Charges: the production Asaas key and webhook token before the first real charge.
@@ -182,6 +200,9 @@ Needs a brand with a panel (`[server]`); without one the app works as before.
       base; legal version `2026-11-10.1`.
 - [ ] Teachers' own progress and plans across their computers (today only students sync).
 - [ ] Moderation flow for the shared base beyond removal (reports from schools).
+- [x] Wikipedia pictures in handouts credit their author and license (from Wikimedia) in
+      the caption, and the topic's bibliography lists the article and the picture file
+      (ABNT in Portuguese, all five languages); handouts saved earlier keep their pages.
 - [ ] Check references against a bibliographic database before showing them.
 
 ## Voice programs per system
