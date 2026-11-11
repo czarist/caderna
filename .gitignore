@@ -9,3 +9,6 @@
 *.p12
 *.key
 /.cargo/config.toml
+
+# Python caches from the agent skills
+__pycache__/
