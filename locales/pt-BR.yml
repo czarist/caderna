@@ -637,6 +637,8 @@ handout:
     exercises: "Exercícios"
     answers: "Gabarito comentado"
     picture_source: "Imagem: Wikipédia"
+    wikipedia_reference: "{title}. In: WIKIPÉDIA: a enciclopédia livre. [S. l.]: Wikimedia Foundation. Disponível em: {url}. Acesso em: %{date}."
+    image_reference: "{author}. {file}. In: WIKIMEDIA Commons. Licença {license}. Disponível em: {url}. Acesso em: %{date}."
     answer_grid: "Respostas rápidas"
 
 settings:

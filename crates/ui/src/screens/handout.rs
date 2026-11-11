@@ -51,6 +51,8 @@ pub fn prepare_request() -> PrepareRequest {
 }
 
 fn labels() -> HandoutLabels {
+    // Pictures are looked up when the handout is made.
+    let accessed = i18n::date(Engine::today());
     HandoutLabels {
         demonstration: t!("licensing.watermark").into_owned(),
         handout: t!("handout.label.handout").into_owned(),
@@ -64,5 +66,11 @@ fn labels() -> HandoutLabels {
         picture_source: t!("handout.label.picture_source").into_owned(),
         answer_grid: t!("handout.label.answer_grid").into_owned(),
         references: t!("handout.label.references").into_owned(),
+        wikipedia_reference: t!(
+            "handout.label.wikipedia_reference",
+            date = accessed.as_str()
+        )
+        .into_owned(),
+        image_reference: t!("handout.label.image_reference", date = accessed.as_str()).into_owned(),
     }
 }

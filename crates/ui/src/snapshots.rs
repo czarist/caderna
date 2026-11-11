@@ -607,6 +607,8 @@ fn reader_snapshots(
         answer_grid: tr("Respostas rápidas", "Quick answers").into(),
         references: tr("Referências bibliográficas", "References").into(),
         demonstration: String::new(),
+        wikipedia_reference: String::new(),
+        image_reference: String::new(),
     };
     // The paragraph highlighted in the reader.
     let highlighted = tr(

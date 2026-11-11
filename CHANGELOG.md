@@ -9,6 +9,46 @@ repository.
 
 ## [Unreleased]
 
+### Added
+- **School restrictions for students.** In the panel's client area (*Permissões dos
+  alunos*), a school can stop its students from taking handouts out of the app
+  (exporting them or opening the PDF in another program) and from taking screenshots or
+  recording the screen. The engine refuses blocked exports, the reader disables those
+  buttons and says why, and Settings lists what the school blocks. On Windows the
+  window shows black in captures (`SetWindowDisplayAffinity`); macOS and Linux cannot
+  block yet, and Settings says so. Teachers are never restricted.
+- **Picture credits and sources in handouts.** Each Wikipedia picture's author and
+  license come from Wikimedia and go in its caption, and the topic's bibliography lists
+  the Wikipedia article and the picture file (ABNT in Portuguese; all five languages).
+  Handouts saved earlier keep their pages, so their highlights stay in place.
+- **Short access codes.** Students can activate with the panel's code
+  (`XXXX-XXXX-XXXX-XXXX`, typed with or without dashes) instead of the long signed key;
+  the panel answers with the signed key, which the app keeps and checks offline. The
+  email sends a link to the code, with a copy button, instead of the code itself.
+- **Overdue payments pause the app.** When a school's payment is 2 days late, the panel
+  refuses its computers with `billing_paused`: the app shows a neutral "access paused,
+  contact support" screen with the support link, keeps the study data, asks again every
+  10 minutes and opens by itself once the payment arrives.
+- Development test accounts for both projects (`DevTestSeeder` in the panel) and a
+  pt-BR MVP test plan (`docs/mvp-test-plan.md`).
+- Panel (CADERNA-DASHBOARD):
+  - charges with a title and a description; the client picks card instalments in its
+    area: up to 3 without interest, up to 10 with 1.99% a month;
+  - subscriptions: a recurring fee issued 10 days before each due date, a due day the
+    client chooses, automatic card payment (Asaas card token) with the client's consent,
+    Pix reminders 3 days before and on the due date, and a pause 2 days after it;
+  - LLM overage: past the monthly allowance the apps keep working up to an optional cap,
+    the school is emailed once a month, and last month's extra tokens become one charge
+    (price per million tokens) on the 1st;
+  - a `scheduler` service in Docker for the daily billing run.
+
+### Changed
+- The brand downloaded from the panel applies as soon as it arrives (theme, title, icon,
+  pictures and handout brand), without restarting the app.
+
+### Fixed
+- CI frees disk space on the runners before building.
+
 ## [0.3.0] - 2026-11-10
 
 ### Added
@@ -69,6 +109,18 @@ Classes in the cloud, for brands with a panel.
   without interest, through Asaas).
 - Per-brand macOS/Linux packages, installers and release workflow; signing scripts that
   read certificates from CI secrets.
+- Panel integration (`[server]` in the brand): online licence activation with a device
+  token in the system's credential store, renewed silently, a check at start and every
+  hour, 14 days offline, refusals that lock the app with their reason, and "Sign out
+  this computer"; the client's brand (names, colours, links, pictures, texts) downloaded
+  and kept; AI through the panel, with the AI choice hidden in setup and Settings.
+- Panel address per build: `[server] dev_url` (localhost) for development, `[server] url`
+  or `KG_SERVER_URL` for releases.
+- Licence modules from the panel (*Videoaula*, *Criação de conteúdos*): closed modules
+  leave the sidebar and the tour, and the engine refuses them.
+- General exam terms (*Programa da prova*, *Cargo ou área*, *Provas anteriores*) instead
+  of terms used only by public-service exams.
+- `scripts/package.ps1` takes the Inno Setup compiler from `KG_ISCC`.
 
 ### Changed
 - Caderna terms of use and privacy policy describe classes, the cloud progress and the
@@ -78,6 +130,12 @@ Classes in the cloud, for brands with a panel.
 - READMEs in all five languages show the Caderna icon and screenshots rendered with the
   Caderna brand, the full brand.toml sections, licence issuing and the CADERNA-DASHBOARD
   panel (its integration in the app is ROADMAP Phase W6). Builds use every core again.
+- The program file follows the brand (`Caderna.exe`).
+
+### Fixed
+- A licence works from the day before its start date, so a key issued at night in Brazil
+  is not refused on a computer still on the previous day.
+- A brand picture that cannot be used no longer holds back the rest of the brand.
 
 ## [0.1.0] - 2026-11-08
 

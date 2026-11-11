@@ -514,8 +514,10 @@ Mais: [builds nativos/CUDA](docs/builds.md), [avaliação do Kokoro](docs/kokoro
 - Retratos dos professores (`crates/ui/assets/teachers`): "Lorelei", de Lisa Wischofsky,
   CC0 1.0, via [DiceBear](https://www.dicebear.com/styles/lorelei/); refeitos com
   `python tools/teachers.py`.
-- As imagens do quadro vêm da [Wikipédia](https://pt.wikipedia.org); a legenda indica o
-  artigo, onde estão o autor e a licença de cada imagem.
+- As imagens do quadro e das apostilas vêm da [Wikipédia](https://pt.wikipedia.org); a
+  legenda indica o artigo, onde estão o autor e a licença de cada imagem. Nas apostilas a
+  legenda traz também o autor e a licença lidos na Wikimedia, e a bibliografia do tópico
+  lista o artigo e o arquivo da imagem.
 - Ícones: [Lucide](https://lucide.dev), licença ISC (`crates/ui/assets/icons`).
 - Ícones das conquistas (`crates/ui/assets/stickers`): SVGs originais feitos para o Know
   Giver, sob a licença do projeto.

@@ -637,6 +637,8 @@ handout:
     exercises: "练习"
     answers: "答案"
     picture_source: "图片：Wikipedia"
+    wikipedia_reference: "{title}. In: Wikipédia（葡萄牙语维基百科）. Wikimedia Foundation. {url}（%{date} 访问）."
+    image_reference: "{author}. {file}. Wikimedia Commons，许可证 {license}. {url}（%{date} 访问）."
     answer_grid: "答案速查"
 
 settings:

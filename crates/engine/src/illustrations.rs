@@ -33,6 +33,22 @@ pub struct BoardImage {
     pub title: String,
     /// Article address, where the picture's author and license are listed.
     pub page_url: String,
+    /// The picture file's author and license, from Wikimedia; `None` for
+    /// pictures cached before credits were looked up, or when the lookup failed.
+    pub credit: Option<ImageCredit>,
+}
+
+/// Who made a Wikimedia picture and under which license.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ImageCredit {
+    /// Author as plain text; may be empty.
+    pub author: String,
+    /// Short license name, e.g. "CC BY-SA 4.0".
+    pub license: String,
+    /// File page on Wikimedia Commons (or the wiki).
+    pub file_url: String,
+    /// File title without its namespace, e.g. "Palacio do Planalto.jpg".
+    pub file: String,
 }
 
 /// State of one search.
@@ -104,10 +120,16 @@ const HANDOUT_PICTURES: usize = 3;
 /// Looks up the handout's pictures and attaches them: one of each topic, and
 /// those the sections ask for. Topics or sections without a fitting picture
 /// are left as they are. Runs on a worker thread (it may use the network).
+///
+/// Handouts made with the bibliography labels also credit each picture's
+/// author and license and list its Wikipedia article and file in the topic's
+/// references. Older saved handouts keep their captions and references, so
+/// their pages (and the highlights on them) do not move.
 pub(crate) fn illustrate(document: &mut kg_handout::Document, cache: &Path) {
     let source = document.labels.picture_source.clone();
+    let cite = Citer::new(&document.labels);
     let mut files: Vec<(String, Vec<u8>)> = Vec::new();
-    let mut find = |query: &str| -> Option<kg_handout::Picture> {
+    let mut find = |query: &str| -> Option<(kg_handout::Picture, Vec<String>)> {
         let query = illustration_key(query);
         if query.is_empty() {
             return None;
@@ -121,27 +143,119 @@ pub(crate) fn illustrate(document: &mut kg_handout::Document, cache: &Path) {
         };
         let file = format!("/img/{}.{}", files.len() + 1, image.format);
         files.push((file.clone(), image.bytes.to_vec()));
-        let caption = if source.is_empty() {
-            image.title
+        let mut caption = if source.is_empty() {
+            image.title.clone()
         } else {
             format!("{source} · {}", image.title)
         };
-        Some(kg_handout::Picture { file, caption })
+        let references = match &cite {
+            Some(cite) => {
+                if let Some(credit) = cite.credit_line(&image) {
+                    caption = format!("{caption} · {credit}");
+                }
+                cite.references(&image)
+            }
+            None => Vec::new(),
+        };
+        Some((kg_handout::Picture { file, caption }, references))
     };
     for topic in &mut document.topics {
-        topic.picture = find(&topic.topic);
+        let mut sources = Vec::new();
+        let mut keep = |found: Option<(kg_handout::Picture, Vec<String>)>| {
+            found.map(|(picture, references)| {
+                sources.extend(references);
+                picture
+            })
+        };
+        topic.picture = keep(find(&topic.topic));
         let mut left = HANDOUT_PICTURES - usize::from(topic.picture.is_some());
         for section in &mut topic.sections {
             if left == 0 {
                 break;
             }
             if !section.image.trim().is_empty() {
-                section.picture = find(&section.image);
+                section.picture = keep(find(&section.image));
                 left -= usize::from(section.picture.is_some());
+            }
+        }
+        for reference in sources {
+            if !topic.references.contains(&reference) {
+                topic.references.push(reference);
             }
         }
     }
     document.files = files;
+}
+
+/// Writes the picture credits and Wikipedia references of a handout, from
+/// its translated templates.
+struct Citer {
+    article: String,
+    image: String,
+}
+
+impl Citer {
+    /// `None` for handouts saved before the templates existed.
+    fn new(labels: &kg_handout::Labels) -> Option<Self> {
+        (!labels.wikipedia_reference.trim().is_empty()).then(|| Self {
+            article: labels.wikipedia_reference.clone(),
+            image: labels.image_reference.clone(),
+        })
+    }
+
+    /// "Author, license" for the caption.
+    fn credit_line(&self, image: &BoardImage) -> Option<String> {
+        let credit = image.credit.as_ref()?;
+        let parts: Vec<&str> = [credit.author.as_str(), credit.license.as_str()]
+            .into_iter()
+            .filter(|part| !part.is_empty())
+            .collect();
+        (!parts.is_empty()).then(|| parts.join(", "))
+    }
+
+    /// The article, then the picture file when its credit is known.
+    fn references(&self, image: &BoardImage) -> Vec<String> {
+        let mut references = Vec::new();
+        if !image.page_url.is_empty() {
+            references.push(
+                self.article
+                    .replace("{title}", &abnt_title(&image.title))
+                    .replace("{url}", &image.page_url),
+            );
+        }
+        if let Some(credit) = &image.credit
+            && !self.image.trim().is_empty()
+            && !credit.file_url.is_empty()
+        {
+            let template = if credit.author.is_empty() {
+                self.image.replace("{author}. ", "")
+            } else {
+                self.image.clone()
+            };
+            let license = if credit.license.is_empty() {
+                "?"
+            } else {
+                credit.license.as_str()
+            };
+            references.push(
+                template
+                    .replace("{author}", &credit.author)
+                    .replace("{file}", &credit.file)
+                    .replace("{license}", license)
+                    .replace("{url}", &credit.file_url),
+            );
+        }
+        references
+    }
+}
+
+/// A work listed by its title (ABNT): the first word in capitals.
+fn abnt_title(title: &str) -> String {
+    let title = title.trim();
+    match title.split_once(' ') {
+        Some((first, rest)) => format!("{} {rest}", first.to_uppercase()),
+        None => title.to_uppercase(),
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -149,6 +263,8 @@ struct CachedMeta {
     title: String,
     page_url: String,
     format: String,
+    #[serde(default)]
+    credit: Option<ImageCredit>,
 }
 
 /// Cached result, or a Wikipedia search. `Ok(None)` when nothing fits.
@@ -168,6 +284,7 @@ fn lookup(cache: &Path, query: &str) -> Result<Option<BoardImage>, String> {
                 format,
                 title: meta.title,
                 page_url: meta.page_url,
+                credit: meta.credit,
             }));
         }
     }
@@ -179,6 +296,7 @@ fn lookup(cache: &Path, query: &str) -> Result<Option<BoardImage>, String> {
                 title: image.title.clone(),
                 page_url: image.page_url.clone(),
                 format: image.format.to_owned(),
+                credit: image.credit.clone(),
             };
             let _ = fs::write(stem.with_extension(image.format), &image.bytes);
             if let Ok(json) = serde_json::to_string(&meta) {
@@ -214,6 +332,9 @@ struct Page {
     fullurl: String,
     #[serde(default)]
     thumbnail: Option<Thumbnail>,
+    /// The picture's file name, without its namespace.
+    #[serde(default)]
+    pageimage: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -241,7 +362,7 @@ fn search(query: &str) -> Result<Option<BoardImage>, String> {
         .query("gsrnamespace", "0")
         .query("gsrlimit", "4")
         .query("prop", "pageimages|info")
-        .query("piprop", "thumbnail")
+        .query("piprop", "thumbnail|name")
         .query("pithumbsize", THUMB_WIDTH.to_string())
         .query("inprop", "url")
         .call()
@@ -277,12 +398,139 @@ fn search(query: &str) -> Result<Option<BoardImage>, String> {
         .limit(MAX_BYTES)
         .read_to_vec()
         .map_err(|e| e.to_string())?;
+    // The picture is shown without its credit rather than not at all.
+    let credit = page
+        .pageimage
+        .as_deref()
+        .and_then(|file| match file_credit(&agent, file) {
+            Ok(credit) => credit,
+            Err(err) => {
+                tracing::warn!(%err, file, "picture credit not found");
+                None
+            }
+        });
     Ok(Some(BoardImage {
         bytes: bytes.into(),
         format,
         title: page.title,
         page_url: page.fullurl,
+        credit,
     }))
+}
+
+#[derive(Debug, Deserialize)]
+struct FileReply {
+    #[serde(default)]
+    query: Option<FilePages>,
+}
+
+#[derive(Debug, Deserialize)]
+struct FilePages {
+    #[serde(default)]
+    pages: Vec<FilePage>,
+}
+
+#[derive(Debug, Deserialize)]
+struct FilePage {
+    #[serde(default)]
+    imageinfo: Vec<ImageInfo>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ImageInfo {
+    #[serde(default)]
+    descriptionurl: String,
+    #[serde(default)]
+    extmetadata: HashMap<String, MetaValue>,
+}
+
+#[derive(Debug, Deserialize)]
+struct MetaValue {
+    #[serde(default)]
+    value: serde_json::Value,
+}
+
+/// The author and license Wikimedia lists for a picture file.
+fn file_credit(agent: &ureq::Agent, file: &str) -> Result<Option<ImageCredit>, String> {
+    let reply: FileReply = agent
+        .get(API)
+        .header("User-Agent", kg_brand::user_agent("desktop study app"))
+        .query("action", "query")
+        .query("format", "json")
+        .query("formatversion", "2")
+        .query("titles", format!("File:{file}"))
+        .query("prop", "imageinfo")
+        .query("iiprop", "extmetadata|url")
+        .query("iiextmetadatafilter", "Artist|LicenseShortName")
+        .call()
+        .map_err(|e| e.to_string())?
+        .body_mut()
+        .with_config()
+        .limit(256 * 1024)
+        .read_json()
+        .map_err(|e| e.to_string())?;
+    Ok(credit_from(reply, file))
+}
+
+fn credit_from(reply: FileReply, file: &str) -> Option<ImageCredit> {
+    let info = reply
+        .query?
+        .pages
+        .into_iter()
+        .find_map(|page| page.imageinfo.into_iter().next())?;
+    let field = |name: &str| {
+        info.extmetadata
+            .get(name)
+            .and_then(|meta| meta.value.as_str())
+            .map(plain_text)
+            .unwrap_or_default()
+    };
+    let license = field("LicenseShortName");
+    let author = field("Artist");
+    if license.is_empty() && author.is_empty() {
+        return None;
+    }
+    Some(ImageCredit {
+        author,
+        license,
+        file_url: info.descriptionurl,
+        // Wiki file names use "_" for spaces.
+        file: file.replace('_', " "),
+    })
+}
+
+/// Longest author or license kept, in characters.
+const MAX_CREDIT_CHARS: usize = 120;
+
+/// Wikimedia's HTML fields as one line of plain text.
+fn plain_text(html: &str) -> String {
+    let mut text = String::with_capacity(html.len());
+    let mut in_tag = false;
+    for c in html.chars() {
+        match c {
+            '<' => in_tag = true,
+            '>' if in_tag => {
+                in_tag = false;
+                text.push(' ');
+            }
+            _ if !in_tag => text.push(c),
+            _ => {}
+        }
+    }
+    let text = text
+        .replace("&nbsp;", " ")
+        .replace("&quot;", "\"")
+        .replace("&#39;", "'")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&amp;", "&");
+    let line = text
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .replace(" ,", ",")
+        .replace(" .", ".");
+    line.chars().take(MAX_CREDIT_CHARS).collect()
 }
 
 /// The article shares a meaningful word with the search, so a loose match
@@ -382,6 +630,83 @@ mod tests {
     }
 
     #[test]
+    fn new_handouts_credit_pictures_and_cite_their_wikipedia_sources() {
+        let cache = tempfile::tempdir().unwrap();
+        let stem = cache
+            .path()
+            .join(format!("{:016x}", fnv("Palácio do Planalto")));
+        fs::write(stem.with_extension("jpg"), b"jpg-bytes").unwrap();
+        fs::write(
+            stem.with_extension("json"),
+            r#"{"title":"Palácio do Planalto","page_url":"https://pt.wikipedia.org/wiki/Pal%C3%A1cio_do_Planalto","format":"jpg",
+               "credit":{"author":"Ana Lima","license":"CC BY-SA 4.0","file_url":"https://commons.wikimedia.org/wiki/File:Planalto.jpg","file":"Planalto.jpg"}}"#,
+        )
+        .unwrap();
+        let mut document = kg_handout::Document {
+            title: String::new(),
+            subtitle: String::new(),
+            generated: String::new(),
+            lang: "pt".into(),
+            labels: kg_handout::Labels {
+                picture_source: "Imagem: Wikipédia".into(),
+                wikipedia_reference:
+                    "{title}. In: WIKIPÉDIA. Disponível em: {url}. Acesso em: 11 nov. 2026.".into(),
+                image_reference: "{author}. {file}. Licença {license}. Disponível em: {url}."
+                    .into(),
+                ..Default::default()
+            },
+            topics: vec![kg_handout::TopicHandout {
+                topic: "Palácio do Planalto".into(),
+                references: vec!["BRASIL. Constituição (1988).".into()],
+                ..Default::default()
+            }],
+            files: Vec::new(),
+            marks: Vec::new(),
+        };
+        illustrate(&mut document, cache.path());
+        // Opening it again does not list the sources twice.
+        illustrate(&mut document, cache.path());
+        let topic = &document.topics[0];
+        assert_eq!(
+            topic.picture.as_ref().unwrap().caption,
+            "Imagem: Wikipédia · Palácio do Planalto · Ana Lima, CC BY-SA 4.0"
+        );
+        assert_eq!(
+            topic.references,
+            [
+                "BRASIL. Constituição (1988).",
+                "PALÁCIO do Planalto. In: WIKIPÉDIA. Disponível em: https://pt.wikipedia.org/wiki/Pal%C3%A1cio_do_Planalto. Acesso em: 11 nov. 2026.",
+                "Ana Lima. Planalto.jpg. Licença CC BY-SA 4.0. Disponível em: https://commons.wikimedia.org/wiki/File:Planalto.jpg.",
+            ]
+        );
+    }
+
+    #[test]
+    fn reads_the_author_and_license_wikimedia_lists() {
+        let reply: FileReply = serde_json::from_str(
+            r#"{"query":{"pages":[{"title":"Ficheiro:X.jpg","imageinfo":[{
+                "descriptionurl":"https://commons.wikimedia.org/wiki/File:X.jpg",
+                "extmetadata":{"Artist":{"value":"<a href=\"//commons.wikimedia.org/wiki/User:Ana\">Ana &amp; Bia</a> , Caio\n"},
+                               "LicenseShortName":{"value":"CC BY-SA 4.0"}}}]}]}}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            credit_from(reply, "X_1.jpg"),
+            Some(ImageCredit {
+                author: "Ana & Bia, Caio".into(),
+                license: "CC BY-SA 4.0".into(),
+                file_url: "https://commons.wikimedia.org/wiki/File:X.jpg".into(),
+                file: "X 1.jpg".into(),
+            })
+        );
+        let empty: FileReply =
+            serde_json::from_str(r#"{"query":{"pages":[{"imageinfo":[{"extmetadata":{}}]}]}}"#)
+                .unwrap();
+        assert_eq!(credit_from(empty, "Y.jpg"), None);
+        assert_eq!(abnt_title("Crase"), "CRASE");
+    }
+
+    #[test]
     fn keeps_only_related_articles_and_known_formats() {
         assert!(related("Palácio do Planalto", "Palácio do Planalto"));
         assert!(related(
@@ -418,6 +743,9 @@ mod tests {
                 b"\xFF\xD8"
             };
             assert!(image.bytes.starts_with(magic), "{query}");
+            let credit = image.credit.as_ref().expect("Wikimedia lists a license");
+            assert!(!credit.license.is_empty(), "{query}");
+            println!("  credit: {credit:?}");
             println!(
                 "{query}: {} ({}, {} bytes)",
                 image.title,
