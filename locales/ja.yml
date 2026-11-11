@@ -637,6 +637,8 @@ handout:
     exercises: "練習問題"
     answers: "解答"
     picture_source: "画像：Wikipedia"
+    wikipedia_reference: "{title}. In: Wikipédia（ポルトガル語版ウィキペディア）. Wikimedia Foundation. {url}（%{date} 閲覧）."
+    image_reference: "{author}. {file}. Wikimedia Commons, ライセンス {license}. {url}（%{date} 閲覧）."
     answer_grid: "解答一覧"
 
 settings:

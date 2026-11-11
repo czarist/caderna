@@ -124,6 +124,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             picture_source: "Imagem: Wikipédia".into(),
             answer_grid: "Respostas rápidas".into(),
             references: "Referências bibliográficas".into(),
+            ..Default::default()
         },
         regenerate: false,
     }))?;

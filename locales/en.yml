@@ -637,6 +637,8 @@ handout:
     exercises: "Exercises"
     answers: "Answer key"
     picture_source: "Picture: Wikipedia"
+    wikipedia_reference: "{title}. In: Wikipédia, a enciclopédia livre (Portuguese Wikipedia). Wikimedia Foundation. Available at: {url}. Accessed: %{date}."
+    image_reference: "{author}. {file}. Wikimedia Commons, license {license}. Available at: {url}. Accessed: %{date}."
     answer_grid: "Quick answers"
 
 settings:

@@ -187,6 +187,13 @@ pub struct Labels {
     pub answer_grid: String,
     /// Heading of the bibliography, e.g. "Referências bibliográficas".
     pub references: String,
+    /// Bibliography entry for the Wikipedia article a picture comes from,
+    /// with `{title}` and `{url}` (the access date already filled in). Empty
+    /// in handouts saved before it existed: their pictures get no credits.
+    pub wikipedia_reference: String,
+    /// Entry for the picture file, with `{author}`, `{file}`, `{license}`
+    /// and `{url}`.
+    pub image_reference: String,
 }
 
 /// A highlight drawn over the text when exporting: rectangles in points
@@ -377,6 +384,8 @@ mod tests {
             answer_grid: "Respostas".into(),
             references: "Referências".into(),
             demonstration: String::new(),
+            wikipedia_reference: String::new(),
+            image_reference: String::new(),
         }
     }
 
