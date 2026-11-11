@@ -1508,10 +1508,11 @@ licensing:
 panel:
   ai_hint: "AI 由 %{company} 的管理面板提供，已包含在您的授權中。不需要 AI 金鑰或帳號。"
   activate_title: "啟用 %{app}"
-  activate_body: "請在下方貼上您從 %{company} 收到的授權金鑰或試用金鑰。%{app} 會透過 %{company} 的管理面板核對金鑰，並為這台電腦保留一個授權席位。"
+  activate_body: "請在下方輸入您從 %{company} 收到的存取碼（電子郵件中的連結會顯示存取碼）。較長的授權金鑰同樣可用。%{app} 會透過 %{company} 的管理面板核對存取碼，並為這台電腦保留一個授權席位。"
+  placeholder: "輸入存取碼（XXXX-XXXX-XXXX-XXXX）"
   locked_body: "%{app} 需要透過 %{company} 的管理面板確認這台電腦的授權。您的學習資料仍保存在這裡。"
   get_license: "申請授權"
-  hint: "金鑰會在這台電腦上以及 %{company} 的管理面板中核對，面板負責統計授權席位。"
+  hint: "存取碼由 %{company} 的管理面板核對，面板負責統計授權席位。"
   busy: "正在與管理面板核對…"
   connected: "管理面板已於 %{date} 確認授權"
   offline: "自 %{date} 起未連線管理面板。%{app} 還可以使用 %{days} 天；請連上網際網路以確認授權。"
@@ -1521,7 +1522,7 @@ panel:
   reactivate: "重新啟用"
   retry: "重試"
   refused:
-    license_invalid: "管理面板無法辨識此授權金鑰。"
+    license_invalid: "管理面板無法辨識此存取碼或授權金鑰。"
     license_revoked: "授權已被 %{company} 取消。"
     license_expired: "授權不在有效期間內。"
     client_inactive: "此授權的帳戶已被 %{company} 暫停。"

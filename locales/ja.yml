@@ -1508,10 +1508,11 @@ licensing:
 panel:
   ai_hint: "AIは%{company}のパネルから提供され、ライセンスに含まれています。AIのキーやアカウントは不要です。"
   activate_title: "%{app}を有効にする"
-  activate_body: "%{company}から受け取ったライセンスキーまたは評価用キーを下に貼り付けてください。%{app}は%{company}のパネルでキーを確認し、このコンピューター用にライセンスの席を1つ確保します。"
+  activate_body: "%{company}から受け取ったアクセスコードを下に入力してください（メールのリンクからコードを確認できます）。長いライセンスキーも使えます。%{app}は%{company}のパネルでコードを確認し、このコンピューター用にライセンスの席を1つ確保します。"
+  placeholder: "アクセスコードを入力（XXXX-XXXX-XXXX-XXXX）"
   locked_body: "%{app}は、このコンピューターのライセンスを%{company}のパネルで確認する必要があります。学習データはこのコンピューターに保存されたままです。"
   get_license: "ライセンスを申し込む"
-  hint: "キーはこのコンピューターと、ライセンスの席数を数える%{company}のパネルで確認されます。"
+  hint: "コードは、ライセンスの席数を数える%{company}のパネルで確認されます。"
   busy: "パネルに確認しています…"
   connected: "%{date}にパネルでライセンスを確認しました"
   offline: "%{date}からパネルに接続していません。%{app}はあと%{days}日使えます。インターネットに接続してライセンスを確認してください。"
@@ -1521,7 +1522,7 @@ panel:
   reactivate: "もう一度有効にする"
   retry: "もう一度試す"
   refused:
-    license_invalid: "パネルはこのライセンスキーを認識できません。"
+    license_invalid: "パネルはこのアクセスコードまたはライセンスキーを認識できません。"
     license_revoked: "ライセンスは%{company}によって取り消されました。"
     license_expired: "ライセンスの有効期間外です。"
     client_inactive: "このライセンスのアカウントは%{company}で停止されています。"

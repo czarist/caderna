@@ -93,9 +93,16 @@ pub fn activation(ui: &mut egui::Ui, engine: &kg_engine::Engine) -> Option<Comma
         .ctx()
         .data_mut(|d| d.get_temp::<String>(id))
         .unwrap_or_default();
+    // With a panel the student types the short access code; the long signed
+    // key still works there and is the only kind without a panel.
+    let placeholder = if kg_brand::has_server() {
+        t!("panel.placeholder")
+    } else {
+        t!("licensing.placeholder")
+    };
     ui.add(
         egui::TextEdit::multiline(&mut input)
-            .hint_text(t!("licensing.placeholder"))
+            .hint_text(placeholder)
             .desired_width(480.0)
             .desired_rows(3)
             .char_limit(8192),
