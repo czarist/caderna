@@ -139,6 +139,9 @@ A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
       token) in its area; Pix reminders 3 days before and on the day; unpaid 2 days after
       the due date, the client's apps are refused with `billing_paused` (contact support)
       and open again by themselves once it is paid.
+- [x] LLM overage: past the monthly allowance the apps keep going up to an optional cap,
+      the client is emailed once a month, and last month's extra tokens become one charge
+      (price per million, tied to the subscription) on the 1st.
 - [ ] Subscriptions: card tokenization enabled on the production Asaas account, and the
       `scheduler` service (or a cron running `schedule:run`) on the production server.
 - [ ] Charges: the production Asaas key and webhook token before the first real charge.

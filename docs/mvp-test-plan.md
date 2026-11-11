@@ -158,6 +158,17 @@ Para testar sem esperar dias, rode a rotina diária na mão:
 7. Pagar a cobrança (Pix no sandbox): em até 10 minutos o app volta sozinho (ou clique em
    "Tentar de novo"). O admin também pode **Liberar acesso** na aba Assinatura.
 
+### Franquia e excedente de LLMs
+
+1. Admin → Escola Teste → seção Modelos de linguagem (LLMs): franquia de 5.000 tokens,
+   "Cobrar excedente" ligado, R$ 20,00 por milhão, teto de 2.000.000.
+2. Usar o app até passar de 5.000 tokens: o app continua; chega no Mailpit o email
+   "Franquia de LLMs do mês ultrapassada"; a tela Assinatura mostra o uso e o excedente.
+3. Baixar o teto para perto do uso atual: ao chegar nele, as funções com LLMs param com o
+   aviso de cota, e o resto do app segue.
+4. No dia 1º (ou rodando `caderna:billing` com uso do mês anterior no banco), a cobrança
+   "Uso de LLMs além da franquia — <mês>" aparece; abaixo de R$ 5,00 não é gerada.
+
 ## 8. Painel admin (`/admin`)
 
 1. Admin precisa de código por email; operador entra sem obrigatoriedade.
