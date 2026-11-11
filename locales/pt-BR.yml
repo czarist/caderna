@@ -1508,10 +1508,11 @@ licensing:
 panel:
   ai_hint: "A IA vem do painel de %{company}, incluída na sua licença. Não é preciso chave nem conta de IA."
   activate_title: "Ativar o %{app}"
-  activate_body: "Cole abaixo a chave de licença ou de avaliação que você recebeu de %{company}. O %{app} confere a chave com o painel de %{company} e reserva uma vaga da licença para este computador."
+  activate_body: "Digite abaixo o código de acesso que você recebeu de %{company} (o link do email mostra o código). A chave longa de licença também funciona. O %{app} confere o código com o painel de %{company} e reserva uma vaga da licença para este computador."
+  placeholder: "Digite o código de acesso (XXXX-XXXX-XXXX-XXXX)"
   locked_body: "O %{app} precisa confirmar a licença deste computador com o painel de %{company}. Seus estudos continuam guardados aqui."
   get_license: "Pedir uma licença"
-  hint: "A chave é conferida neste computador e no painel de %{company}, que conta as vagas da licença."
+  hint: "O código é conferido no painel de %{company}, que conta as vagas da licença."
   busy: "Conferindo com o painel…"
   connected: "Licença confirmada pelo painel em %{date}"
   offline: "Sem contato com o painel desde %{date}. O %{app} continua funcionando por mais %{days} dias; conecte-se à internet para confirmar a licença."
@@ -1521,7 +1522,7 @@ panel:
   reactivate: "Ativar de novo"
   retry: "Tentar de novo"
   refused:
-    license_invalid: "O painel não reconhece esta chave de licença."
+    license_invalid: "O painel não reconhece este código de acesso ou chave de licença."
     license_revoked: "A licença foi cancelada por %{company}."
     license_expired: "A licença está fora do prazo de validade."
     client_inactive: "A conta desta licença está suspensa em %{company}."

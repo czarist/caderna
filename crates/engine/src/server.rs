@@ -104,6 +104,10 @@ pub enum PanelStatus {
 pub(crate) struct Activation {
     pub token: String,
     pub token_expires_at: DateTime<Utc>,
+    /// The signed licence key, which the app keeps and checks offline; the
+    /// student may have typed only the short access code.
+    #[serde(default)]
+    pub license_key: Option<String>,
     #[serde(default)]
     pub license: LicenseInfo,
 }
@@ -437,6 +441,25 @@ fn download_images(
         }
     }
     Ok(images)
+}
+
+/// Letters and digits of the panel's access codes, which cannot be mistaken
+/// for each other when typed (no 0/O, 1/I/L, U).
+const ACCESS_CODE_ALPHABET: &str = "23456789ABCDEFGHJKMNPQRSTVWXYZ";
+
+/// The short access code as the panel stores it (`XXXX-XXXX-XXXX-XXXX`),
+/// from what the student typed; `None` when it is not one (a signed key).
+fn access_code(typed: &str) -> Option<String> {
+    let chars: String = typed
+        .chars()
+        .filter(|c| !c.is_whitespace() && *c != '-')
+        .map(|c| c.to_ascii_uppercase())
+        .collect();
+    if chars.len() != 16 || !chars.chars().all(|c| ACCESS_CODE_ALPHABET.contains(c)) {
+        return None;
+    }
+    let groups: Vec<&str> = (0..4).map(|i| &chars[i * 4..i * 4 + 4]).collect();
+    Some(groups.join("-"))
 }
 
 /// The panel's company name, colour and watermark for the handouts.
@@ -821,14 +844,23 @@ impl crate::Engine {
         self.panel.session.token_expires_at = None;
     }
 
-    /// Activates a licence key with the panel; it is kept only once the
-    /// panel accepts this computer.
+    /// Activates a licence key or a short access code with the panel; the
+    /// signed key is kept only once the panel accepts this computer.
     pub(crate) fn activate_online(&mut self, key: &str) -> Result<(), EngineError> {
-        let key = key.trim().to_owned();
-        let license = crate::license::verify(&key, kg_brand::LICENSE_PUBLIC_KEY, kg_brand::SLUG)?;
-        if !license.valid_on(self.license_day()) {
-            return Err(crate::license::LicenseError::Date.into());
-        }
+        // A short access code is checked only by the panel, which answers with
+        // the signed key; a signed key is checked here first.
+        let key = match access_code(key) {
+            Some(code) => code,
+            None => {
+                let key = key.trim().to_owned();
+                let license =
+                    crate::license::verify(&key, kg_brand::LICENSE_PUBLIC_KEY, kg_brand::SLUG)?;
+                if !license.valid_on(self.license_day()) {
+                    return Err(crate::license::LicenseError::Date.into());
+                }
+                key
+            }
+        };
         if self.panel.busy {
             return Ok(());
         }
@@ -877,7 +909,7 @@ impl crate::Engine {
     ) -> Result<(), EngineError> {
         self.panel.busy = false;
         let activation = result?;
-        self.store_license(key)?;
+        self.store_license(activation.license_key.as_deref().unwrap_or(key))?;
         self.keep_token(&activation);
         if let Some(modules) = activation.license.modules.clone() {
             self.panel.session.modules = Some(modules);
@@ -1057,11 +1089,46 @@ mod tests {
         Activation {
             token: "new".into(),
             token_expires_at: now() + Duration::days(days),
+            license_key: None,
             license: LicenseInfo {
                 modules: Some(vec!["lessons".into()]),
                 role: None,
             },
         }
+    }
+
+    #[test]
+    fn short_access_codes_are_read_as_the_panel_stores_them() {
+        assert_eq!(
+            access_code(
+                " abcd efgh-jkmn
+pqrs "
+            ),
+            Some("ABCD-EFGH-JKMN-PQRS".into())
+        );
+        assert_eq!(
+            access_code("ABCD-EFGH-JKMN-PQRS"),
+            Some("ABCD-EFGH-JKMN-PQRS".into())
+        );
+        // Letters the panel never uses, wrong length, or a signed key.
+        assert_eq!(access_code("ABCD-EFGH-JKMN-PQR0"), None);
+        assert_eq!(access_code("ABCD-EFGH-JKMN"), None);
+        assert_eq!(access_code("eyJ2ZXJzaW9uIjoxfQ.c2lnbmF0dXJl"), None);
+    }
+
+    #[test]
+    fn an_access_code_is_never_kept_in_place_of_the_signed_key() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut engine = engine(dir.path());
+        let mut activation = fresh_token(7);
+        activation.license_key = None;
+        assert!(
+            engine
+                .on_panel_activated("ABCD-EFGH-JKMN-PQRS", Ok(activation))
+                .is_err()
+        );
+        assert_eq!(engine.license_key(), None);
+        assert!(engine.license().is_none());
     }
 
     #[test]

@@ -16,8 +16,9 @@ docker compose up -d --build        # reconstrói a imagem com o código atual e
 docker compose exec app php artisan db:seed --class=DevTestSeeder
 ```
 
-O seeder cria a **Escola Teste (dev)** e imprime as chaves de licença. Pode rodar de novo:
-não duplica nada, só imprime as chaves outra vez. Não roda em produção.
+O seeder cria a **Escola Teste (dev)** e imprime os códigos de acesso
+(`XXXX-XXXX-XXXX-XXXX`). Pode rodar de novo: não duplica nada, só imprime os códigos outra
+vez. Não roda em produção.
 
 | Onde | Login | Senha |
 |---|---|---|
@@ -25,9 +26,10 @@ não duplica nada, só imprime as chaves outra vez. Não roda em produção.
 | <http://localhost:8000/admin> | `operador@caderna.test` (operador) | `caderna-teste` |
 | <http://localhost:8000/cliente> | `escola@caderna.test` (cliente) | `caderna-teste` |
 
-Os códigos de acesso e as chaves dos alunos chegam no Mailpit: <http://localhost:8025>.
+Os códigos de login do painel e os emails dos alunos (com o link do código) chegam no
+Mailpit: <http://localhost:8025>.
 
-| Chave (tabela do seeder) | Para que serve |
+| Código (tabela do seeder) | Para que serve |
 |---|---|
 | `aluno.completo@caderna.test` | aluno da Turma Teste, todos os módulos |
 | `aluno.conteudo@caderna.test` | aluno só com "Criação de conteúdos" |
@@ -48,7 +50,7 @@ cargo run --release
 Para começar do zero, apague a pasta de `KG_DATA_DIR`.
 
 > **Trocar de conta no mesmo computador:** o token do aparelho fica no cofre do Windows
-> com um nome só por marca, mesmo com `KG_DATA_DIR` diferente. Antes de usar outra chave,
+> com um nome só por marca, mesmo com `KG_DATA_DIR` diferente. Antes de usar outro código,
 > faça **Configurações → Desconectar este computador** na conta atual.
 
 ## 1. Primeira abertura e licença
@@ -57,10 +59,14 @@ Para começar do zero, apague a pasta de `KG_DATA_DIR`.
    professor, termos). A escolha de IA **não** aparece (a IA vem do painel).
 2. Os termos e a política mostram a versão `2026-11-10.1` e falam do painel, da nuvem
    de progresso e da base comum.
-3. Sem licença o app fica na tela de licença. Colar uma chave inválida: mensagem clara.
-4. Colar a chave `seed: licença completa`: ativa online, abre o app.
+3. Sem licença o app fica na tela de licença. Digitar um código inválido
+   (`AAAA-BBBB-CCCC-DDDD`): mensagem clara.
+4. Digitar o código `seed: licença completa` em minúsculas e com espaços no lugar dos
+   traços: ativa online e abre o app.
 5. No painel (admin → Escola Teste → Licenças), a licença mostra 1 computador em uso.
-6. Fechar e abrir de novo: entra direto, sem pedir a chave.
+   O botão **Código** mostra o código curto (com copiar) e a chave longa.
+6. Fechar e abrir de novo: entra direto, sem pedir o código.
+7. A chave longa (do botão **Código** no admin) também ativa, em outra pasta de teste.
 
 ## 2. Marca vinda do painel
 
@@ -114,11 +120,14 @@ Para começar do zero, apague a pasta de `KG_DATA_DIR`.
 ## 7. Área do cliente (`/cliente`, `escola@caderna.test`)
 
 1. Entrar com senha + código do Mailpit.
-2. Matricular um aluno novo: a chave chega por email no Mailpit, com o tema Caderna.
-3. Reenviar a chave; mudar plano; tornar professor; remover (a licença é revogada e o
-   app desse aluno trava na próxima checagem).
-4. Passar do limite de alunos (baixar o limite no admin para testar): mensagem clara.
-5. Cobranças: o admin cria uma cobrança; o cliente paga por Pix e cartão no sandbox
+2. Matricular um aluno novo: o email chega no Mailpit, com o tema Caderna, **sem o
+   código**, só com o botão "Ver meu código de acesso".
+3. Abrir o link: a página mostra o código e o botão **Copiar código**; copiar e colar no
+   app ativa. Mudar uma letra da URL: "Este link expirou", sem mostrar nada da licença.
+4. Reenviar o email; mudar plano; tornar professor; remover (a licença é revogada, o app
+   desse aluno trava na próxima checagem e o link mostra "licença cancelada").
+5. Passar do limite de alunos (baixar o limite no admin para testar): mensagem clara.
+6. Cobranças: o admin cria uma cobrança; o cliente paga por Pix e cartão no sandbox
    Asaas; o webhook marca como paga.
 
 ## 8. Painel admin (`/admin`)

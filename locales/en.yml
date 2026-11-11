@@ -1508,10 +1508,11 @@ licensing:
 panel:
   ai_hint: "AI comes from %{company}'s panel and is included in your license. No AI key or account is needed."
   activate_title: "Activate %{app}"
-  activate_body: "Paste below the license or evaluation key you received from %{company}. %{app} checks the key with %{company}'s panel and reserves one of the license's seats for this computer."
+  activate_body: "Type below the access code you received from %{company} (the link in the email shows it). The long license key works too. %{app} checks the code with %{company}'s panel and reserves one of the license's seats for this computer."
+  placeholder: "Type the access code (XXXX-XXXX-XXXX-XXXX)"
   locked_body: "%{app} needs to confirm this computer's license with %{company}'s panel. Your studies are still saved here."
   get_license: "Ask for a license"
-  hint: "The key is checked on this computer and by %{company}'s panel, which counts the license's seats."
+  hint: "The code is checked by %{company}'s panel, which counts the license's seats."
   busy: "Checking with the panel…"
   connected: "License confirmed by the panel on %{date}"
   offline: "No contact with the panel since %{date}. %{app} keeps working for %{days} more days; connect to the internet to confirm the license."
@@ -1521,7 +1522,7 @@ panel:
   reactivate: "Activate again"
   retry: "Try again"
   refused:
-    license_invalid: "The panel does not recognize this license key."
+    license_invalid: "The panel does not recognize this access code or license key."
     license_revoked: "The license was cancelled by %{company}."
     license_expired: "The license is outside its validity period."
     client_inactive: "The account of this license is suspended at %{company}."
