@@ -129,7 +129,8 @@ A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
 - [x] Panel: client area (`/cliente`) where a school enrols its students, each with a
       one-seat licence by email, and picks their plan, within the limits set by the admins.
 - [x] Panel: charges. The admins bill a client for anything; the client pays in its area by
-      Pix or credit card (up to 3 instalments without interest) through Asaas, with the
+      Pix or credit card (up to 3 instalments without interest, up to 10 with 1.99% a month,
+      chosen by the client) through Asaas, with the
       Asaas webhook and Caderna-themed emails.
 - [x] Charges tested on the Asaas sandbox: Pix, card in 3 instalments, refusal, webhook,
       cancelling.
