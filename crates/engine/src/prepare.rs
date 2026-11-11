@@ -158,6 +158,7 @@ impl Engine {
             topics: Vec::new(),
             files: Vec::new(),
             marks: Vec::new(),
+            holder: self.reader_mark(),
         };
         let pictures = self.picture_cache();
         let topic_ids: Vec<TopicId> = plan.topics().map(|(_, t)| t.id).collect();

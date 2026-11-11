@@ -16,7 +16,12 @@ repository.
   recording the screen. The engine refuses blocked exports, the reader disables those
   buttons and says why, and Settings lists what the school blocks. On Windows the
   window shows black in captures (`SetWindowDisplayAffinity`); macOS and Linux cannot
-  block yet, and Settings says so. Teachers are never restricted.
+  block by themselves, so there the content is covered while the window is out of focus
+  or a known screen recorder or screenshot tool is running (`ps` on macOS, `/proc` on
+  Linux, read locally), and macOS also marks the window as not shared. With capture
+  blocked, handouts carry the student's name and email as a faint diagonal watermark
+  (sent by the panel only then, never saved with the handout, not selectable in the
+  reader). Teachers are never restricted.
 - **Picture credits and sources in handouts.** Each Wikipedia picture's author and
   license come from Wikimedia and go in its caption, and the topic's bibliography lists
   the Wikipedia article and the picture file (ABNT in Portuguese; all five languages).
@@ -43,6 +48,9 @@ repository.
   - a `scheduler` service in Docker for the daily billing run.
 
 ### Changed
+- Caderna terms of use and privacy policy describe the school's restrictions, the
+  watermark, the local check of open programs and the Wikimedia credits (version
+  `2026-11-11.1`; users agree again).
 - The brand downloaded from the panel applies as soon as it arrives (theme, title, icon,
   pictures and handout brand), without restarting the app.
 

@@ -100,13 +100,26 @@
 // The reader's highlights, over the text of their page.
 #let marks = data.at("marks", default: ())
 
+// Who is reading, faint and repeated across the page, so a photo or a
+// screenshot shows whose copy it was. In the brand colour, so it stays out of
+// the reader's text (`pages.rs`).
+#let holder = data.at("holder", default: "")
+#let holder-mark = if holder != "" {
+  place(top + left, box(width: 100%, height: 100%, inset: 1.2cm, grid(
+    columns: (1fr, 1fr),
+    rows: (1fr,) * 6,
+    ..range(12).map(_ => align(center + horizon, rotate(-30deg, reflow: true,
+      text(size: 10pt, fill: brand.transparentize(78%), holder))))
+  )))
+} else { [] }
+
 #set page(
   paper: "a4",
   margin: (x: 2.3cm, top: 2.6cm, bottom: 2.4cm),
   numbering: "1",
   // The maker's mark, faint, in the middle of the page. Text in the brand
   // colour is left out of the reader's text (`pages.rs`).
-  background: place(center + horizon, stack(
+  background: holder-mark + place(center + horizon, stack(
     spacing: 14pt,
     if company.show { align(center, image("/brand/watermark.svg", width: 52%)) },
     if company.show { align(center, text(size: 34pt, weight: "bold", tracking: 3pt,

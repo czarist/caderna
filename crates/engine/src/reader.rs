@@ -219,10 +219,13 @@ impl Engine {
             unsaved_since: None,
         });
         let pictures = self.picture_cache();
+        let holder = self.reader_mark();
         self.spawn(move || {
             let result = (|| {
                 let mut document: Document = serde_json::from_str(&json)
                     .map_err(|e| kg_handout::HandoutError::Layout(e.to_string()))?;
+                // Whoever reads it now, as the school asks today.
+                document.holder = holder;
                 if let Some(cache) = pictures {
                     crate::illustrations::illustrate(&mut document, &cache);
                 }

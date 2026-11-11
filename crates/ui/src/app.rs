@@ -896,6 +896,15 @@ impl eframe::App for KnowGiverApp {
 
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         toggle_fullscreen(ui.ctx());
+        // macOS and Linux cannot keep the window out of captures: hide the
+        // content while it is out of focus or a recorder runs.
+        let block_capture = self
+            .engine
+            .as_ref()
+            .is_ok_and(|engine| engine.restricted(kg_engine::Restriction::ScreenCapture));
+        if let Some(cover) = self.capture.cover(ui.ctx(), block_capture) {
+            crate::capture::show_cover(ui.ctx(), &cover);
+        }
         let locale = i18n::current();
         if locale != self.fonts_locale {
             theme::set_fonts(ui.ctx(), &locale);

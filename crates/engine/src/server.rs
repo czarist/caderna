@@ -29,6 +29,8 @@ const RETRY_AFTER_FAILURE: StdDuration = StdDuration::from_secs(5 * 60);
 /// While the client's payment is overdue, the app asks again this often, so
 /// it opens by itself minutes after the payment is confirmed.
 const RETRY_WHILE_BILLING_PAUSED: StdDuration = StdDuration::from_secs(10 * 60);
+/// Longest watermark kept (name and email), in characters.
+const MAX_WATERMARK_CHARS: usize = 120;
 
 const SESSION_SETTING: &str = "panel_session";
 const FALLBACK_ID_SETTING: &str = "panel_device_fallback";
@@ -138,6 +140,10 @@ pub(crate) struct LicenseInfo {
     /// unknown ids are ignored.
     #[serde(default)]
     pub restrictions: Vec<String>,
+    /// The person's name and email for the handouts' watermark; sent only
+    /// while the school blocks screen capture.
+    #[serde(default)]
+    pub watermark: Option<String>,
 }
 
 /// The panel's API. A trait so the check-in logic can be tested without a network.
@@ -426,6 +432,8 @@ pub(crate) struct CheckIn {
     pub role: Option<String>,
     /// What the school blocks; meaningful only when `modules` is `Some`.
     pub restrictions: Vec<String>,
+    /// The handouts' watermark; meaningful only when `modules` is `Some`.
+    pub watermark: Option<String>,
 }
 
 /// A changed brand, its pictures already checked.
@@ -504,12 +512,14 @@ pub(crate) fn check_in(
     let mut modules = None;
     let mut role = None;
     let mut restrictions = Vec::new();
+    let mut watermark = None;
     let token = match usable {
         Some((token, _)) => match api.current(token) {
             Ok(license) => {
                 modules = license.modules;
                 role = license.role;
                 restrictions = license.restrictions;
+                watermark = license.watermark;
                 token.to_owned()
             }
             Err(PanelError::Unauthenticated) => {
@@ -547,6 +557,7 @@ pub(crate) fn check_in(
         modules.clone_from(&activation.license.modules);
         role.clone_from(&activation.license.role);
         restrictions.clone_from(&activation.license.restrictions);
+        watermark.clone_from(&activation.license.watermark);
     }
     Ok(CheckIn {
         renewed,
@@ -554,6 +565,7 @@ pub(crate) fn check_in(
         modules,
         role,
         restrictions,
+        watermark,
     })
 }
 
@@ -640,6 +652,9 @@ struct Session {
     /// What the school blocks, from the last check.
     #[serde(default)]
     restrictions: Vec<String>,
+    /// The handouts' watermark, from the last check.
+    #[serde(default)]
+    watermark: Option<String>,
 }
 
 /// The engine's panel state.
@@ -738,6 +753,23 @@ impl crate::Engine {
                 .restrictions
                 .iter()
                 .any(|id| id == restriction.id())
+    }
+
+    /// The reader's name and email to repeat faintly on handout pages, while
+    /// the school blocks screen capture; empty otherwise.
+    pub fn reader_mark(&self) -> String {
+        if !self.restricted(crate::Restriction::ScreenCapture) {
+            return String::new();
+        }
+        self.panel
+            .session
+            .watermark
+            .as_deref()
+            .map(str::trim)
+            .unwrap_or_default()
+            .chars()
+            .take(MAX_WATERMARK_CHARS)
+            .collect()
     }
 
     /// The person's role from the panel. Without a panel, or for a licence
@@ -954,6 +986,10 @@ impl crate::Engine {
                 .session
                 .restrictions
                 .clone_from(&activation.license.restrictions);
+            self.panel
+                .session
+                .watermark
+                .clone_from(&activation.license.watermark);
         }
         self.panel.session.last_ok_at = Some(Utc::now());
         self.panel.session.refused = None;
@@ -1047,6 +1083,7 @@ impl crate::Engine {
                     self.panel.session.modules = Some(modules);
                     self.panel.session.role = check.role;
                     self.panel.session.restrictions = check.restrictions;
+                    self.panel.session.watermark = check.watermark;
                 }
                 self.panel.session.last_ok_at = Some(now);
                 self.panel.session.refused = None;
@@ -1148,6 +1185,7 @@ mod tests {
                 modules: Some(vec!["lessons".into()]),
                 role: None,
                 restrictions: Vec::new(),
+                watermark: None,
             },
         }
     }
@@ -1375,6 +1413,7 @@ pqrs "
                 modules: None,
                 role: None,
                 restrictions: Vec::new(),
+                watermark: None,
             }),
             now(),
         );
@@ -1398,6 +1437,7 @@ pqrs "
             modules: Some(vec!["content".into()]),
             role: Some("student".into()),
             restrictions: restrictions.iter().map(|&id| id.to_owned()).collect(),
+            watermark: Some(" Ana Souza · ana@escola.example ".into()),
         };
         assert!(!engine.restricted(crate::Restriction::ExportHandouts));
 
@@ -1411,6 +1451,7 @@ pqrs "
         );
         assert!(engine.restricted(crate::Restriction::ExportHandouts));
         assert!(engine.restricted(crate::Restriction::ScreenCapture));
+        assert_eq!(engine.reader_mark(), "Ana Souza · ana@escola.example");
         let target = dir.path().join("fora.pdf");
         assert!(matches!(
             engine.handle(crate::Command::ExportReading(target.clone())),
@@ -1435,6 +1476,8 @@ pqrs "
         engine.apply_check(Ok(check(&[])), now());
         assert!(!engine.restricted(crate::Restriction::ExportHandouts));
         assert!(!engine.restricted(crate::Restriction::ScreenCapture));
+        // No watermark while screen capture is allowed.
+        assert_eq!(engine.reader_mark(), "");
     }
 
     #[test]
@@ -1478,6 +1521,7 @@ pqrs "
                 modules: Some(vec!["content".into()]),
                 role: Some("teacher".into()),
                 restrictions: Vec::new(),
+                watermark: None,
             }),
             now(),
         );

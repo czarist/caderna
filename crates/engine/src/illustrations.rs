@@ -616,6 +616,7 @@ mod tests {
             }],
             files: Vec::new(),
             marks: Vec::new(),
+            holder: String::new(),
         };
         illustrate(&mut document, cache.path());
         let topic = &document.topics[0];
@@ -662,6 +663,7 @@ mod tests {
             }],
             files: Vec::new(),
             marks: Vec::new(),
+            holder: String::new(),
         };
         illustrate(&mut document, cache.path());
         // Opening it again does not list the sources twice.

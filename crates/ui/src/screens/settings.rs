@@ -1040,6 +1040,7 @@ fn school_rules(ui: &mut egui::Ui, engine: &Engine) {
         } else {
             widgets::hint(ui, &t!("restrictions.screen_capture_unsupported"));
         }
+        widgets::hint(ui, &t!("restrictions.watermark"));
     }
 }
 

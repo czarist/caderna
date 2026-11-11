@@ -2,7 +2,7 @@
 
 Rascunho para revisão do cliente. Prestadora do serviço aos alunos: {{provider}}. Licenciadora do software: {{licensor}}. Contato da prestadora: {{contact}}. Este texto deve ser revisado com o contrato entre a prestadora e a licenciadora antes da distribuição.
 
-Versão de 10 de novembro de 2026 ({{version}}). O {{app}} é oferecido apenas no Brasil.
+Versão de 11 de novembro de 2026 ({{version}}). O {{app}} é oferecido apenas no Brasil.
 
 ## 1. Quem somos
 
@@ -55,6 +55,12 @@ aplicativo pedirá um novo aceite.
 - O **aluno** usa o que as turmas dele recebem (aulas, quizzes, apostilas e leituras) e não
   cria nem altera matérias. O progresso do aluno fica guardado no painel e pode ser visto
   pelos professores da escola.
+- A escola pode impedir que os alunos levem as apostilas para fora do {{app}} e que tirem
+  print ou gravem a tela. Com as capturas bloqueadas, as apostilas mostram o nome e o email
+  do aluno em marca-d'água clara; no Windows a janela fica fora das capturas, e no macOS e
+  no Linux o conteúdo é encoberto quando a janela sai de foco ou quando um programa de
+  gravação de tela está aberto. Esses bloqueios dificultam, mas não impedem, toda cópia;
+  não tente contorná-los.
 - O {{app}} reaproveita materiais de uma **base comum** feita pela IA para todas as escolas.
   Esses materiais também podem conter erros (veja a seção 6).
 

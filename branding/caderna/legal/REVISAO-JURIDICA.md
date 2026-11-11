@@ -16,6 +16,18 @@ e pede um novo aceite sempre que a versão muda.
 O Caderna é oferecido só no Brasil e só em português do Brasil. Não há versões em outros
 idiomas ou regiões.
 
+## Novidades da versão 2026-11-11.1 (restrições da escola e créditos das imagens)
+
+- A escola pode bloquear, para os alunos, a exportação das apostilas e as capturas de tela.
+  Com as capturas bloqueadas, o painel envia ao app o nome e o email do aluno, que aparecem
+  em marca-d'água nas apostilas, e no macOS e no Linux o app lê localmente a lista de
+  programas abertos para encobrir o conteúdo durante gravações. Revisar a base legal
+  (contrato e legítimo interesse da escola), a proporcionalidade da marca com email (não só
+  o nome) e o aviso aos alunos menores de idade.
+- As imagens da Wikipédia nas apostilas trazem autor e licença (Wikimedia Commons) e entram
+  na bibliografia; o nome do arquivo da imagem também é consultado na Wikipédia. Conferir
+  se o crédito atende às licenças Creative Commons usadas (CC BY e CC BY-SA).
+
 ## Novidades da versão 2026-11-10.1 (turmas, nuvem e base comum)
 
 - Professores e alunos cadastrados pela escola: o painel guarda os planos publicados e o

@@ -202,14 +202,18 @@ impl Engine {
         });
         let client = self.ai_client();
         let pictures = self.picture_cache();
+        let holder = self.reader_mark();
         let (tx, waker) = self.sender();
         self.spawn(move || {
             let result = build_handout(
                 &client,
                 items,
                 &request,
-                &path,
-                pictures.as_deref(),
+                Output {
+                    path: &path,
+                    pictures: pictures.as_deref(),
+                    holder,
+                },
                 Progress {
                     done: &done,
                     cancel: &cancel,
@@ -315,14 +319,22 @@ struct Progress<'a> {
     cancel: &'a AtomicBool,
 }
 
+/// Where the finished handout goes and how it is drawn.
+struct Output<'a> {
+    path: &'a std::path::Path,
+    /// The picture cache, or `None` for no pictures.
+    pictures: Option<&'a std::path::Path>,
+    /// The reader's watermark (engine `reader_mark`); may be empty.
+    holder: String,
+}
+
 /// Writes missing topics (a few at a time), then renders and saves the PDF.
 /// `on_written` receives each newly written topic as JSON, for caching.
 fn build_handout(
     client: &kg_ai::Client,
     items: Vec<Item>,
     request: &HandoutRequest,
-    path: &std::path::Path,
-    pictures: Option<&std::path::Path>,
+    output: Output<'_>,
     progress: Progress<'_>,
     on_written: &(dyn Fn(TopicId, String) + Sync),
 ) -> Result<SavedHandout, EngineError> {
@@ -393,8 +405,9 @@ fn build_handout(
         topics,
         files: Vec::new(),
         marks: Vec::new(),
+        holder: output.holder,
     };
-    saved_handout(document, path, pictures)
+    saved_handout(document, output.path, output.pictures)
 }
 
 /// Writes the PDF and returns what to keep for reading it in the app.

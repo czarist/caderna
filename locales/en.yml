@@ -1591,4 +1591,8 @@ classes:
 restrictions:
   export_handouts: "Your school does not allow taking handouts out of %{app}: exporting them or opening the PDF in another program."
   screen_capture: "Your school blocked screenshots and screen recordings: the %{app} window shows black in them."
-  screen_capture_unsupported: "Your school asked to block screenshots and screen recordings, but this system cannot do it yet; only Windows blocks them for now."
+  screen_capture_unsupported: "Your school blocked screenshots and screen recordings. This system cannot keep %{app} out of captures, so the content is covered while the window is out of focus or a screen recorder is open."
+  watermark: "Handouts show your name and email as a faint watermark while your school blocks screen capture."
+  covered_unfocused: "Content hidden while the %{app} window is out of focus. Click here to continue."
+  covered_recording: "Content hidden while %{program} is open. Close it to continue."
+  covered_system_capture: "Content hidden during the system's screen capture."
