@@ -4079,12 +4079,14 @@ dependencies = [
  "kg-brand",
  "kg-engine",
  "kg-study",
+ "raw-window-handle",
  "resvg 0.47.0",
  "rfd",
  "rust-i18n",
  "tempfile",
  "tracing",
  "tray-icon",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

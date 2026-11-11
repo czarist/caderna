@@ -1586,3 +1586,7 @@ classes:
     lessons: "Lessons"
     time: "Study time"
     last: "Last activity"
+restrictions:
+  export_handouts: "Your school does not allow taking handouts out of %{app}: exporting them or opening the PDF in another program."
+  screen_capture: "Your school blocked screenshots and screen recordings: the %{app} window shows black in them."
+  screen_capture_unsupported: "Your school asked to block screenshots and screen recordings, but this system cannot do it yet; only Windows blocks them for now."

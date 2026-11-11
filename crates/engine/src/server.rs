@@ -134,6 +134,10 @@ pub(crate) struct LicenseInfo {
     /// for licences without an enrolment.
     #[serde(default)]
     pub role: Option<String>,
+    /// What the school blocks for this person ([`crate::Restriction`] ids);
+    /// unknown ids are ignored.
+    #[serde(default)]
+    pub restrictions: Vec<String>,
 }
 
 /// The panel's API. A trait so the check-in logic can be tested without a network.
@@ -420,6 +424,8 @@ pub(crate) struct CheckIn {
     pub modules: Option<Vec<String>>,
     /// The person's role; meaningful only when `modules` is `Some`.
     pub role: Option<String>,
+    /// What the school blocks; meaningful only when `modules` is `Some`.
+    pub restrictions: Vec<String>,
 }
 
 /// A changed brand, its pictures already checked.
@@ -497,11 +503,13 @@ pub(crate) fn check_in(
     let mut renewed: Option<Activation> = None;
     let mut modules = None;
     let mut role = None;
+    let mut restrictions = Vec::new();
     let token = match usable {
         Some((token, _)) => match api.current(token) {
             Ok(license) => {
                 modules = license.modules;
                 role = license.role;
+                restrictions = license.restrictions;
                 token.to_owned()
             }
             Err(PanelError::Unauthenticated) => {
@@ -538,12 +546,14 @@ pub(crate) fn check_in(
     {
         modules.clone_from(&activation.license.modules);
         role.clone_from(&activation.license.role);
+        restrictions.clone_from(&activation.license.restrictions);
     }
     Ok(CheckIn {
         renewed,
         brand,
         modules,
         role,
+        restrictions,
     })
 }
 
@@ -627,6 +637,9 @@ struct Session {
     /// The person's role from the last check (see [`crate::ClassRole`]).
     #[serde(default)]
     role: Option<String>,
+    /// What the school blocks, from the last check.
+    #[serde(default)]
+    restrictions: Vec<String>,
 }
 
 /// The engine's panel state.
@@ -713,6 +726,18 @@ impl crate::Engine {
             .modules
             .as_ref()
             .is_none_or(|modules| modules.iter().any(|m| m == module.id()))
+    }
+
+    /// Whether the school blocks `restriction` for this person. Without a
+    /// panel nothing is blocked.
+    pub fn restricted(&self, restriction: crate::Restriction) -> bool {
+        kg_brand::has_server()
+            && self
+                .panel
+                .session
+                .restrictions
+                .iter()
+                .any(|id| id == restriction.id())
     }
 
     /// The person's role from the panel. Without a panel, or for a licence
@@ -925,6 +950,10 @@ impl crate::Engine {
         if let Some(modules) = activation.license.modules.clone() {
             self.panel.session.modules = Some(modules);
             self.panel.session.role.clone_from(&activation.license.role);
+            self.panel
+                .session
+                .restrictions
+                .clone_from(&activation.license.restrictions);
         }
         self.panel.session.last_ok_at = Some(Utc::now());
         self.panel.session.refused = None;
@@ -1017,6 +1046,7 @@ impl crate::Engine {
                 if let Some(modules) = check.modules {
                     self.panel.session.modules = Some(modules);
                     self.panel.session.role = check.role;
+                    self.panel.session.restrictions = check.restrictions;
                 }
                 self.panel.session.last_ok_at = Some(now);
                 self.panel.session.refused = None;
@@ -1117,6 +1147,7 @@ mod tests {
             license: LicenseInfo {
                 modules: Some(vec!["lessons".into()]),
                 role: None,
+                restrictions: Vec::new(),
             },
         }
     }
@@ -1343,6 +1374,7 @@ pqrs "
                 brand: None,
                 modules: None,
                 role: None,
+                restrictions: Vec::new(),
             }),
             now(),
         );
@@ -1351,6 +1383,58 @@ pqrs "
             engine.panel_status_at(now()),
             PanelStatus::Connected { last_ok: now() }
         );
+    }
+
+    #[test]
+    fn the_school_blocks_exporting_handouts_and_lifts_it_again() {
+        if !kg_brand::has_server() {
+            return;
+        }
+        let dir = tempfile::tempdir().unwrap();
+        let mut engine = engine(dir.path());
+        let check = |restrictions: &[&str]| CheckIn {
+            renewed: None,
+            brand: None,
+            modules: Some(vec!["content".into()]),
+            role: Some("student".into()),
+            restrictions: restrictions.iter().map(|&id| id.to_owned()).collect(),
+        };
+        assert!(!engine.restricted(crate::Restriction::ExportHandouts));
+
+        engine.apply_check(
+            Ok(check(&[
+                "export_handouts",
+                "screen_capture",
+                "not_known_yet",
+            ])),
+            now(),
+        );
+        assert!(engine.restricted(crate::Restriction::ExportHandouts));
+        assert!(engine.restricted(crate::Restriction::ScreenCapture));
+        let target = dir.path().join("fora.pdf");
+        assert!(matches!(
+            engine.handle(crate::Command::ExportReading(target.clone())),
+            Err(crate::EngineError::Restricted(
+                crate::Restriction::ExportHandouts
+            ))
+        ));
+        assert!(matches!(
+            engine.handle(crate::Command::ExportSavedReading {
+                reading: crate::ReadingId(1),
+                path: target,
+            }),
+            Err(crate::EngineError::Restricted(
+                crate::Restriction::ExportHandouts
+            ))
+        ));
+
+        // Kept for the next start, and lifted at the next check.
+        let kept: Session =
+            serde_json::from_str(&engine.store.setting(SESSION_SETTING).unwrap().unwrap()).unwrap();
+        assert_eq!(kept.restrictions.len(), 3);
+        engine.apply_check(Ok(check(&[])), now());
+        assert!(!engine.restricted(crate::Restriction::ExportHandouts));
+        assert!(!engine.restricted(crate::Restriction::ScreenCapture));
     }
 
     #[test]
@@ -1393,6 +1477,7 @@ pqrs "
                 }),
                 modules: Some(vec!["content".into()]),
                 role: Some("teacher".into()),
+                restrictions: Vec::new(),
             }),
             now(),
         );

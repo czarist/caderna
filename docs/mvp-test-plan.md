@@ -104,6 +104,16 @@ Para começar do zero, apague a pasta de `KG_DATA_DIR`.
 2. Na área do cliente, mudar o plano desse aluno para incluir Videoaula: na próxima
    checagem (ou ao reabrir) o módulo aparece.
 3. Ativar `seed: só videoaula`: só a parte de aulas fica aberta.
+4. Permissões dos alunos: em `/cliente` → Alunos → *Permissões dos alunos*, desligar
+   "Exportar apostilas" e "Capturar e gravar a tela". Com `aluno.completo@caderna.test`
+   ativado, reabrir o app:
+   - em Apostilas, "Exportar PDF", "Exportar" e "Abrir PDF" ficam desativados, e o motivo
+     aparece ao passar o mouse;
+   - em Configurações aparece o aviso das duas restrições;
+   - no Windows, o print (Win+Shift+S, PrtSc) e a gravação (Win+Alt+R, OBS) mostram a
+     janela preta ou sem a janela.
+5. Ativar a conta da professora: nada fica bloqueado. Religar as permissões: o aluno
+   volta a exportar e a tirar print ao reabrir, ou em até uma hora.
 
 ## 6. Turmas e cursos na nuvem
 

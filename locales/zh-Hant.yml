@@ -1586,3 +1586,7 @@ classes:
     lessons: "課程"
     time: "學習時長"
     last: "最近活動"
+restrictions:
+  export_handouts: "你的學校不允許將講義帶出 %{app}：匯出或在其他程式中開啟 PDF。"
+  screen_capture: "你的學校已封鎖螢幕截圖和螢幕錄影：%{app} 視窗在其中顯示為黑色。"
+  screen_capture_unsupported: "你的學校要求封鎖螢幕截圖和螢幕錄影，但此系統暫不支援；目前只有 Windows 可以封鎖。"

@@ -65,6 +65,7 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
         });
         ui.add_space(12.0);
         about_section(ui, draft);
+        school_rules(ui, engine);
         if let Some(command) = super::demo::activation(ui, engine) {
             actions.send(command);
         }
@@ -1024,6 +1025,22 @@ fn about_section(ui: &mut egui::Ui, draft: &mut kg_engine::Settings) {
             }
         }
     });
+}
+
+/// What the school blocks for its students, so a black screenshot or a
+/// missing export button is not a surprise.
+fn school_rules(ui: &mut egui::Ui, engine: &Engine) {
+    use kg_engine::Restriction;
+    if engine.restricted(Restriction::ExportHandouts) {
+        widgets::hint(ui, &t!("restrictions.export_handouts"));
+    }
+    if engine.restricted(Restriction::ScreenCapture) {
+        if crate::capture::SUPPORTED {
+            widgets::hint(ui, &t!("restrictions.screen_capture"));
+        } else {
+            widgets::hint(ui, &t!("restrictions.screen_capture_unsupported"));
+        }
+    }
 }
 
 fn legal_section(ui: &mut egui::Ui, engine: &Engine, actions: &mut Actions) {

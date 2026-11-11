@@ -189,6 +189,8 @@ pub struct KnowGiverApp {
     fonts_locale: String,
     tray: Option<crate::tray::SystemTray>,
     tray_initialized: bool,
+    /// Screenshots of the window, as the school allows.
+    capture: crate::capture::CaptureGuard,
     /// Keeps this the only running copy; later launches ask it to show.
     instance: Option<crate::instance::Instance>,
     window_hidden: bool,
@@ -304,6 +306,7 @@ impl KnowGiverApp {
             fonts_locale: String::new(),
             tray: None,
             tray_initialized: false,
+            capture: crate::capture::CaptureGuard::default(),
             instance: None,
             window_hidden: run_options.start_hidden,
             quit_requested: false,
@@ -714,7 +717,7 @@ impl Badges {
 }
 
 impl eframe::App for KnowGiverApp {
-    fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn logic(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         if !self.tray_initialized {
             self.tray_initialized = true;
             match crate::tray::SystemTray::new() {
@@ -782,6 +785,10 @@ impl eframe::App for KnowGiverApp {
                 if engine.take_brand_change() {
                     crate::brand::refresh(ctx, engine.panel_brand());
                 }
+                self.capture.sync(
+                    frame,
+                    engine.restricted(kg_engine::Restriction::ScreenCapture),
+                );
                 stickers = engine.take_sticker_notices();
                 if let Some(url) = engine.take_account_url() {
                     open_url(&url);

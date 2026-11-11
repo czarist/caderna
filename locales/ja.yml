@@ -1586,3 +1586,7 @@ classes:
     lessons: "授業"
     time: "学習時間"
     last: "最終活動"
+restrictions:
+  export_handouts: "学校の設定により、%{app} の教材を外部に持ち出すこと（書き出しや他のアプリで PDF を開くこと）はできません。"
+  screen_capture: "学校の設定により、スクリーンショットと画面録画はブロックされています。%{app} のウィンドウは黒く表示されます。"
+  screen_capture_unsupported: "学校はスクリーンショットと画面録画のブロックを求めていますが、このシステムではまだ対応していません。現在ブロックできるのは Windows のみです。"
