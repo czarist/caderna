@@ -131,8 +131,9 @@ With a panel:
 - **AI goes through the panel** with the device token. `text_model` and `vision_model`
   are the panel's model aliases; the AI choice disappears from the setup and Settings.
 - **The brand is downloaded** from the panel (ETag cache): app and company names, accent
-  and highlight colours, support and contact links. It applies from the next start, so
-  nothing changes mid-session. Pictures (icon, cover, reminder art, mark, handout
+  and highlight colours, support and contact links. The app checks with the panel when it
+  opens and every hour; a changed brand applies at once (names, colours, pictures, window
+  title and icon, handouts made from then on) and is kept for the next start. Pictures (icon, cover, reminder art, mark, handout
   watermark) are downloaded too and kept only when safe: square PNGs of 64–2048 px up to
   2 MB, SVGs up to 512 KB without scripts or outside references, from `https://` or the
   panel's own address. Texts replace the app's by locale key, in the brand's first

@@ -439,6 +439,15 @@ fn download_images(
     Ok(images)
 }
 
+/// The panel's company name, colour and watermark for the handouts.
+fn set_handout_brand(brand: &PanelBrand) {
+    kg_handout::set_brand(kg_handout::HandoutBrand {
+        company: brand.company_name.clone(),
+        color: brand.company_color,
+        watermark_svg: brand.image("watermark.svg").map(<[u8]>::to_vec),
+    });
+}
+
 /// Confirms this computer with the panel, renewing the token when it is
 /// missing, expiring or no longer accepted, then fetches the brand if it
 /// changed. A computer signed out in the panel stays out (`renew`).
@@ -596,10 +605,13 @@ pub(crate) struct Panel {
     busy: bool,
     /// `None`: no background checks (tests, or nothing to check).
     next_check: Option<Instant>,
-    /// The brand of this start (a newer download applies at the next one).
+    /// The brand in use: the one kept at an earlier start, replaced as soon
+    /// as the panel sends a newer one.
     brand: Option<PanelBrand>,
     /// A brand is kept on disk, so its ETag can be sent.
     brand_kept: bool,
+    /// The panel sent a new brand the UI has not shown yet.
+    brand_changed: bool,
 }
 
 impl Default for Panel {
@@ -613,6 +625,7 @@ impl Default for Panel {
             next_check: None,
             brand: None,
             brand_kept: false,
+            brand_changed: false,
         }
     }
 }
@@ -633,11 +646,7 @@ impl crate::Engine {
             .unwrap_or_default();
         let brand = panel_brand::load_panel_brand(&self.paths);
         if let Some(brand) = &brand {
-            kg_handout::set_brand(kg_handout::HandoutBrand {
-                company: brand.company_name.clone(),
-                color: brand.company_color,
-                watermark_svg: brand.image("watermark.svg").map(<[u8]>::to_vec),
-            });
+            set_handout_brand(brand);
         }
         self.panel = Panel {
             session,
@@ -648,6 +657,7 @@ impl crate::Engine {
             next_check: background.then(Instant::now),
             brand_kept: brand.is_some(),
             brand,
+            brand_changed: false,
         };
     }
 
@@ -705,9 +715,16 @@ impl crate::Engine {
         self.panel.session.role = Some(role.to_owned());
     }
 
-    /// The brand downloaded from the panel at an earlier start.
+    /// The brand from the panel: the one kept at an earlier start, or the
+    /// newer one the panel sent during this session.
     pub fn panel_brand(&self) -> Option<&PanelBrand> {
         self.panel.brand.as_ref()
+    }
+
+    /// Whether the panel sent a new brand since the last call, so the UI
+    /// shows it right away.
+    pub fn take_brand_change(&mut self) -> bool {
+        std::mem::take(&mut self.panel.brand_changed)
     }
 
     pub fn panel_status(&self) -> PanelStatus {
@@ -941,6 +958,12 @@ impl crate::Engine {
                             self.panel.brand_kept = true;
                         }
                         Err(err) => tracing::warn!(%err, "could not keep the panel brand"),
+                    }
+                    // Shown now, even if it could not be kept for the next start.
+                    if self.panel.brand.as_ref() != Some(&brand) {
+                        set_handout_brand(&brand);
+                        self.panel.brand = Some(brand);
+                        self.panel.brand_changed = true;
                     }
                 }
                 if let Some(modules) = check.modules {
@@ -1249,8 +1272,13 @@ mod tests {
             Err(crate::EngineError::ModuleDisabled(crate::Module::Lessons))
         ));
         assert_eq!(engine.panel.session.brand_etag.as_deref(), Some("v2"));
-        // Kept for the next start, not applied to this one.
-        assert_eq!(engine.panel_brand(), None);
+        // Applied to this session at once, and kept for the next start.
+        assert_eq!(
+            engine.panel_brand().and_then(|b| b.app_name.as_deref()),
+            Some("Escola")
+        );
+        assert!(engine.take_brand_change());
+        assert!(!engine.take_brand_change());
         let kept = panel_brand::load_panel_brand(&engine.paths).unwrap();
         assert_eq!(kept.app_name.as_deref(), Some("Escola"));
         assert!(kept.image("mark.svg").is_some());

@@ -32,14 +32,22 @@ impl Art {
     }
 }
 
+/// Where the brand's pictures are cached; forgotten when a new brand arrives.
+pub const BRAND_URIS: [&str; 4] = [
+    "bytes://brand/icon.png",
+    "bytes://brand/cover.png",
+    "bytes://brand/engraving.png",
+    "bytes://brand/mark.svg",
+];
+
 /// A picture of the build's brand (`kg-brand`); `name` gives the loader its
 /// format, e.g. "icon.png" or "mark.svg".
 pub fn brand_image(name: &'static str, bytes: &'static [u8]) -> ImageSource<'static> {
     let uri = match name {
-        "icon.png" => "bytes://brand/icon.png",
-        "cover.png" => "bytes://brand/cover.png",
-        "engraving.png" => "bytes://brand/engraving.png",
-        _ => "bytes://brand/mark.svg",
+        "icon.png" => BRAND_URIS[0],
+        "cover.png" => BRAND_URIS[1],
+        "engraving.png" => BRAND_URIS[2],
+        _ => BRAND_URIS[3],
     };
     ImageSource::Bytes {
         uri: std::borrow::Cow::Borrowed(uri),

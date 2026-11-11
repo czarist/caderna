@@ -112,13 +112,16 @@ A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
       check-in at start and every hour, 14 days offline, refusals lock the app with their
       reason; "Sign out this computer" frees the seat. Hashed machine id, no computer name.
 - [x] App: download the client's brand (`GET /api/v1/brand`, ETag) and cache it; names,
-      colours and links apply from the next start, built-in brand until then.
+      colours and links apply as soon as they arrive (at start and every hourly check),
+      and the kept brand applies when the app opens.
 - [x] App: AI through the panel with the device token (`[server] text_model` /
       `vision_model`); the AI choice is hidden in setup and Settings.
 - [x] Caderna privacy policy and terms (pt-BR only, Brazil only, `[locale]`): what goes to
       the panel, with the legal version bumped.
 - [x] Apply the panel's pictures (icon, cover, reminder art, mark, handout watermark) and
-      texts at runtime, from the next start, after checking them.
+      texts at runtime, as soon as they arrive, after checking them.
+- [ ] The device token's credential-store entry is one per brand, so two data folders
+      (`KG_DATA_DIR`) on one computer share it; key it by data folder too.
 - [x] Panel address per build: `[server] dev_url` (localhost) for `cargo run` and tests,
       `[server] url` or `KG_SERVER_URL` for releases; never read on the student's computer.
 - [x] Modules per licence from the panel (Videoaula, Criação de conteúdos): hidden in the

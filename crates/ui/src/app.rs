@@ -779,6 +779,9 @@ impl eframe::App for KnowGiverApp {
         let notices = match self.engine.as_mut() {
             Ok(engine) => {
                 engine.poll();
+                if engine.take_brand_change() {
+                    crate::brand::refresh(ctx, engine.panel_brand());
+                }
                 stickers = engine.take_sticker_notices();
                 if let Some(url) = engine.take_account_url() {
                     open_url(&url);
