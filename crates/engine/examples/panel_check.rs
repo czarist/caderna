@@ -48,7 +48,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     println!("app: {:?}", engine.demo());
 
-    // The brand downloaded by the check-in applies from the next start.
+    // The brand downloaded by the check-in, as the next start reads it.
     let reopened = Engine::new(AppPaths::new(dir.path()), AiConfig::default())?;
     match reopened.panel_brand() {
         Some(brand) => {

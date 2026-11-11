@@ -1,23 +1,53 @@
 //! The brand as shown: the build's (`kg-brand`), with what the brand's panel
-//! sent at an earlier start laid over it: names, colours, links, pictures and
-//! texts. Set once at startup, so nothing changes in the middle of a session.
+//! sent laid over it: names, colours, links, pictures and texts. The brand
+//! kept at an earlier start applies when the app opens; a newer one from the
+//! panel replaces it as soon as it arrives ([`refresh`]).
 
 use std::borrow::Cow;
-use std::sync::OnceLock;
+use std::sync::RwLock;
 
 use kg_engine::PanelBrand;
 
-static PANEL: OnceLock<PanelBrand> = OnceLock::new();
+/// The brands are leaked so the text and picture getters stay `'static`.
+/// A brand changes only when the client edits it in the panel, so a session
+/// leaks one or two at most.
+static PANEL: RwLock<Option<&'static PanelBrand>> = RwLock::new(None);
 
-/// Lays the panel's brand over the build's. Only the first call counts.
-pub fn apply(brand: Option<&PanelBrand>) {
-    if let Some(brand) = brand {
-        let _ = PANEL.set(brand.clone());
+/// Lays the panel's brand over the build's. Returns whether it changed.
+pub fn apply(brand: Option<&PanelBrand>) -> bool {
+    let Some(brand) = brand else { return false };
+    if panel() == Some(brand) {
+        return false;
     }
+    let brand: &'static PanelBrand = Box::leak(Box::new(brand.clone()));
+    match PANEL.write() {
+        Ok(mut current) => *current = Some(brand),
+        Err(poisoned) => *poisoned.into_inner() = Some(brand),
+    }
+    true
+}
+
+/// Shows a brand that arrived during the session: colours, pictures, the
+/// window's title and icon. Texts and names are read on every frame.
+pub fn refresh(ctx: &egui::Context, brand: Option<&PanelBrand>) {
+    if !apply(brand) {
+        return;
+    }
+    crate::theme::apply(ctx);
+    for uri in crate::art::BRAND_URIS {
+        ctx.forget_image(uri);
+    }
+    ctx.send_viewport_cmd(egui::ViewportCommand::Title(t!("app.name").into_owned()));
+    ctx.send_viewport_cmd(egui::ViewportCommand::Icon(Some(std::sync::Arc::new(
+        crate::icon::app_icon(),
+    ))));
 }
 
 fn panel() -> Option<&'static PanelBrand> {
-    PANEL.get()
+    match PANEL.read() {
+        Ok(current) => *current,
+        Err(poisoned) => *poisoned.into_inner(),
+    }
 }
 
 /// Product name shown to students.

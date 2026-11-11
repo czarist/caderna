@@ -41,16 +41,24 @@ pub struct HandoutBrand {
     pub watermark_svg: Option<Vec<u8>>,
 }
 
-static BRAND: std::sync::OnceLock<HandoutBrand> = std::sync::OnceLock::new();
+static BRAND: std::sync::RwLock<Option<std::sync::Arc<HandoutBrand>>> =
+    std::sync::RwLock::new(None);
 
-/// Lays the panel's brand over the build's for every handout. Only the
-/// first call counts, so handouts of one session look the same.
+/// Lays the panel's brand over the build's for the handouts made from now
+/// on. A newer brand from the panel replaces the earlier one.
 pub fn set_brand(brand: HandoutBrand) {
-    let _ = BRAND.set(brand);
+    let brand = Some(std::sync::Arc::new(brand));
+    match BRAND.write() {
+        Ok(mut current) => *current = brand,
+        Err(poisoned) => *poisoned.into_inner() = brand,
+    }
 }
 
-fn brand() -> Option<&'static HandoutBrand> {
-    BRAND.get()
+fn brand() -> Option<std::sync::Arc<HandoutBrand>> {
+    match BRAND.read() {
+        Ok(current) => current.clone(),
+        Err(poisoned) => poisoned.into_inner().clone(),
+    }
 }
 
 /// The company colour of the handouts (the reader leaves text in it out).
@@ -60,18 +68,19 @@ pub(crate) fn company_color() -> [u8; 3] {
         .unwrap_or(kg_brand::COMPANY_COLOR)
 }
 
-fn watermark_svg() -> &'static [u8] {
+fn watermark_svg() -> Vec<u8> {
     brand()
-        .and_then(|b| b.watermark_svg.as_deref())
-        .unwrap_or(kg_brand::WATERMARK_SVG)
+        .and_then(|b| b.watermark_svg.clone())
+        .unwrap_or_else(|| kg_brand::WATERMARK_SVG.to_vec())
 }
 
 /// What the template prints about the company that ships the app.
 fn brand_info() -> Vec<u8> {
     let [r, g, b] = company_color();
+    let brand = brand();
     serde_json::json!({
         "show": kg_brand::SHOW_CREDIT,
-        "name": brand().and_then(|b| b.company.as_deref()).unwrap_or(kg_brand::COMPANY),
+        "name": brand.as_ref().and_then(|b| b.company.as_deref()).unwrap_or(kg_brand::COMPANY),
         "url": kg_brand::COMPANY_URL,
         "label": kg_brand::COMPANY_URL_LABEL,
         "color": format!("#{r:02X}{g:02X}{b:02X}"),

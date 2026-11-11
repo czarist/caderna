@@ -1,7 +1,7 @@
 //! The client's brand as the panel sends it: names, colours, links, texts
 //! and pictures. Everything is checked before it is kept, and it is kept as
 //! files in `<data dir>/panel-brand/` so the reminder pop-up (a separate
-//! process) reads the same brand. It applies from the next start.
+//! process) reads the same brand. A new brand applies as soon as it arrives.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
