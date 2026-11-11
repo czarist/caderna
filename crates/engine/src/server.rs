@@ -605,7 +605,7 @@ pub(crate) enum Vault {
 
 impl Vault {
     fn entry() -> Option<keyring::Entry> {
-        keyring::Entry::new(&format!("{}-panel", kg_brand::SLUG), "device-token")
+        keyring::Entry::new(&format!("{}-panel", kg_brand::INSTALL_SLUG), "device-token")
             .map_err(|err| tracing::warn!(%err, "credential store unavailable"))
             .ok()
     }

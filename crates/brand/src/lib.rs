@@ -80,49 +80,71 @@ mod config {
     include!("../config.rs");
 
     #[test]
-    fn development_builds_use_dev_url_and_releases_need_https() {
+    fn each_channel_talks_to_its_own_panel() {
         let server = ServerSection {
             url: "https://painel.example.com".into(),
-            dev_url: "http://localhost:8000".into(),
+            hom_url: "https://hom.painel.example.com".into(),
+            dev_url: "http://localhost:8080".into(),
             text_model: "t".into(),
             vision_model: "v".into(),
         };
         assert_eq!(
-            server.url_for(false, None).as_deref(),
-            Ok("http://localhost:8000")
-        );
-        assert_eq!(
-            server.url_for(true, None).as_deref(),
+            server.url_for(Channel::Prod, None).as_deref(),
             Ok("https://painel.example.com")
         );
-        // KG_SERVER_URL wins in both, without a trailing slash.
+        assert_eq!(
+            server.url_for(Channel::Hom, None).as_deref(),
+            Ok("https://hom.painel.example.com")
+        );
+        assert_eq!(
+            server.url_for(Channel::Dev, None).as_deref(),
+            Ok("http://localhost:8080")
+        );
+        // KG_SERVER_URL wins, without a trailing slash, and must be https.
         assert_eq!(
             server
-                .url_for(true, Some("https://outro.example.com/"))
+                .url_for(Channel::Prod, Some("https://outro.example.com/"))
                 .as_deref(),
             Ok("https://outro.example.com")
         );
         assert!(
             server
-                .url_for(true, Some("http://evil.example.com"))
+                .url_for(Channel::Prod, Some("http://evil.example.com"))
                 .is_err()
         );
 
         let dev_only = ServerSection {
             url: String::new(),
+            hom_url: String::new(),
             ..server
         };
-        assert_eq!(
-            dev_only.url_for(false, None).as_deref(),
-            Ok("http://localhost:8000")
-        );
         assert!(
-            dev_only.url_for(true, None).is_err(),
+            dev_only.url_for(Channel::Prod, None).is_err(),
             "never ship localhost"
         );
+        assert!(dev_only.url_for(Channel::Hom, None).is_err());
         assert_eq!(
-            ServerSection::default().url_for(true, None).as_deref(),
+            ServerSection::default()
+                .url_for(Channel::Prod, None)
+                .as_deref(),
             Ok("")
         );
+    }
+
+    #[test]
+    fn channels_install_apart() {
+        assert_eq!(Channel::parse(None, true), Ok(Channel::Prod));
+        assert_eq!(Channel::parse(None, false), Ok(Channel::Dev));
+        assert_eq!(Channel::parse(Some(" hom "), true), Ok(Channel::Hom));
+        assert!(Channel::parse(Some("staging"), true).is_err());
+        let guid = "F104D038-F0C6-44A0-9C76-2FC42659D335";
+        assert_eq!(Channel::Prod.installer_guid(guid), guid);
+        let hom = Channel::Hom.installer_guid(guid);
+        let dev = Channel::Dev.installer_guid(guid);
+        assert!(hom != guid && dev != guid && hom != dev);
+        assert!(is_guid(&hom) && is_guid(&dev));
+        assert!(hom.starts_with("F104D038-F0C6-44A0-9C76-"));
+        // Stable between builds.
+        assert_eq!(hom, Channel::Hom.installer_guid(guid));
     }
 }

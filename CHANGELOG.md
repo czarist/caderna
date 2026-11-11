@@ -10,6 +10,16 @@ repository.
 ## [Unreleased]
 
 ### Added
+- **Build channels.** Brands with a panel build for production, homologation or
+  development (`KG_CHANNEL`, from the branch in CI: `main`, `hom`, `dev`), each talking to
+  its own panel (`[server] url`, `hom_url`, `dev_url`). Homologation and development
+  install as programs of their own (*Caderna HOM*, *Caderna DEV*: own data folder,
+  executable, installer GUID and credential entry), show *HOMOLOGAÇÃO* or
+  *DESENVOLVIMENTO* in a strip at the top and in the window title, and never update
+  themselves. `.github/workflows/channels.yml` builds each branch for Windows, Linux and
+  macOS and replaces its download (releases `latest-prod`, `latest-hom`, `latest-dev`);
+  production is published only after the brand's legal review. Caderna points at
+  `https://caderna.ia.br`, `https://hom.caderna.ia.br` and `http://localhost:8080`.
 - **School restrictions for students.** In the panel's client area (*Permissões dos
   alunos*), a school can stop its students from taking handouts out of the app
   (exporting them or opening the PDF in another program) and from taking screenshots or
@@ -48,6 +58,7 @@ repository.
   - a `scheduler` service in Docker for the daily billing run.
 
 ### Changed
+- The local panel runs on port 8080 (`APP_PORT`), as the development channel expects.
 - Caderna terms of use and privacy policy describe the school's restrictions, the
   watermark, the local check of open programs and the Wikimedia credits (version
   `2026-11-11.1`; users agree again).

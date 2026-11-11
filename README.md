@@ -390,9 +390,15 @@ in Brazilian Portuguese (`[locale]`), and works with its panel: evaluations and 
 come from there. Its
 legal texts are drafts (`[legal] reviewed = false`), so packaging it for sale stays
 blocked until they are reviewed. Run it with
-`$env:KG_BRAND_DIR = "branding/caderna"; cargo run` (it talks to the panel at `[server] dev_url`, `http://localhost:8000`; a release build
+`$env:KG_BRAND_DIR = "branding/caderna"; cargo run` (it talks to the panel at `[server] dev_url`, `http://localhost:8080`; a release build
 needs the online panel in `[server] url` or `KG_SERVER_URL`); each brand keeps its own
-data folder, so it never mixes with an installed Know Giver.
+data folder, so it never mixes with an installed Know Giver. Caderna builds in three
+channels, one per branch: `main` (production, `https://caderna.ia.br`), `hom`
+(homologation, `https://hom.caderna.ia.br`) and `dev` (development,
+`http://localhost:8080`). Each installs as a program of its own (*Caderna*, *Caderna HOM*,
+*Caderna DEV*) with its own data, and homologation and development show *HOMOLOGAÇÃO* or
+*DESENVOLVIMENTO* at the top of the window. Every push replaces that channel's download
+(releases `latest-prod`, `latest-hom`, `latest-dev`); see `branding/README.md`.
 
 **Issuing licences.** Keys are made once per brand and the private key never enters the
 repository:

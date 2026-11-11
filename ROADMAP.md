@@ -168,8 +168,15 @@ A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
 - [ ] Subscriptions: card tokenization enabled on the production Asaas account, and the
       `scheduler` service (or a cron running `schedule:run`) on the production server.
 - [ ] Charges: the production Asaas key and webhook token before the first real charge.
-- [ ] The online panel's `https://` address in `[server] url` of `branding/caderna/brand.toml`
-      (or `KG_SERVER_URL` in CI) before the first Caderna release.
+- [x] Build channels per branch (`main` production, `hom` homologation, `dev`
+      development), each with its panel address, installed side by side and labelled
+      in the app; CI replaces each channel's download on every push.
+- [ ] Put the panels online at the addresses the builds use: `https://caderna.ia.br`
+      (production) and `https://hom.caderna.ia.br` (homologation), with HTTPS, the same
+      licence signing key pair as the app's public key, and their own database, Asaas
+      and mail settings (homologation on the Asaas sandbox).
+- [ ] Sign the channel builds (Windows and macOS) once the certificates exist; today
+      homologation and development downloads are unsigned.
 
 ## Phase W7 — Classes in the cloud (done in 0.2.0)
 

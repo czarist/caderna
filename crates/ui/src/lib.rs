@@ -72,7 +72,7 @@ pub use reminders::REMINDER_FLAG;
 pub use kg_engine::{AiConfig, AppPaths};
 
 /// Stable identifier for eframe's settings storage. Not shown to the user.
-const APP_ID: &str = kg_brand::SLUG;
+const APP_ID: &str = kg_brand::INSTALL_SLUG;
 
 /// Options passed by the installed app's launcher.
 #[derive(Debug, Default, Clone, Copy)]
@@ -94,7 +94,7 @@ pub fn run(env_ai: AiConfig, run_options: RunOptions, instance: SingleInstance) 
     // The client's brand from its panel, before the window gets its title and icon.
     brand::apply(kg_engine::load_panel_brand(&AppPaths::detect()).as_ref());
     i18n::set(i18n::DEFAULT_LOCALE);
-    let title = t!("app.name").into_owned();
+    let title = brand::window_title();
 
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()

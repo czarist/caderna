@@ -42,10 +42,13 @@ pub struct ServerSection {
     /// licences online, downloads the brand and uses AI through the panel.
     #[serde(default)]
     pub url: String,
-    /// The panel for development builds (`cargo run`, tests), e.g.
-    /// `http://localhost:8000`. Empty: the same as `url`.
+    /// The panel for development builds (`cargo run`, tests, the `dev`
+    /// channel), e.g. `http://localhost:8080`. Empty: the same as `url`.
     #[serde(default)]
     pub dev_url: String,
+    /// The homologation panel (`hom` channel), e.g. `https://hom.example.com`.
+    #[serde(default)]
+    pub hom_url: String,
     /// The panel's model names for text tasks and for images (its AI aliases).
     #[serde(default)]
     pub text_model: String,
@@ -74,17 +77,76 @@ impl LocaleSection {
     }
 }
 
+/// Which panel a build of a brand with a panel talks to, and how it installs
+/// beside the others (`KG_CHANNEL`): production, homologation or development.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Channel {
+    Prod,
+    Hom,
+    Dev,
+}
+
+impl Channel {
+    /// `KG_CHANNEL` (`prod`, `hom` or `dev`); without it, release builds are
+    /// production and the others development.
+    pub fn parse(value: Option<&str>, release: bool) -> Result<Self, String> {
+        match value.map(str::trim).filter(|v| !v.is_empty()) {
+            None if release => Ok(Self::Prod),
+            None => Ok(Self::Dev),
+            Some("prod") => Ok(Self::Prod),
+            Some("hom") => Ok(Self::Hom),
+            Some("dev") => Ok(Self::Dev),
+            Some(other) => Err(format!("KG_CHANNEL {other:?} must be prod, hom or dev")),
+        }
+    }
+
+    /// The id the app shows a label for; empty in production.
+    pub fn id(self) -> &'static str {
+        match self {
+            Self::Prod => "",
+            Self::Hom => "hom",
+            Self::Dev => "dev",
+        }
+    }
+
+    /// Appended to folder and file names, so each channel installs apart.
+    pub fn suffix(self) -> &'static str {
+        match self {
+            Self::Prod => "",
+            Self::Hom => "Hom",
+            Self::Dev => "Dev",
+        }
+    }
+
+    /// A GUID of its own for the Windows installer, derived from the brand's.
+    pub fn installer_guid(self, guid: &str) -> String {
+        if self == Self::Prod || guid.len() < 12 {
+            return guid.to_owned();
+        }
+        let hash = format!("{guid}:{}", self.id())
+            .bytes()
+            .fold(0xcbf2_9ce4_8422_2325_u64, |hash, byte| {
+                (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3)
+            });
+        format!(
+            "{}{:012X}",
+            &guid[..guid.len() - 12],
+            hash & 0xFFFF_FFFF_FFFF
+        )
+    }
+}
+
 impl ServerSection {
     /// The brand works with a panel (in some build).
     pub fn has_panel(&self) -> bool {
-        !self.url.is_empty() || !self.dev_url.is_empty()
+        !self.url.is_empty() || !self.dev_url.is_empty() || !self.hom_url.is_empty()
     }
 
     /// The panel address this build talks to. `override_url` is
     /// `KG_SERVER_URL` (shell or CI; in development also the repository's
-    /// `.env`). Release builds never fall back to `dev_url` and need
-    /// `https://`, unless `KG_SERVER_URL` says otherwise.
-    pub fn url_for(&self, release: bool, override_url: Option<&str>) -> Result<String, String> {
+    /// `.env`). Production and homologation need `https://`; only the
+    /// development channel uses `dev_url`.
+    pub fn url_for(&self, channel: Channel, override_url: Option<&str>) -> Result<String, String> {
         if let Some(url) = override_url.map(str::trim).filter(|u| !u.is_empty()) {
             let url = url.trim_end_matches('/');
             if !server_url_ok(url) {
@@ -97,20 +159,31 @@ impl ServerSection {
         if !self.has_panel() {
             return Ok(String::new());
         }
-        if release {
-            if !self.url.starts_with("https://") {
-                return Err(
-                    "brand.toml: a release build needs [server] url with the panel's https:// address, or KG_SERVER_URL"
-                        .into(),
-                );
+        match channel {
+            Channel::Prod => {
+                if !self.url.starts_with("https://") {
+                    return Err(
+                        "brand.toml: a production build needs [server] url with the panel's https:// address, or KG_SERVER_URL"
+                            .into(),
+                    );
+                }
+                Ok(self.url.clone())
             }
-            return Ok(self.url.clone());
+            Channel::Hom => {
+                if !self.hom_url.starts_with("https://") {
+                    return Err(
+                        "brand.toml: a homologation build needs [server] hom_url with the panel's https:// address, or KG_SERVER_URL"
+                            .into(),
+                    );
+                }
+                Ok(self.hom_url.clone())
+            }
+            Channel::Dev => Ok(if self.dev_url.is_empty() {
+                self.url.clone()
+            } else {
+                self.dev_url.clone()
+            }),
         }
-        Ok(if self.dev_url.is_empty() {
-            self.url.clone()
-        } else {
-            self.dev_url.clone()
-        })
     }
 }
 
@@ -367,6 +440,11 @@ impl Brand {
         }
         if !f.server.url.is_empty() && !server_url_ok(&f.server.url) {
             return fail("server.url must be https://host (http:// only for localhost), without a trailing /");
+        }
+        if !f.server.hom_url.is_empty()
+            && (!server_url_ok(&f.server.hom_url) || !f.server.hom_url.starts_with("https://"))
+        {
+            return fail("server.hom_url must be https://, without a trailing /");
         }
         if !f.server.dev_url.is_empty() && !server_url_ok(&f.server.dev_url) {
             return fail("server.dev_url must be https:// or http://localhost…, without a trailing /");

@@ -9,7 +9,7 @@ mod config {
     include!("config.rs");
 }
 
-use config::{load_brand, parse_color};
+use config::{Channel, load_brand, parse_color};
 
 fn main() -> Result<(), String> {
     let manifest = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").map_err(|e| e.to_string())?);
@@ -24,15 +24,45 @@ fn main() -> Result<(), String> {
     );
 
     let f = &brand.file;
+    // Brands with a panel build per channel (KG_CHANNEL): production,
+    // homologation or development, each installed as a program of its own.
+    println!("cargo:rerun-if-env-changed=KG_CHANNEL");
+    let release = std::env::var("PROFILE").as_deref() == Ok("release");
+    let channel = if f.server.has_panel() {
+        Channel::parse(std::env::var("KG_CHANNEL").ok().as_deref(), release)?
+    } else {
+        Channel::Prod
+    };
+    let suffix = channel.suffix();
+    let joined = |base: &str, sep: &str, part: &str| {
+        if part.is_empty() {
+            base.to_owned()
+        } else {
+            format!("{base}{sep}{part}")
+        }
+    };
     let mut out = String::new();
     let mut text = |name: &str, value: &str| {
         let _ = writeln!(out, "pub const {name}: &str = {value:?};");
     };
     text("NAME", &f.app.name);
+    // The licence's brand: the same in every channel.
     text("SLUG", &f.app.slug);
-    text("DATA_DIR", &f.app.data_dir);
-    text("EXECUTABLE", &f.app.executable);
-    text("INSTALLER_GUID", &f.app.installer_guid);
+    text("CHANNEL", channel.id());
+    text(
+        "INSTALL_NAME",
+        &joined(&f.app.name, " ", &suffix.to_uppercase()),
+    );
+    text(
+        "INSTALL_SLUG",
+        &joined(&f.app.slug, "-", &suffix.to_lowercase()),
+    );
+    text("DATA_DIR", &joined(&f.app.data_dir, "-", suffix));
+    text("EXECUTABLE", &joined(&f.app.executable, "-", suffix));
+    text(
+        "INSTALLER_GUID",
+        &channel.installer_guid(&f.app.installer_guid),
+    );
     text(
         "ICON_PNG_PATH",
         &brand.asset(&f.assets.icon_png).to_string_lossy(),
@@ -64,12 +94,19 @@ fn main() -> Result<(), String> {
         },
     );
     text("MARK_LICENSE", &f.company.mark_license);
-    text("REPOSITORY", f.updates.repository.trim_end_matches('/'));
+    // Only production updates itself: the releases there are production's.
+    text(
+        "REPOSITORY",
+        if channel == Channel::Prod {
+            f.updates.repository.trim_end_matches('/')
+        } else {
+            ""
+        },
+    );
     // Development builds talk to dev_url (or KG_SERVER_URL from the shell or
     // the repository's .env); release builds to url (or KG_SERVER_URL from the
     // shell or CI), never to a file on the student's computer.
     println!("cargo:rerun-if-env-changed=KG_SERVER_URL");
-    let release = std::env::var("PROFILE").as_deref() == Ok("release");
     let mut server_override = std::env::var("KG_SERVER_URL").ok();
     if !release && server_override.is_none() {
         let dotenv = root.join(".env");
@@ -81,7 +118,7 @@ fn main() -> Result<(), String> {
             })
         });
     }
-    let server_url = f.server.url_for(release, server_override.as_deref())?;
+    let server_url = f.server.url_for(channel, server_override.as_deref())?;
     text("SERVER_URL", &server_url);
     text("SERVER_TEXT_MODEL", f.server.text_model.trim());
     text("SERVER_VISION_MODEL", f.server.vision_model.trim());

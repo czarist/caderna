@@ -104,11 +104,23 @@ count computers.
 The address is chosen when the app is built, never read on the student's computer, so
 nobody can point an installed app at another server:
 
-- `url`: release builds (the installer). Must be `https://`; a release build of a brand
-  with a panel stops without it.
-- `dev_url`: `cargo run` and tests, e.g. `http://localhost:8000`.
-- `KG_SERVER_URL` overrides both, from the shell or CI; in development builds it can also
+- `url`: production builds (`main`). Must be `https://`.
+- `hom_url`: homologation builds (`hom`). Must be `https://`.
+- `dev_url`: development builds (`dev`, `cargo run` and tests), e.g. `http://localhost:8080`.
+- `KG_SERVER_URL` overrides them, from the shell or CI; in development builds it can also
   come from the repository's `.env` (see `.env.example`).
+
+The channel comes from `KG_CHANNEL` (`prod`, `hom` or `dev`; without it, release builds are
+production and the others development). Outside production, the installed name gets
+` HOM` or ` DEV`, and the data folder, executable, credential entry and window id a
+`-Hom`/`-Dev` suffix; the Windows installer GUID is derived from `installer_guid`. So the
+three install side by side, each with its own data. The app shows *HOMOLOGAÇÃO* or
+*DESENVOLVIMENTO* in a strip at the top and in the window title, and only production
+checks for updates. The licence brand (`slug`) stays the same, so one panel's licences
+work in every channel; the homologation panel must sign with the same key pair.
+`.github/workflows/channels.yml` builds the channel of each branch and replaces its
+download, the release `latest-prod`, `latest-hom` or `latest-dev`
+(`Caderna-Hom-setup.exe`, …); production is published only after the legal review.
 
 With a panel:
 

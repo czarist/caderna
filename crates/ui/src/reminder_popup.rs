@@ -39,7 +39,7 @@ pub fn run_reminder(args: &[String]) -> eframe::Result {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title(t!("reminder.title"))
-            .with_app_id(format!("{}-reminder", kg_brand::SLUG))
+            .with_app_id(format!("{}-reminder", kg_brand::INSTALL_SLUG))
             .with_icon(crate::icon::app_icon())
             .with_inner_size([WIDTH, height])
             .with_resizable(false)

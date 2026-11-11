@@ -38,7 +38,7 @@ impl SystemTray {
         let menu = Menu::with_items(&[&open_item, &quit_item])?;
         let icon = Icon::from_rgba(crate::icon::rgba(32), 32, 32)?;
         let tray_icon = TrayIconBuilder::new()
-            .with_tooltip(t!("app.name"))
+            .with_tooltip(crate::brand::window_title())
             .with_menu(Box::new(menu))
             // The right button shows the menu at once; the left one waits
             // for a possible double-click (see `Clicks`).

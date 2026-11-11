@@ -1596,3 +1596,6 @@ restrictions:
   covered_unfocused: "Conteúdo oculto enquanto a janela do %{app} está fora de foco. Clique aqui para continuar."
   covered_recording: "Conteúdo oculto enquanto %{program} está aberto. Feche o programa para continuar."
   covered_system_capture: "Conteúdo oculto durante a captura de tela do sistema."
+channel:
+  hom: "HOMOLOGAÇÃO"
+  dev: "DESENVOLVIMENTO"

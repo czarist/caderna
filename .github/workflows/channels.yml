@@ -1,0 +1,125 @@
+name: Channel builds
+# One installable build per branch of the Caderna brand, each a program of its
+# own (KG_CHANNEL): main is production (https://caderna.ia.br), hom is
+# homologation (https://hom.caderna.ia.br), dev is development
+# (http://localhost:8080). Each push replaces that channel's download, a
+# release tagged latest-<channel>. Production is published only once the
+# brand's legal and commercial review is done (`metadata release-ready`).
+on:
+  push:
+    branches: [main, hom, dev]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: channel-${{ github.ref_name }}
+  cancel-in-progress: true
+env:
+  KG_BRAND_DIR: branding/caderna
+  KG_CHANNEL: ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
+  # Debug info and incremental caches fill the runner's disk.
+  CARGO_INCREMENTAL: '0'
+  CARGO_PROFILE_DEV_DEBUG: '0'
+jobs:
+  package:
+    if: contains(fromJSON('["main", "hom", "dev"]'), github.ref_name)
+    outputs:
+      data_dir: ${{ steps.brand.outputs.data_dir }}
+      name: ${{ steps.brand.outputs.name }}
+      ready: ${{ steps.brand.outputs.ready }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-24.04, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Free disk space
+        if: runner.os == 'Linux'
+        run: sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL && df -h /
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Install Rust
+        shell: bash
+        run: rustup update stable --no-self-update && rustup default stable
+      - name: Channel metadata
+        id: brand
+        shell: bash
+        run: |
+          cargo build -p kg-brand --example metadata
+          meta=target/debug/examples/metadata
+          [[ -f "$meta.exe" ]] && meta="$meta.exe"
+          echo "data_dir=$("$meta" data_dir)" >> "$GITHUB_OUTPUT"
+          echo "name=$("$meta" name)" >> "$GITHUB_OUTPUT"
+          if [[ "$KG_CHANNEL" != prod ]] || "$meta" release-ready; then
+            echo "ready=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Production is built but not published until the brand's legal and commercial review is done ([legal] reviewed and commercial_reviewed)."
+            echo "ready=no" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Linux system libraries
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev libudev-dev libxkbcommon-dev libwayland-dev libegl1-mesa-dev libvulkan-dev glslc glslang-tools spirv-headers pkg-config
+      - name: Windows Vulkan SDK
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: choco install vulkan-sdk --version=1.4.363 -y --no-progress
+      - name: Inno Setup
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+      - name: Windows package
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/package.ps1 -Brand $env:KG_BRAND_DIR
+      - name: Unix package
+        if: runner.os != 'Windows'
+        run: bash scripts/package-unix.sh "$KG_BRAND_DIR"
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: ${{ steps.brand.outputs.data_dir }}-${{ runner.os }}-${{ runner.arch }}
+          path: |
+            dist/*.zip
+            dist/*.exe
+            dist/*.tar.gz
+          if-no-files-found: error
+
+  release:
+    needs: package
+    if: needs.package.outputs.ready == 'yes'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      DATA_DIR: ${{ needs.package.outputs.data_dir }}
+      NAME: ${{ needs.package.outputs.name }}
+      TAG: latest-${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
+    steps:
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          path: artifacts
+      - name: Assets with fixed names
+        run: |
+          mkdir release
+          find artifacts -type f | while read -r file; do
+            name="$(basename "$file" | sed -E 's/-[0-9]+\.[0-9]+\.[0-9]+//')"
+            cp "$file" "release/$name"
+          done
+          ls release
+          for required in "$DATA_DIR-setup.exe" "$DATA_DIR-windows-x64.zip" \
+              "$DATA_DIR-linux-x86_64.tar.gz" "$DATA_DIR-macos-arm64.tar.gz"; do
+            test -f "release/$required"
+          done
+          (cd release && sha256sum * > SHA256SUMS.txt)
+      - name: Replace the channel's download
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          short="${GITHUB_SHA::7}"
+          notes="$NAME built from $GITHUB_REF_NAME at $short. Install $DATA_DIR-setup.exe on Windows; it installs apart from the other channels."
+          kind=(--prerelease)
+          [[ "$GITHUB_REF_NAME" == main ]] && kind=(--latest)
+          gh release delete "$TAG" --cleanup-tag --yes || true
+          gh release create "$TAG" release/* --target "$GITHUB_SHA" \
+            --title "$NAME ($short)" --notes "$notes" "${kind[@]}"

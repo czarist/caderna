@@ -1596,3 +1596,6 @@ restrictions:
   covered_unfocused: "Content hidden while the %{app} window is out of focus. Click here to continue."
   covered_recording: "Content hidden while %{program} is open. Close it to continue."
   covered_system_capture: "Content hidden during the system's screen capture."
+channel:
+  hom: "STAGING"
+  dev: "DEVELOPMENT"

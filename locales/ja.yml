@@ -1596,3 +1596,6 @@ restrictions:
   covered_unfocused: "%{app} のウィンドウが非アクティブの間、内容は隠されています。クリックして続けてください。"
   covered_recording: "%{program} が開いている間、内容は隠されています。アプリを閉じて続けてください。"
   covered_system_capture: "システムの画面キャプチャ中は内容が隠されています。"
+channel:
+  hom: "検証環境"
+  dev: "開発環境"
