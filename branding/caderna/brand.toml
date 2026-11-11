@@ -68,8 +68,11 @@ public_key = "MhuEw6S6kUFP+duSB6pBXfOt778LM0lS/j6w65yFizs=" # Public Ed25519 key
 # KG_SERVER_URL overrides both: from the shell or CI, or, in development
 # only, from the repository's .env.
 [server]
-url = ""                          # TODO: the online panel, e.g. https://painel.caderna.com.br
-dev_url = "http://localhost:8000"
+# One build per channel (KG_CHANNEL, from the branch in CI): main is production,
+# hom homologation, dev development. Each installs as a program of its own.
+url = "https://caderna.ia.br"          # production (main)
+hom_url = "https://hom.caderna.ia.br"  # homologation (hom)
+dev_url = "http://localhost:8080"      # development (dev, cargo run)
 text_model = "caderna-texto"      # the panel's AI aliases (config/caderna.php)
 vision_model = "caderna-visao"
 

@@ -37,7 +37,7 @@ pub fn refresh(ctx: &egui::Context, brand: Option<&PanelBrand>) {
     for uri in crate::art::BRAND_URIS {
         ctx.forget_image(uri);
     }
-    ctx.send_viewport_cmd(egui::ViewportCommand::Title(t!("app.name").into_owned()));
+    ctx.send_viewport_cmd(egui::ViewportCommand::Title(window_title()));
     ctx.send_viewport_cmd(egui::ViewportCommand::Icon(Some(std::sync::Arc::new(
         crate::icon::app_icon(),
     ))));
@@ -47,6 +47,25 @@ fn panel() -> Option<&'static PanelBrand> {
     match PANEL.read() {
         Ok(current) => *current,
         Err(poisoned) => *poisoned.into_inner(),
+    }
+}
+
+/// The build's channel in the UI language ("HOMOLOGAÇÃO", "DESENVOLVIMENTO");
+/// `None` in production and for brands without a panel.
+pub fn channel_label() -> Option<String> {
+    match kg_brand::CHANNEL {
+        "hom" => Some(t!("channel.hom").into_owned()),
+        "dev" => Some(t!("channel.dev").into_owned()),
+        _ => None,
+    }
+}
+
+/// The window's title: the product name, and the channel outside production.
+pub fn window_title() -> String {
+    let name = t!("app.name");
+    match channel_label() {
+        Some(label) => format!("{name} — {label}"),
+        None => name.into_owned(),
     }
 }
 

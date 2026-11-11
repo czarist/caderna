@@ -1,7 +1,7 @@
 # Roteiro de teste do MVP — Caderna (app + painel)
 
 Teste de ponta a ponta em desenvolvimento: painel (CADERNA-DASHBOARD) em Docker na
-máquina e app Caderna compilado com `dev_url = http://localhost:8000`.
+máquina e app Caderna compilado com `dev_url = http://localhost:8080`.
 
 Anote cada passo como **OK**, **Falhou** (com o que apareceu) ou **Pulei** (com o motivo).
 Quando falhar, guarde o log do app (`<pasta de dados>/logs`) e um print.
@@ -22,9 +22,9 @@ vez. Não roda em produção.
 
 | Onde | Login | Senha |
 |---|---|---|
-| <http://localhost:8000/admin> | `admin@caderna.test` (admin) | `caderna-teste` |
-| <http://localhost:8000/admin> | `operador@caderna.test` (operador) | `caderna-teste` |
-| <http://localhost:8000/cliente> | `escola@caderna.test` (cliente) | `caderna-teste` |
+| <http://localhost:8080/admin> | `admin@caderna.test` (admin) | `caderna-teste` |
+| <http://localhost:8080/admin> | `operador@caderna.test` (operador) | `caderna-teste` |
+| <http://localhost:8080/cliente> | `escola@caderna.test` (cliente) | `caderna-teste` |
 
 Os códigos de login do painel e os emails dos alunos (com o link do código) chegam no
 Mailpit: <http://localhost:8025>.

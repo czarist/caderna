@@ -1596,3 +1596,6 @@ restrictions:
   covered_unfocused: "%{app} 窗口失去焦点时内容已隐藏。点击此处继续。"
   covered_recording: "%{program} 打开期间内容已隐藏。关闭该程序以继续。"
   covered_system_capture: "系统截屏期间内容已隐藏。"
+channel:
+  hom: "预发布环境"
+  dev: "开发环境"

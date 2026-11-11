@@ -234,7 +234,7 @@ powershell -ExecutionPolicy Bypass -File scripts\package.ps1 -Brand branding\<�
 
 **依品牌的授權與法律文本：** 品牌可以包含 Ed25519 公鑰；客戶的學生隨後可在設定或「示範已結束」畫面啟用授權金鑰（離線驗證，綁定品牌、客戶、席位和日期，不會動到學習資料）。品牌也可以自帶使用條款和隱私權政策、支援連結、老師肖像和貼紙。在品牌的法律和商業審查標記設定之前，銷售用打包不會執行。詳見 [branding/README.md](branding/README.md)，未完成的部分見 [ROADMAP](ROADMAP.md)。出售前請檢查致謝中的授權。
 
-**Caderna**：`branding/caderna` 是第一個客戶品牌：紙張、石墨和橄欖色，獨立的圖示、封面和標誌，以及 Ed25519 公鑰。它只在巴西以巴西葡萄牙語提供（`[locale]`），並與管理面板搭配使用：試用和授權都由面板簽發。其法律文本仍是草稿（`[legal] reviewed = false`），審查完成前無法打包銷售。執行：`$env:KG_BRAND_DIR = "branding/caderna"; cargo run`（開發建置連線 `[server] dev_url` 的面板 `http://localhost:8000`；發行建置需要在 `[server] url` 或 `KG_SERVER_URL` 中設定線上面板）；每個品牌有自己的資料夾，不會與已安裝的 Know Giver 混在一起。
+**Caderna**：`branding/caderna` 是第一個客戶品牌：紙張、石墨和橄欖色，獨立的圖示、封面和標誌，以及 Ed25519 公鑰。它只在巴西以巴西葡萄牙語提供（`[locale]`），並與管理面板搭配使用：試用和授權都由面板簽發。其法律文本仍是草稿（`[legal] reviewed = false`），審查完成前無法打包銷售。執行：`$env:KG_BRAND_DIR = "branding/caderna"; cargo run`（開發建置連線 `[server] dev_url` 的面板 `http://localhost:8080`；發行建置需要在 `[server] url` 或 `KG_SERVER_URL` 中設定線上面板）；每個品牌有自己的資料夾，不會與已安裝的 Know Giver 混在一起。Caderna 依分支建置三個通道：`main`（正式，`https://caderna.ia.br`）、`hom`（預發布，`https://hom.caderna.ia.br`）和 `dev`（開發，`http://localhost:8080`）。每個通道作為獨立程式安裝（*Caderna*、*Caderna HOM*、*Caderna DEV*），資料互不相同；預發布和開發版本在視窗頂部顯示 *HOMOLOGAÇÃO* 或 *DESENVOLVIMENTO*。每次 push 都會替換該通道的下載（發行 `latest-prod`、`latest-hom`、`latest-dev`）。
 
 **簽發授權**：每個品牌只產生一次金鑰，私鑰絕不進入儲存庫：
 

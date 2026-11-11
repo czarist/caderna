@@ -716,6 +716,36 @@ impl Badges {
     }
 }
 
+/// A strip across the top of homologation and development builds, so they
+/// are never taken for production.
+fn channel_banner(ui: &mut egui::Ui) {
+    let Some(label) = crate::brand::channel_label() else {
+        return;
+    };
+    let fill = if kg_brand::CHANNEL == "hom" {
+        egui::Color32::from_rgb(0xB4, 0x5A, 0x09)
+    } else {
+        egui::Color32::from_rgb(0x5B, 0x3F, 0xA8)
+    };
+    egui::Panel::top("channel")
+        .resizable(false)
+        .frame(
+            egui::Frame::new()
+                .fill(fill)
+                .inner_margin(egui::Margin::symmetric(12, 4)),
+        )
+        .show(ui, |ui| {
+            ui.vertical_centered(|ui| {
+                ui.label(
+                    egui::RichText::new(label)
+                        .strong()
+                        .size(13.0)
+                        .color(egui::Color32::WHITE),
+                );
+            });
+        });
+}
+
 impl eframe::App for KnowGiverApp {
     fn logic(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         if !self.tray_initialized {
@@ -905,6 +935,7 @@ impl eframe::App for KnowGiverApp {
         if let Some(cover) = self.capture.cover(ui.ctx(), block_capture) {
             crate::capture::show_cover(ui.ctx(), &cover);
         }
+        channel_banner(ui);
         let locale = i18n::current();
         if locale != self.fonts_locale {
             theme::set_fonts(ui.ctx(), &locale);

@@ -396,9 +396,15 @@ português do Brasil (`[locale]`), e funciona com o seu painel: avaliações e l
 vêm de lá. Os
 textos legais são rascunhos (`[legal] reviewed = false`), então o empacotamento para
 venda continua bloqueado até a revisão. Para rodar:
-`$env:KG_BRAND_DIR = "branding/caderna"; cargo run` (fala com o painel em `[server] dev_url`, `http://localhost:8000`; um build de release
+`$env:KG_BRAND_DIR = "branding/caderna"; cargo run` (fala com o painel em `[server] dev_url`, `http://localhost:8080`; um build de release
 precisa do painel online em `[server] url` ou em `KG_SERVER_URL`); cada marca tem a sua pasta
-de dados, então nunca se mistura com um Know Giver instalado.
+de dados, então nunca se mistura com um Know Giver instalado. O Caderna tem três canais de
+build, um por branch: `main` (produção, `https://caderna.ia.br`), `hom` (homologação,
+`https://hom.caderna.ia.br`) e `dev` (desenvolvimento, `http://localhost:8080`). Cada um
+instala como um programa separado (*Caderna*, *Caderna HOM*, *Caderna DEV*), com os seus
+próprios dados, e os de homologação e desenvolvimento mostram *HOMOLOGAÇÃO* ou
+*DESENVOLVIMENTO* no topo da janela. Cada push troca o download daquele canal (releases
+`latest-prod`, `latest-hom`, `latest-dev`); veja `branding/README.md`.
 
 **Emitir licenças.** As chaves são criadas uma vez por marca, e a chave privada nunca
 entra no repositório:
