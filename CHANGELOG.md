@@ -63,6 +63,9 @@ repository.
   - a `scheduler` service in Docker for the daily billing run.
 
 ### Changed
+- Channel builds (`.github/workflows/channels.yml`) run only by hand
+  (`gh workflow run channels.yml --ref <branch>`), no longer on every push, to save
+  Actions minutes; releases still build from a `v*` tag.
 - The local panel runs on port 8080 (`APP_PORT`), as the development channel expects.
 - Caderna terms of use and privacy policy describe the school's restrictions, the
   watermark, the local check of open programs and the Wikimedia credits (version
