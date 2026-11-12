@@ -397,7 +397,7 @@ channels, one per branch: `main` (production, `https://caderna.ia.br`), `hom`
 (homologation, `https://hom.caderna.ia.br`) and `dev` (development,
 `http://localhost:8080`). Each installs as a program of its own (*Caderna*, *Caderna HOM*,
 *Caderna DEV*) with its own data, and homologation and development show *HOMOLOGAÇÃO* or
-*DESENVOLVIMENTO* at the top of the window. Every push replaces that channel's download
+*DESENVOLVIMENTO* at the top of the window. Running `.github/workflows/channels.yml` by hand on a branch replaces that channel's download
 (releases `latest-prod`, `latest-hom`, `latest-dev`); see `branding/README.md`.
 
 **Issuing licences.** Keys are made once per brand and the private key never enters the

@@ -2,12 +2,13 @@ name: Channel builds
 # One installable build per branch of the Caderna brand, each a program of its
 # own (KG_CHANNEL): main is production (https://caderna.ia.br), hom is
 # homologation (https://hom.caderna.ia.br), dev is development
-# (http://localhost:8080). Each push replaces that channel's download, a
+# (http://localhost:8080). Each run replaces that channel's download, a
 # release tagged latest-<channel>. Production is published only once the
 # brand's legal and commercial review is done (`metadata release-ready`).
 on:
-  push:
-    branches: [main, hom, dev]
+  # Run by hand only (Actions tab or `gh workflow run channels.yml --ref <branch>`):
+  # every push used up the account's Actions minutes. Releases come from a
+  # `v*` tag (packages.yml).
   workflow_dispatch:
 permissions:
   contents: read
