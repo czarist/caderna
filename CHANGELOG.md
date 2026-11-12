@@ -66,6 +66,8 @@ repository.
 - Channel builds (`.github/workflows/channels.yml`) run only by hand
   (`gh workflow run channels.yml --ref <branch>`), no longer on every push, to save
   Actions minutes; releases still build from a `v*` tag.
+- CI jobs stop after a time limit (Checks 60 min, packages 120 min) instead of the
+  6-hour default, retry apt downloads, and Checks skip documentation-only changes.
 - The local panel runs on port 8080 (`APP_PORT`), as the development channel expects.
 - Caderna terms of use and privacy policy describe the school's restrictions, the
   watermark, the local check of open programs and the Wikimedia credits (version
