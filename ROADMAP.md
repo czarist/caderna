@@ -170,7 +170,7 @@ A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
 - [ ] Charges: the production Asaas key and webhook token before the first real charge.
 - [x] Build channels per branch (`main` production, `hom` homologation, `dev`
       development), each with its panel address, installed side by side and labelled
-      in the app; CI replaces each channel's download on every push.
+      in the app; CI replaces each channel's download when run by hand.
 - [ ] Put the panels online at the addresses the builds use: `https://caderna.ia.br`
       (production) and `https://hom.caderna.ia.br` (homologation), with HTTPS, the same
       licence signing key pair as the app's public key, and their own database, Asaas

@@ -403,7 +403,7 @@ build, um por branch: `main` (produção, `https://caderna.ia.br`), `hom` (homol
 `https://hom.caderna.ia.br`) e `dev` (desenvolvimento, `http://localhost:8080`). Cada um
 instala como um programa separado (*Caderna*, *Caderna HOM*, *Caderna DEV*), com os seus
 próprios dados, e os de homologação e desenvolvimento mostram *HOMOLOGAÇÃO* ou
-*DESENVOLVIMENTO* no topo da janela. Cada push troca o download daquele canal (releases
+*DESENVOLVIMENTO* no topo da janela. Rodar `.github/workflows/channels.yml` à mão num branch troca o download daquele canal (releases
 `latest-prod`, `latest-hom`, `latest-dev`); veja `branding/README.md`.
 
 **Emitir licenças.** As chaves são criadas uma vez por marca, e a chave privada nunca

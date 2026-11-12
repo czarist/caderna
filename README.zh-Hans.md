@@ -234,7 +234,7 @@ powershell -ExecutionPolicy Bypass -File scripts\package.ps1 -Brand branding\<�
 
 **按品牌的许可证与法律文本：** 品牌可以包含 Ed25519 公钥；客户的学生随后可在设置或“演示已结束”页面激活许可证密钥（离线验证，绑定品牌、客户、席位和日期，不会动到学习数据）。品牌也可以自带使用条款和隐私政策、支持链接、老师肖像和贴纸。在品牌的法律和商业审查标记设置之前，销售用打包不会运行。详见 [branding/README.md](branding/README.md)，未完成的部分见 [ROADMAP](ROADMAP.md)。出售前请检查致谢中的许可证。
 
-**Caderna**：`branding/caderna` 是第一个客户品牌：纸张、石墨和橄榄色，独立的图标、封面和标志，以及 Ed25519 公钥。它只在巴西以巴西葡萄牙语提供（`[locale]`），并与管理面板配合使用：试用和许可证都由面板签发。其法律文本仍是草稿（`[legal] reviewed = false`），审查完成前无法打包销售。运行：`$env:KG_BRAND_DIR = "branding/caderna"; cargo run`（开发构建连接 `[server] dev_url` 的面板 `http://localhost:8080`；发布构建需要在 `[server] url` 或 `KG_SERVER_URL` 中设置在线面板）；每个品牌有自己的数据文件夹，不会与已安装的 Know Giver 混在一起。Caderna 按分支构建三个通道：`main`（生产，`https://caderna.ia.br`）、`hom`（预发布，`https://hom.caderna.ia.br`）和 `dev`（开发，`http://localhost:8080`）。每个通道作为独立程序安装（*Caderna*、*Caderna HOM*、*Caderna DEV*），数据互不相同；预发布和开发版本在窗口顶部显示 *HOMOLOGAÇÃO* 或 *DESENVOLVIMENTO*。每次 push 都会替换该通道的下载（发布 `latest-prod`、`latest-hom`、`latest-dev`）。
+**Caderna**：`branding/caderna` 是第一个客户品牌：纸张、石墨和橄榄色，独立的图标、封面和标志，以及 Ed25519 公钥。它只在巴西以巴西葡萄牙语提供（`[locale]`），并与管理面板配合使用：试用和许可证都由面板签发。其法律文本仍是草稿（`[legal] reviewed = false`），审查完成前无法打包销售。运行：`$env:KG_BRAND_DIR = "branding/caderna"; cargo run`（开发构建连接 `[server] dev_url` 的面板 `http://localhost:8080`；发布构建需要在 `[server] url` 或 `KG_SERVER_URL` 中设置在线面板）；每个品牌有自己的数据文件夹，不会与已安装的 Know Giver 混在一起。Caderna 按分支构建三个通道：`main`（生产，`https://caderna.ia.br`）、`hom`（预发布，`https://hom.caderna.ia.br`）和 `dev`（开发，`http://localhost:8080`）。每个通道作为独立程序安装（*Caderna*、*Caderna HOM*、*Caderna DEV*），数据互不相同；预发布和开发版本在窗口顶部显示 *HOMOLOGAÇÃO* 或 *DESENVOLVIMENTO*。在分支上手动运行 `.github/workflows/channels.yml` 会替换该通道的下载（发布 `latest-prod`、`latest-hom`、`latest-dev`）。
 
 **签发许可证**：每个品牌只生成一次密钥，私钥绝不进入仓库：
 
