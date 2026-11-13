@@ -84,7 +84,7 @@ welcome.
 
 - **No checksum on downloads yet.** Models and runtimes come from fixed URLs over HTTPS and
   are checked for completeness, not against a published hash. A compromised upstream
-  host would not be detected. Pinned SHA-256 checks are planned (ROADMAP, Phase 8.5).
+  host would not be detected. Pinned SHA-256 checks are planned (ROADMAP, security audit).
 - **The API key is stored in plain text** in the local SQLite database when typed in
   Settings (a key that only comes from `.env` is not copied there). Anyone who can read
   your user profile can read it.
