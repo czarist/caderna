@@ -217,6 +217,164 @@ Needs a brand with a panel (`[server]`); without one the app works as before.
       (ABNT in Portuguese, all five languages); handouts saved earlier keep their pages.
 - [ ] Check references against a bibliographic database before showing them.
 
+## Phase W8 — Lesson planning for teachers (planned, not started)
+
+**Goal:** a "Planejamento" module in the teacher's area where the teacher schedules the
+classes of a classroom from the plan's content: on which days and times each class
+happens, which topics it covers, what it aims at, which activities and materials it
+uses and what the students do before and after. The teacher publishes it with the
+course; students see their class calendar, what to prepare and their homework; the
+teacher sees who did it.
+
+Needs a brand with a panel (`[server]`) to publish; the planning itself works locally.
+
+### Concepts
+
+- **Schedule (cronograma):** one per published plan and classroom, with a start date, an
+  end date (or the exam date), the classroom's time zone (default `America/Sao_Paulo`),
+  class days and times (for example Mon and Wed 19:00–20:40), class length, blocked days
+  and the topic release rule (below).
+- **Class session (aula):** a stable key (like topic keys, so republishing keeps student
+  progress), date, start time, minutes, kind (presencial, online with an `https` link only,
+  or self-study), the topics it covers (topic keys from the plan, one topic may span
+  several sessions), objectives, activities in order with minutes each, materials,
+  homework, a public note for students and a private note for the teacher (never
+  published), and a status (planned, given, cancelled, moved).
+- **Activity kinds:** teacher explanation, voice lesson with the AI teacher (opens the
+  topic's lesson in the student's app, with the lesson type of Phase 10 once it exists),
+  handout reading (pages), quiz (bank and number of questions), spoken review, written
+  answer (proposal), mock exam (Phase 12), discussion/exercise in class, free text.
+- **Homework (tarefa):** activities the student does between two sessions, with a due
+  session; done or not is computed in code from saved study (lesson taken, quiz answered
+  with N questions, handout read, written answer sent), never declared by the AI.
+- **Release rule:** "all topics open" (today's behaviour) or "open as the classes happen"
+  (a topic opens for students on the day of its first session; reviews and the mistakes
+  notebook keep working on opened topics). Chosen per schedule.
+
+### Generating the schedule (code first, AI second)
+
+- [ ] Session calendar computed in code (`kg_study::schedule`): class days between start
+      and end, minus blocked days and holidays. Holidays per region computed in code
+      (Brazil: national fixed dates plus Carnaval, Sexta-feira Santa and Corpus Christi from
+      Easter); state and city holidays added by the teacher as blocked days.
+- [ ] Topic distribution computed in code: topics in the plan's order, weighted by their
+      size (handout length or estimated lesson minutes) and by the notice's weight when the
+      plan has it (mock-exam sections, Phase 12); a review session every N sessions
+      (default 6) and a mock exam before the end when the plan has an exam format.
+      Too many topics for the sessions is said up front, with the shortfall in hours and
+      options: more sessions, longer sessions, or mark topics as self-study.
+- [ ] Per session, the AI suggests objectives, activities with minutes, materials from
+      what the plan already has (handouts, quiz banks, board material) and homework
+      (`lesson_planning` prompt in every `crates/ai/prompts/<lang>/`, JSON, same keys and
+      placeholders; teaching culture from `culture.rs` and the plan's `ExamPurpose`).
+      Checked in code: topic keys exist in the plan and belong to that session, activity
+      minutes add up to at most the session length, materials exist, homework activities
+      are of known kinds; a failed check asks once more, then falls back to an empty session
+      with only the topics. Batches of sessions, like mock-exam questions.
+- [ ] pt-BR plan-of-class conventions in the prompt note: objetivos (verbs of Bloom's
+      taxonomy), conteúdo, metodologia, recursos, avaliação; the other regions follow their
+      own culture note (Portuguese and English through `PromptLanguage::pick`).
+- [ ] Shared base (W7) is not used for schedules: they depend on the school's calendar.
+
+### Teacher's editing
+
+- [ ] New "Planejamento" screen in the teacher's area (beside Classes): a calendar view
+      (month and week) and a list view; select a plan and a classroom; the wizard asks
+      start, end, days, times, length, blocked days and release rule, then generates.
+- [ ] Edit a session: topics, objectives, activities (add, remove, reorder, minutes),
+      materials, homework, notes, kind and link. Move it to another day by dragging or by a
+      date field; split a session in two or merge two.
+- [ ] Lock sessions; **replan**: when a session is cancelled or moved, or a topic took
+      longer, the following unlocked sessions are redistributed in code; given and locked
+      sessions never move. Show a summary of what changed before applying.
+- [ ] Mark a session as given (with what was really covered, if different), so the
+      replanning starts from the truth.
+- [ ] Undo for the last changes; the schedule is saved locally as edited (SQLite tables
+      `class_schedule`, `class_session`, `class_session_topic`, `class_session_activity`,
+      with migrations), so nothing is lost before publishing.
+- [ ] Export: printable PDF (Typst, `crates/handout/templates/lesson_plan.typ`): the
+      schedule as a table and one page per session in the plan-of-class format; and an
+      iCalendar file (`.ics`) of the sessions for the teacher's calendar.
+- [ ] Engine commands (`GenerateSchedule`, `EditSession`, `ReplanSchedule`,
+      `PublishSchedule`, `ExportSchedulePdf`, `ExportScheduleIcs`) refused for students
+      (`Command::creates_plans`) and when the licence lacks the module.
+- [ ] Owner role (no panel): decide whether a student studying alone may use the same
+      screen as a personal study calendar (see Decisions).
+
+### Panel (CADERNA-DASHBOARD)
+
+- [ ] Tables for schedules and sessions tied to a course and a classroom; API
+      `PUT /api/v1/courses/{course}/schedules/{classroom}` (teacher, whole schedule,
+      bumps a version like courses) and the schedule inside what students download at
+      every check. Private teacher notes never leave the teacher's computer.
+- [ ] Students' homework status in the progress sync (`/api/v1/progress`), computed by the
+      app from saved study; merged without duplicates like the rest of `kg_study::sync`.
+- [ ] Client area: "Agenda" per classroom (read-only for the school), and in "Desempenho"
+      per session: how many students did the preparation and the homework.
+- [ ] New licence module "Planejamento de aulas" (`Module::Planning`), chosen per client
+      in `allowed_modules` like Videoaula and Criação de conteúdos; README API contract and
+      AGENTS.md updated in both languages.
+
+### Students' side
+
+- [ ] "Agenda" on Today: next class (day, time, kind, link), what to prepare before it,
+      homework due and late; a calendar of the classroom's sessions in the plan screen.
+- [ ] Topics follow the release rule; a closed topic shows the day it opens.
+- [ ] Reminders through the existing study reminders: the day before a class with
+      homework still open, and an hour before an online class (both can be turned off).
+- [ ] A changed schedule (republished) shows a quiet note with what moved.
+- [ ] Homework counts for challenges only if it fits existing families; no new
+      pressure (no countdowns, no "late" in red), in the calm style of Phase 11.
+
+### Legal, languages and docs
+
+- [ ] Caderna privacy policy and terms (pt-BR, `branding/caderna/legal/`): the panel now
+      keeps schedules and each student's homework status, visible to the school's
+      teachers; bump the legal version and `TERMS_VERSION`. `REVISAO-JURIDICA.md` gets the
+      item for the lawyer.
+- [ ] Every UI text in the five `locales/*.yml`; the prompt in the five prompt folders;
+      README sections (all `README*.md`) and screenshots of the Planejamento screen and
+      the student's Agenda in each language.
+
+### Tests
+
+- [ ] `kg_study::schedule`: calendar with holidays and blocked days, Easter-based dates
+      over several years, distribution by weight, review and mock-exam placement,
+      shortfall report, replan never moving given or locked sessions, stable session keys
+      across republishing.
+- [ ] Checks of the AI's answer (wrong topic key, minutes over the length, unknown
+      material) with a fake client; prompt parity (`cargo test -p kg-ai`) and locale
+      parity (`cargo test -p kg-ui`).
+- [ ] Engine: students and closed modules refused; release rule hides and opens topics
+      by date (fixed clock); homework done computed from saved study; sync round-trip.
+- [ ] Panel: feature tests for the schedule API, versioning, the student download and the
+      client area pages.
+
+### Decisions to take before starting
+
+- Module name and whether it is sold apart (proposed: "Planejamento de aulas", its own
+  module) or comes with Criação de conteúdos.
+- Whether Owner (no panel) gets the screen as a personal study calendar (proposed: yes,
+  later, reusing the same scheduler without publishing).
+- Default release rule (proposed: all topics open, as today).
+- Whether school coordinators may edit schedules in the client area or only view them
+  (proposed: view only; editing stays in the app).
+
+### Order of work
+
+1. `kg_study::schedule` (calendar, holidays, distribution, replan) with tests.
+2. Local screen, storage, editing and PDF/ICS export for teachers.
+3. `lesson_planning` prompt in five languages and the checks.
+4. Panel tables, API, module and client-area pages.
+5. Publishing, student Agenda, release rule, reminders and homework status in the sync.
+6. Legal texts, READMEs and screenshots.
+
+**Acceptance criteria:** with a real plan, a teacher generates a semester schedule for a
+classroom in a few minutes, with holidays skipped and topics spread by weight; moving or
+cancelling a class replans the rest without touching given ones; the published schedule
+reaches the students' apps at the next check, shows the next class and homework on Today,
+and the teacher sees, per class, who did the preparation and the homework.
+
 ## Voice programs per system
 
 - [x] Voice programs download on Windows, Linux (x86_64, aarch64) and macOS, pinned
