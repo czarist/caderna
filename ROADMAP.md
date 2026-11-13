@@ -375,6 +375,117 @@ cancelling a class replans the rest without touching given ones; the published s
 reaches the students' apps at the next check, shows the next class and homework on Today,
 and the teacher sees, per class, who did the preparation and the homework.
 
+## Phase W9 — Developer mode instead of three channel builds (planned, not started)
+
+**Goal:** one production executable per brand. A developer token generated in the
+panel (Laravel) unlocks a developer area in the app where the owner and the team point
+it at homologation or development: which panel API it talks to and which local database
+it uses. The `hom` and `dev` installers stop being needed for testing.
+
+**Today:** three builds per brand (`KG_CHANNEL`, `.github/workflows/channels.yml`), each
+with its panel address chosen at build time, its own name, data folder, executable,
+installer GUID and credential entry. CLAUDE.md says the panel address is "chosen at build
+time, never read on the student's computer"; this phase changes that rule and needs the
+owner's sign-off before it starts (see Decisions).
+
+### Token (panel)
+
+- [ ] Panel (production, `/admin`): "Tokens de desenvolvedor" page, admins only. A token
+      names a person, the environments it opens (`hom`, `dev`, or both), an expiry
+      (default 30 days, at most 90) and optionally one device (hashed machine id, as in
+      activations). Shown once on creation; the panel keeps only its hash; revoking is
+      one click; every use is logged (who, when, which environment, app version).
+- [ ] The token is a signed claim like the licence (Ed25519, its own prefix
+      `kg-dev-v1\0` + claims JSON, the same key pair or a separate developer key, see
+      Decisions), so the app checks signature, brand slug and expiry offline; the app also
+      asks the production panel at activation and every hourly check whether it was
+      revoked, and leaves developer mode when it was.
+- [ ] Short code like access codes (`DEV-XXXX-XXXX-XXXX`) that the panel exchanges for the
+      signed token, so nobody types a long key.
+
+### Developer area (app)
+
+- [ ] Hidden entry: Settings → About, clicking the version seven times, or the
+      `--developer` flag; asks for the token. Nothing about it appears in the UI, tour or
+      README for students.
+- [ ] Environment switch: **Production / Homologation / Development**. The addresses come
+      only from the brand (`[server] url`, `hom_url`, `dev_url`, compiled in); no free URL
+      field, so a token cannot point the app at an unknown server. Optional "custom
+      `localhost` port" for development only (`http://127.0.0.1:<port>`).
+- [ ] Database per environment: each environment uses its own data folder inside the
+      brand's (`<data_dir>/env/hom`, `<data_dir>/env/dev`), with its own SQLite file, plans,
+      progress, handouts, cache of the panel brand and courses; production data is never
+      opened, migrated or synced while another environment is on. Options in the area:
+      "start empty", "copy my production data into this environment" (one-way copy,
+      never back), "reset this environment".
+- [ ] Credential entry per environment (device token, licence) so hom and dev activations
+      never replace the production one; this also closes the W6 item about one entry per
+      brand.
+- [ ] Switching restarts the app (engine, sync and AI client start from the chosen
+      environment); the choice is remembered until the token expires or is revoked, then
+      the app returns to production on its own and says so.
+- [ ] While not in production: a coloured strip and the window title say the environment
+      (reusing today's channel strip), the updater stays on production releases, and logs
+      record the environment.
+- [ ] Developer tools in the area (optional, after the switch): open the data folder,
+      show the current licence claims and modules, force a panel check, copy the last
+      panel errors.
+
+### What stays and what goes
+
+- [ ] Engine and UI read the environment at start (`Environment` in engine settings)
+      instead of `KG_CHANNEL` at compile time; `kg-brand` keeps all three addresses.
+- [ ] `cargo run` keeps starting in development without a token (debug builds only), so
+      day-to-day work does not change.
+- [ ] Once the developer mode is tested: retire the `hom` and `dev` installers from
+      `channels.yml` (or keep `hom` only for testers outside the team, see Decisions),
+      update CLAUDE.md (Git workflow and `[server]` rules), `branding/README.md`,
+      `brand.toml` comments and the packaging scripts. Branches `dev`/`hom`/`main` stay as
+      the code flow.
+- [ ] Students: a production build with no developer token behaves exactly as today; the
+      production panel never hands a developer token to a student or school account.
+
+### Security
+
+- [ ] Only addresses compiled into the brand; HTTPS for `url` and `hom_url`.
+- [ ] Token checked offline (signature, slug, expiry, device) and online (revocation);
+      expired or revoked returns to production without touching that environment's data.
+- [ ] No token, key or environment data in exported files or crash messages.
+- [ ] Rate limit and audit log on the panel's code exchange; tokens never in URLs.
+
+### Legal and languages
+
+- [ ] Privacy policy: nothing changes for students (the area only works with a developer
+      token); confirm with the lawyer note in `REVISAO-JURIDICA.md`. If the panel logs the
+      developer's machine id, the internal policy for the team says so.
+- [ ] Developer-area texts in the five `locales/*.yml` (`cargo test -p kg-ui`), even if
+      only the team sees them.
+
+### Tests
+
+- [ ] Token: valid, wrong signature, other brand, expired, other device, revoked online.
+- [ ] Environment folders and credential entries never cross (production data untouched
+      after a session in dev and in hom); copy is one-way; reset removes only that
+      environment.
+- [ ] Only compiled addresses are reachable; the custom port works only for development.
+- [ ] Panel: token creation, hash only stored, code exchange, revocation, audit log.
+
+### Decisions to take before starting
+
+- Changing the "never read on the student's computer" rule: the addresses stay compiled
+  in, only the choice between them moves to runtime behind the token (proposed: accept).
+- Same Ed25519 key as licences or a separate developer key (proposed: separate key, so a
+  leak of one does not affect the other).
+- Keep a `hom` installer for outside testers (schools trying a release) or give them
+  tokens too (proposed: tokens with `hom` only and a short expiry).
+- Who may create tokens: admins only, or also a "Desenvolvedor" role (proposed: admins).
+
+**Acceptance criteria:** with only the production installer, the owner types a developer
+code, switches to homologation, studies with a separate database against
+`hom.caderna.ia.br`, switches to development against `localhost`, and back to
+production finds their data exactly as before; revoking the token in the panel brings the
+app back to production at the next check.
+
 ## Voice programs per system
 
 - [x] Voice programs download on Windows, Linux (x86_64, aarch64) and macOS, pinned
