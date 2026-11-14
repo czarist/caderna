@@ -50,10 +50,10 @@ contact_url = "https://example.com/contato"   # https:// or mailto:
 # Editable drafts. Set reviewed only after review for the actual client.
 [legal]
 directory = "legal"
-version = "2026-11-11.1"
-provider = "Caderna Educação — empresa demonstrativa"
+version = "2026-11-13.1"
+provider = "Caderna Educação, nome comercial da TRENTIN SOLUÇÕES EM SOFTWARE LTDA – ME, CNPJ 36.154.590/0001-54, com sede em Novo Hamburgo/RS"
 licensor = "TRENTIN SOLUÇÕES EM SOFTWARE LTDA – ME, CNPJ 36.154.590/0001-54"
-contact = "https://example.com/suporte"
+contact = "contato@caderna.ai.br"
 reviewed = false
 commercial_reviewed = false
 
