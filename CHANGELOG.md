@@ -10,6 +10,11 @@ repository.
 ## [Unreleased]
 
 ### Added
+- **Snapshot options for the website.** The screen snapshots take `KG_SNAPSHOT_SIZE`
+  (for example `1920x1080`), `KG_SNAPSHOT_LOCALE` (one language) and
+  `KG_SNAPSHOT_BOARD_SCALE` (pixel density of the whiteboard); without them nothing
+  changes. A new `quiz_snapshots` renders a quiz question before and after the answer,
+  and the written-answer snapshots no longer show sticker notices.
 - **Build channels.** Brands with a panel build for production, homologation or
   development (`KG_CHANNEL`, from the branch in CI: `main`, `hom`, `dev`), each talking to
   its own panel (`[server] url`, `hom_url`, `dev_url`). Homologation and development
@@ -58,6 +63,11 @@ repository.
   - a `scheduler` service in Docker for the daily billing run.
 
 ### Changed
+- Channel builds (`.github/workflows/channels.yml`) run only by hand
+  (`gh workflow run channels.yml --ref <branch>`), no longer on every push, to save
+  Actions minutes; releases still build from a `v*` tag.
+- CI jobs stop after a time limit (Checks 60 min, packages 120 min) instead of the
+  6-hour default, retry apt downloads, and Checks skip documentation-only changes.
 - The local panel runs on port 8080 (`APP_PORT`), as the development channel expects.
 - Caderna terms of use and privacy policy describe the school's restrictions, the
   watermark, the local check of open programs and the Wikimedia credits (version

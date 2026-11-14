@@ -2,8 +2,21 @@ name: Checks
 on:
   push:
     branches: [dev, hom]
+    paths-ignore:
+      # Documentation only; docs/legal and the prompts are compiled into the app.
+      - '*.md'
+      - 'docs/*.md'
+      - 'docs/*.svg'
+      - 'docs/images/**'
+      - 'branding/README.md'
   pull_request:
     branches: [dev, hom, main]
+    paths-ignore:
+      - '*.md'
+      - 'docs/*.md'
+      - 'docs/*.svg'
+      - 'docs/images/**'
+      - 'branding/README.md'
 permissions:
   contents: read
 concurrency:
@@ -16,6 +29,7 @@ env:
 jobs:
   checks:
     runs-on: ubuntu-24.04
+    timeout-minutes: 60
     steps:
       - name: Free disk space
         run: sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL && df -h /
@@ -25,7 +39,7 @@ jobs:
           rustup update stable --no-self-update && rustup default stable
           rustup component add rustfmt clippy
       - name: Linux system libraries
-        run: sudo apt-get update && sudo apt-get install -y libasound2-dev libudev-dev libxkbcommon-dev libwayland-dev libegl1-mesa-dev libvulkan-dev glslc pkg-config
+        run: sudo apt-get -o Acquire::Retries=3 update && sudo apt-get -o Acquire::Retries=3 install -y libasound2-dev libudev-dev libxkbcommon-dev libwayland-dev libegl1-mesa-dev libvulkan-dev glslc pkg-config
       - name: Format
         run: cargo fmt --all -- --check
       - name: Lints

@@ -118,7 +118,7 @@ three install side by side, each with its own data. The app shows *HOMOLOGAÇÃO
 *DESENVOLVIMENTO* in a strip at the top and in the window title, and only production
 checks for updates. The licence brand (`slug`) stays the same, so one panel's licences
 work in every channel; the homologation panel must sign with the same key pair.
-`.github/workflows/channels.yml` builds the channel of each branch and replaces its
+`.github/workflows/channels.yml`, run by hand on a branch, builds that channel and replaces its
 download, the release `latest-prod`, `latest-hom` or `latest-dev`
 (`Caderna-Hom-setup.exe`, …); production is published only after the legal review.
 

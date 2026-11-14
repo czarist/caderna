@@ -95,7 +95,7 @@ uses OpenAI's *Sign in with ChatGPT* registration under the app's own name, neve
 client's ID or private tokens. Live check: `cargo run -p kg-ai --example account_check --
 <chatgpt|claude-code|copilot> [model]`.
 
-Planned for managed local AI (ROADMAP Phase 8), not built; do not describe them as available
+Once planned for managed local AI (dropped from the ROADMAP on 2026-11-13), not built; do not describe them as available
 until they ship:
 - LiteLLM (<https://github.com/BerriAI/litellm>): local proxy, embedded in the installer
 - llama.cpp for text models, beyond OCR

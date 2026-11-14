@@ -170,7 +170,7 @@ A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
 - [ ] Charges: the production Asaas key and webhook token before the first real charge.
 - [x] Build channels per branch (`main` production, `hom` homologation, `dev`
       development), each with its panel address, installed side by side and labelled
-      in the app; CI replaces each channel's download on every push.
+      in the app; CI replaces each channel's download when run by hand.
 - [ ] Put the panels online at the addresses the builds use: `https://caderna.ia.br`
       (production) and `https://hom.caderna.ia.br` (homologation), with HTTPS, the same
       licence signing key pair as the app's public key, and their own database, Asaas
@@ -217,6 +217,275 @@ Needs a brand with a panel (`[server]`); without one the app works as before.
       (ABNT in Portuguese, all five languages); handouts saved earlier keep their pages.
 - [ ] Check references against a bibliographic database before showing them.
 
+## Phase W8 — Lesson planning for teachers (planned, not started)
+
+**Goal:** a "Planejamento" module in the teacher's area where the teacher schedules the
+classes of a classroom from the plan's content: on which days and times each class
+happens, which topics it covers, what it aims at, which activities and materials it
+uses and what the students do before and after. The teacher publishes it with the
+course; students see their class calendar, what to prepare and their homework; the
+teacher sees who did it.
+
+Needs a brand with a panel (`[server]`) to publish; the planning itself works locally.
+
+### Concepts
+
+- **Schedule (cronograma):** one per published plan and classroom, with a start date, an
+  end date (or the exam date), the classroom's time zone (default `America/Sao_Paulo`),
+  class days and times (for example Mon and Wed 19:00–20:40), class length, blocked days
+  and the topic release rule (below).
+- **Class session (aula):** a stable key (like topic keys, so republishing keeps student
+  progress), date, start time, minutes, kind (presencial, online with an `https` link only,
+  or self-study), the topics it covers (topic keys from the plan, one topic may span
+  several sessions), objectives, activities in order with minutes each, materials,
+  homework, a public note for students and a private note for the teacher (never
+  published), and a status (planned, given, cancelled, moved).
+- **Activity kinds:** teacher explanation, voice lesson with the AI teacher (opens the
+  topic's lesson in the student's app, with the lesson type of Phase 10 once it exists),
+  handout reading (pages), quiz (bank and number of questions), spoken review, written
+  answer (proposal), mock exam (Phase 12), discussion/exercise in class, free text.
+- **Homework (tarefa):** activities the student does between two sessions, with a due
+  session; done or not is computed in code from saved study (lesson taken, quiz answered
+  with N questions, handout read, written answer sent), never declared by the AI.
+- **Release rule:** "all topics open" (today's behaviour) or "open as the classes happen"
+  (a topic opens for students on the day of its first session; reviews and the mistakes
+  notebook keep working on opened topics). Chosen per schedule.
+
+### Generating the schedule (code first, AI second)
+
+- [ ] Session calendar computed in code (`kg_study::schedule`): class days between start
+      and end, minus blocked days and holidays. Holidays per region computed in code
+      (Brazil: national fixed dates plus Carnaval, Sexta-feira Santa and Corpus Christi from
+      Easter); state and city holidays added by the teacher as blocked days.
+- [ ] Topic distribution computed in code: topics in the plan's order, weighted by their
+      size (handout length or estimated lesson minutes) and by the notice's weight when the
+      plan has it (mock-exam sections, Phase 12); a review session every N sessions
+      (default 6) and a mock exam before the end when the plan has an exam format.
+      Too many topics for the sessions is said up front, with the shortfall in hours and
+      options: more sessions, longer sessions, or mark topics as self-study.
+- [ ] Per session, the AI suggests objectives, activities with minutes, materials from
+      what the plan already has (handouts, quiz banks, board material) and homework
+      (`lesson_planning` prompt in every `crates/ai/prompts/<lang>/`, JSON, same keys and
+      placeholders; teaching culture from `culture.rs` and the plan's `ExamPurpose`).
+      Checked in code: topic keys exist in the plan and belong to that session, activity
+      minutes add up to at most the session length, materials exist, homework activities
+      are of known kinds; a failed check asks once more, then falls back to an empty session
+      with only the topics. Batches of sessions, like mock-exam questions.
+- [ ] pt-BR plan-of-class conventions in the prompt note: objetivos (verbs of Bloom's
+      taxonomy), conteúdo, metodologia, recursos, avaliação; the other regions follow their
+      own culture note (Portuguese and English through `PromptLanguage::pick`).
+- [ ] Shared base (W7) is not used for schedules: they depend on the school's calendar.
+
+### Teacher's editing
+
+- [ ] New "Planejamento" screen in the teacher's area (beside Classes): a calendar view
+      (month and week) and a list view; select a plan and a classroom; the wizard asks
+      start, end, days, times, length, blocked days and release rule, then generates.
+- [ ] Edit a session: topics, objectives, activities (add, remove, reorder, minutes),
+      materials, homework, notes, kind and link. Move it to another day by dragging or by a
+      date field; split a session in two or merge two.
+- [ ] Lock sessions; **replan**: when a session is cancelled or moved, or a topic took
+      longer, the following unlocked sessions are redistributed in code; given and locked
+      sessions never move. Show a summary of what changed before applying.
+- [ ] Mark a session as given (with what was really covered, if different), so the
+      replanning starts from the truth.
+- [ ] Undo for the last changes; the schedule is saved locally as edited (SQLite tables
+      `class_schedule`, `class_session`, `class_session_topic`, `class_session_activity`,
+      with migrations), so nothing is lost before publishing.
+- [ ] Export: printable PDF (Typst, `crates/handout/templates/lesson_plan.typ`): the
+      schedule as a table and one page per session in the plan-of-class format; and an
+      iCalendar file (`.ics`) of the sessions for the teacher's calendar.
+- [ ] Engine commands (`GenerateSchedule`, `EditSession`, `ReplanSchedule`,
+      `PublishSchedule`, `ExportSchedulePdf`, `ExportScheduleIcs`) refused for students
+      (`Command::creates_plans`) and when the licence lacks the module.
+- [ ] Owner role (no panel): decide whether a student studying alone may use the same
+      screen as a personal study calendar (see Decisions).
+
+### Panel (CADERNA-DASHBOARD)
+
+- [ ] Tables for schedules and sessions tied to a course and a classroom; API
+      `PUT /api/v1/courses/{course}/schedules/{classroom}` (teacher, whole schedule,
+      bumps a version like courses) and the schedule inside what students download at
+      every check. Private teacher notes never leave the teacher's computer.
+- [ ] Students' homework status in the progress sync (`/api/v1/progress`), computed by the
+      app from saved study; merged without duplicates like the rest of `kg_study::sync`.
+- [ ] Client area: "Agenda" per classroom (read-only for the school), and in "Desempenho"
+      per session: how many students did the preparation and the homework.
+- [ ] New licence module "Planejamento de aulas" (`Module::Planning`), chosen per client
+      in `allowed_modules` like Videoaula and Criação de conteúdos; README API contract and
+      AGENTS.md updated in both languages.
+
+### Students' side
+
+- [ ] "Agenda" on Today: next class (day, time, kind, link), what to prepare before it,
+      homework due and late; a calendar of the classroom's sessions in the plan screen.
+- [ ] Topics follow the release rule; a closed topic shows the day it opens.
+- [ ] Reminders through the existing study reminders: the day before a class with
+      homework still open, and an hour before an online class (both can be turned off).
+- [ ] A changed schedule (republished) shows a quiet note with what moved.
+- [ ] Homework counts for challenges only if it fits existing families; no new
+      pressure (no countdowns, no "late" in red), in the calm style of Phase 11.
+
+### Legal, languages and docs
+
+- [ ] Caderna privacy policy and terms (pt-BR, `branding/caderna/legal/`): the panel now
+      keeps schedules and each student's homework status, visible to the school's
+      teachers; bump the legal version and `TERMS_VERSION`. `REVISAO-JURIDICA.md` gets the
+      item for the lawyer.
+- [ ] Every UI text in the five `locales/*.yml`; the prompt in the five prompt folders;
+      README sections (all `README*.md`) and screenshots of the Planejamento screen and
+      the student's Agenda in each language.
+
+### Tests
+
+- [ ] `kg_study::schedule`: calendar with holidays and blocked days, Easter-based dates
+      over several years, distribution by weight, review and mock-exam placement,
+      shortfall report, replan never moving given or locked sessions, stable session keys
+      across republishing.
+- [ ] Checks of the AI's answer (wrong topic key, minutes over the length, unknown
+      material) with a fake client; prompt parity (`cargo test -p kg-ai`) and locale
+      parity (`cargo test -p kg-ui`).
+- [ ] Engine: students and closed modules refused; release rule hides and opens topics
+      by date (fixed clock); homework done computed from saved study; sync round-trip.
+- [ ] Panel: feature tests for the schedule API, versioning, the student download and the
+      client area pages.
+
+### Decisions to take before starting
+
+- Module name and whether it is sold apart (proposed: "Planejamento de aulas", its own
+  module) or comes with Criação de conteúdos.
+- Whether Owner (no panel) gets the screen as a personal study calendar (proposed: yes,
+  later, reusing the same scheduler without publishing).
+- Default release rule (proposed: all topics open, as today).
+- Whether school coordinators may edit schedules in the client area or only view them
+  (proposed: view only; editing stays in the app).
+
+### Order of work
+
+1. `kg_study::schedule` (calendar, holidays, distribution, replan) with tests.
+2. Local screen, storage, editing and PDF/ICS export for teachers.
+3. `lesson_planning` prompt in five languages and the checks.
+4. Panel tables, API, module and client-area pages.
+5. Publishing, student Agenda, release rule, reminders and homework status in the sync.
+6. Legal texts, READMEs and screenshots.
+
+**Acceptance criteria:** with a real plan, a teacher generates a semester schedule for a
+classroom in a few minutes, with holidays skipped and topics spread by weight; moving or
+cancelling a class replans the rest without touching given ones; the published schedule
+reaches the students' apps at the next check, shows the next class and homework on Today,
+and the teacher sees, per class, who did the preparation and the homework.
+
+## Phase W9 — Developer mode instead of three channel builds (planned, not started)
+
+**Goal:** one production executable per brand. A developer token generated in the
+panel (Laravel) unlocks a developer area in the app where the owner and the team point
+it at homologation or development: which panel API it talks to and which local database
+it uses. The `hom` and `dev` installers stop being needed for testing.
+
+**Today:** three builds per brand (`KG_CHANNEL`, `.github/workflows/channels.yml`), each
+with its panel address chosen at build time, its own name, data folder, executable,
+installer GUID and credential entry. CLAUDE.md says the panel address is "chosen at build
+time, never read on the student's computer"; this phase changes that rule and needs the
+owner's sign-off before it starts (see Decisions).
+
+### Token (panel)
+
+- [ ] Panel (production, `/admin`): "Tokens de desenvolvedor" page, admins only. A token
+      names a person, the environments it opens (`hom`, `dev`, or both), an expiry
+      (default 30 days, at most 90) and optionally one device (hashed machine id, as in
+      activations). Shown once on creation; the panel keeps only its hash; revoking is
+      one click; every use is logged (who, when, which environment, app version).
+- [ ] The token is a signed claim like the licence (Ed25519, its own prefix
+      `kg-dev-v1\0` + claims JSON, the same key pair or a separate developer key, see
+      Decisions), so the app checks signature, brand slug and expiry offline; the app also
+      asks the production panel at activation and every hourly check whether it was
+      revoked, and leaves developer mode when it was.
+- [ ] Short code like access codes (`DEV-XXXX-XXXX-XXXX`) that the panel exchanges for the
+      signed token, so nobody types a long key.
+
+### Developer area (app)
+
+- [ ] Hidden entry: Settings → About, clicking the version seven times, or the
+      `--developer` flag; asks for the token. Nothing about it appears in the UI, tour or
+      README for students.
+- [ ] Environment switch: **Production / Homologation / Development**. The addresses come
+      only from the brand (`[server] url`, `hom_url`, `dev_url`, compiled in); no free URL
+      field, so a token cannot point the app at an unknown server. Optional "custom
+      `localhost` port" for development only (`http://127.0.0.1:<port>`).
+- [ ] Database per environment: each environment uses its own data folder inside the
+      brand's (`<data_dir>/env/hom`, `<data_dir>/env/dev`), with its own SQLite file, plans,
+      progress, handouts, cache of the panel brand and courses; production data is never
+      opened, migrated or synced while another environment is on. Options in the area:
+      "start empty", "copy my production data into this environment" (one-way copy,
+      never back), "reset this environment".
+- [ ] Credential entry per environment (device token, licence) so hom and dev activations
+      never replace the production one; this also closes the W6 item about one entry per
+      brand.
+- [ ] Switching restarts the app (engine, sync and AI client start from the chosen
+      environment); the choice is remembered until the token expires or is revoked, then
+      the app returns to production on its own and says so.
+- [ ] While not in production: a coloured strip and the window title say the environment
+      (reusing today's channel strip), the updater stays on production releases, and logs
+      record the environment.
+- [ ] Developer tools in the area (optional, after the switch): open the data folder,
+      show the current licence claims and modules, force a panel check, copy the last
+      panel errors.
+
+### What stays and what goes
+
+- [ ] Engine and UI read the environment at start (`Environment` in engine settings)
+      instead of `KG_CHANNEL` at compile time; `kg-brand` keeps all three addresses.
+- [ ] `cargo run` keeps starting in development without a token (debug builds only), so
+      day-to-day work does not change.
+- [ ] Once the developer mode is tested: retire the `hom` and `dev` installers from
+      `channels.yml` (or keep `hom` only for testers outside the team, see Decisions),
+      update CLAUDE.md (Git workflow and `[server]` rules), `branding/README.md`,
+      `brand.toml` comments and the packaging scripts. Branches `dev`/`hom`/`main` stay as
+      the code flow.
+- [ ] Students: a production build with no developer token behaves exactly as today; the
+      production panel never hands a developer token to a student or school account.
+
+### Security
+
+- [ ] Only addresses compiled into the brand; HTTPS for `url` and `hom_url`.
+- [ ] Token checked offline (signature, slug, expiry, device) and online (revocation);
+      expired or revoked returns to production without touching that environment's data.
+- [ ] No token, key or environment data in exported files or crash messages.
+- [ ] Rate limit and audit log on the panel's code exchange; tokens never in URLs.
+
+### Legal and languages
+
+- [ ] Privacy policy: nothing changes for students (the area only works with a developer
+      token); confirm with the lawyer note in `REVISAO-JURIDICA.md`. If the panel logs the
+      developer's machine id, the internal policy for the team says so.
+- [ ] Developer-area texts in the five `locales/*.yml` (`cargo test -p kg-ui`), even if
+      only the team sees them.
+
+### Tests
+
+- [ ] Token: valid, wrong signature, other brand, expired, other device, revoked online.
+- [ ] Environment folders and credential entries never cross (production data untouched
+      after a session in dev and in hom); copy is one-way; reset removes only that
+      environment.
+- [ ] Only compiled addresses are reachable; the custom port works only for development.
+- [ ] Panel: token creation, hash only stored, code exchange, revocation, audit log.
+
+### Decisions to take before starting
+
+- Changing the "never read on the student's computer" rule: the addresses stay compiled
+  in, only the choice between them moves to runtime behind the token (proposed: accept).
+- Same Ed25519 key as licences or a separate developer key (proposed: separate key, so a
+  leak of one does not affect the other).
+- Keep a `hom` installer for outside testers (schools trying a release) or give them
+  tokens too (proposed: tokens with `hom` only and a short expiry).
+- Who may create tokens: admins only, or also a "Desenvolvedor" role (proposed: admins).
+
+**Acceptance criteria:** with only the production installer, the owner types a developer
+code, switches to homologation, studies with a separate database against
+`hom.caderna.ia.br`, switches to development against `localhost`, and back to
+production finds their data exactly as before; revoking the token in the panel brings the
+app back to production at the next check.
+
 ## Voice programs per system
 
 - [x] Voice programs download on Windows, Linux (x86_64, aarch64) and macOS, pinned
@@ -236,348 +505,9 @@ Needs a brand with a panel (`[server]`); without one the app works as before.
 
 ## Know Giver phases still open
 
-Carried over from Know Giver; they apply to every brand.
-
-## Phase 8 — Managed local AI (planned, not started)
-
-**Goal:** the student picks "run the AI on this computer" and gets a working setup without
-starting servers, downloading model files or typing an API key. The app checks the machine,
-recommends a model, installs it after consent and runs the needed processes in the
-background. When no supported setup meets the minimum, local mode stays off and the app
-says why and what could change that.
-
-**Status:** planning only. None of the components below ship today. What exists: the
-student can point Settings → AI at any OpenAI-compatible endpoint, including a local
-Ollama (`AiConfig` default `http://localhost:11434/v1`), with one model per task
-(`ModelSet`) and a separate vision model. That manual path stays as it is.
-
-### Target architecture
-
-```text
-Know Giver (Rust) ──HTTP, loopback──> LiteLLM (proxy) ──> llama.cpp server ──> model files (GGUF)
-                                                        ▲
-gpu-unlock (optional, boot time, Linux or Windows) ── prepares the GPU, never in the request path
-```
-
-- **Know Giver** keeps all orchestration in Rust: diagnosis, catalog, downloads, process
-  supervision, health checks and settings live in `kg-engine` workers and report through
-  `Event`s, like model downloads and the Parakeet server today. The AI client keeps
-  talking OpenAI-compatible HTTP; local mode only changes the base URL, the key and the
-  model aliases.
-- **LiteLLM** is the gateway: one stable endpoint, per-task model aliases, a key, request
-  limits and timeouts. It does not load or run models.
-- **llama.cpp** (`llama-server`) loads the model and runs it on CPU or GPU (8.3).
-- **gpu-unlock** belongs to hardware preparation. Local AI must work with it absent,
-  unsupported or failed.
-
-### Exceptions to the pure-Rust preference
-
-The owner authorized these external projects. Each is integrated as published, not
-rewritten in Rust, and runs outside the app process; orchestration stays in Rust. This is
-not a general permission for dependencies in other languages: any further one needs its own
-recorded decision.
-
-- **LiteLLM** — <https://github.com/BerriAI/litellm>. Python, embedded in the installer
-  and run as a managed child process bound to loopback. Use only the open-source part;
-  features under the LiteLLM commercial license stay off. Confirm the license of the
-  pinned version before shipping.
-- **llama.cpp** — <https://github.com/ggml-org/llama.cpp>. C/C++ (MIT), the inference
-  engine: its `llama-server` binary runs as a child process, like the sherpa-onnx runtime
-  today. Not linked into the app.
-- **gpu-unlock** — <https://github.com/Zagitta/gpu-unlock> on Linux (kernel module, C,
-  GPL-2.0-only) and its Windows port **Windows-GPU-UNLOCK** —
-  <https://github.com/impacifist/Windows-GPU-UNLOCK> (UEFI pre-boot tool, GPL-2.0-only).
-  Optional, only on an explicit user action through the system's administrator prompt.
-  Not bundled in the installer; NVIDIA firmware is never redistributed.
-
-### Dependencies
-
-- Existing: the model download code (`kg_audio::models::ModelStore`/`Fetcher`, which has
-  no checksum or resume today), engine workers and events, `Settings`/`AiConfig`, the rule
-  that images go only to a vision model, the vision probe (`check_vision`), the i18n
-  system, and the packaging scripts (`scripts/package.ps1`, `scripts/package-unix.sh`).
-- Order inside the phase: 8.1 → 8.2 and 8.3 in parallel → 8.4 → 8.5 → 8.6 → 8.8.
-  8.7 depends only on 8.2 and 8.8's benchmark and can come last or never.
-- Related items elsewhere: the optional CUDA build of candle (Whisper on the GPU shares
-  VRAM with the model), "CUDA execution … unverified" under Not yet verified, and the idea
-  of a local model as `MODEL_VERIFIER` (Next up #8), which a managed install would make
-  easy to try.
-
-### 8.1 Investigation
-- [ ] Measure what the app already uses while a lesson runs: RAM and VRAM for Whisper or
-      Parakeet, Kokoro or Piper, the reader and the UI, on Windows and Linux. These are
-      the reserve the model must leave free.
-- [ ] Write per-task needs from the current prompts: context length (edital excerpts,
-      handouts with board material), output length (study plan, handout), JSON reliability
-      (quiz, correction, written-answer grades), streaming latency (tutor first sentence)
-      and vision (scanned editais, handwritten pages).
-- [ ] Shortlist Portuguese-capable open models per task and size class, with license,
-      quantizations and vision support; record sources and dates.
-- [ ] Measure the installer with LiteLLM and llama.cpp embedded: size, start time,
-      memory, and Windows antivirus behaviour with the embedded Python.
-
-### 8.2 Hardware diagnosis
-- [ ] Detect OS and architecture; CPU model, cores and instruction sets (AVX2, AVX-512,
-      NEON); total and available RAM.
-- [ ] Detect GPUs: vendor, device ID, VRAM total and free, driver version. NVIDIA, AMD,
-      Intel and Apple, with a source per platform (to investigate: NVML, DXGI, Metal, sysfs,
-      or llama.cpp's own device listing).
-- [ ] Detect which inference backends really work (CUDA, Vulkan, ROCm/HIP, SYCL, Metal,
-      CPU) by asking the chosen engine to list and initialize devices, not by guessing from
-      the GPU name.
-- [x] For local manuscript OCR, probe llama.cpp's Vulkan device list on Windows/Linux,
-      select supported hardware devices and retry with the CPU runtime if GPU startup fails.
-      Physical-device compatibility and performance still need validation on each vendor.
-- [ ] Check free disk space for download, unpacking and running (download and installed
-      size counted separately).
-- [ ] Subtract the app's own use (8.1) and a safety margin from available memory.
-- [ ] Keep a fingerprint of hardware, driver, engine and model; when it changes, run the
-      diagnosis again before starting local mode.
-- [ ] Keep a versioned compatibility matrix in the repo (OS, hardware, driver, backend,
-      engine version, model, quantization), each row marked **verified**, **experimental**
-      or **incompatible**, with who tested it and when.
-- [ ] Evaluate NVIDIA without unlock, AMD, Intel, Apple Silicon and CPU-only on their own
-      backends. A missing gpu-unlock never blocks local mode by itself.
-
-### 8.3 Inference engine: llama.cpp
-Chosen 2026-10-29 for its hardware coverage (CUDA, Vulkan, ROCm/HIP, SYCL, Metal, CPU),
-prebuilt Windows/Linux/macOS binaries, GGUF models, an OpenAI-compatible server, vision
-models and grammar-constrained JSON. Alternatives considered: `mistral.rs` (Rust, narrower
-hardware), Ollama (its own model store overlaps an app-managed catalog), candle in process
-(serving and vision would be ours to build), vLLM-style server stacks (not for a desktop).
-- [ ] Pin one `llama.cpp` release; list which of its builds the app uses per platform
-      and backend, with SHA-256 in the manifest (see Decisions).
-- [ ] Use the engine's device listing for the backend check in 8.2.
-- [ ] Check vision models (multimodal projector files), JSON grammar and streaming through
-      LiteLLM with the app's real prompts.
-- [ ] Settings per model: context size, GPU layers, threads (leave cores for STT/TTS),
-      batch size; from the catalog, not typed by the student.
-
-### 8.4 LiteLLM integration
-- [ ] Generate the LiteLLM config from the app: only local engine backends, one alias per
-      task (`kg-study-plan`, `kg-tutor`, `kg-vision`, …) mapped to installed models, no
-      external providers in local mode.
-- [ ] Bind LiteLLM and the engine to `127.0.0.1` on free ports; protect LiteLLM with a
-      random master key kept in the app's settings and the engine with its own key or a
-      loopback-only socket; turn off the admin UI, telemetry, callbacks and spend
-      database.
-- [ ] Start, health-check (LiteLLM and engine), stop and restart from a supervisor worker in
-      `kg-engine`; restart with a limit and backoff; stop both processes on app exit and
-      clean up leftovers on the next start, as the Parakeet server does.
-- [ ] Pin LiteLLM and llama.cpp in the manifest; updates only through an app release,
-      with the same checks as a first install.
-- [ ] Map errors (engine not ready, out of memory, model missing, timeout) to `AiError`
-      kinds the UI already translates, with new keys where needed.
-
-### 8.5 Model catalog and installation
-- [ ] The model part of the `local-ai.toml` manifest (see Decisions): source and revision, license,
-      SHA-256, download and installed size, quantization, context, memory needed at that
-      context (weights + KV cache + engine overhead), and capabilities per task (text,
-      structured JSON, tools if ever needed, vision).
-- [ ] Recommend from the diagnosis: Portuguese quality on the app's tasks, latency,
-      context and running memory with room for STT/TTS. Fitting the file into VRAM is not
-      enough.
-- [ ] After the student accepts the size: download with progress, cancel, resume
-      (HTTP ranges) and SHA-256 check, staged so an interrupted install never looks
-      installed; remove frees the space. Extend the existing downloader rather than add a
-      second one, so speech models gain checksums and resume too.
-- [ ] Per-feature availability: a text-only setup enables lessons, plans, quizzes and
-      handouts, and marks image features (scanned editais, written answers) unavailable
-      with the reason. A text model never receives images.
-- [ ] Optional vision model as a separate install, checked with the existing vision probe.
-
-### 8.6 Setup experience
-- [ ] A clear choice in Settings → AI and onboarding: external API or on this computer.
-      The external settings are kept, so switching back needs no retyping.
-- [ ] Diagnosis and recommendation before anything is installed: what was found, the
-      recommended model, download and disk size, expected speed, what will not work
-      (for example, no vision).
-- [ ] Local mode sends no AI request outside the machine. Downloads of components and
-      models come only from pinned sources. Wikipedia pictures and update checks stay on;
-      Settings lists the services the app still reaches.
-- [ ] No automatic fallback to an external API; if the local service fails, the app says
-      so and offers retry, a smaller model, or switching mode on purpose.
-- [ ] Status in the app: starting, ready, busy, stopped, failed, with the reason.
-- [ ] All new UI text through `locales/*.yml` in every locale.
-- [ ] Heavy work (diagnosis, downloads, test runs, process start) in workers; the UI
-      stays responsive.
-
-### 8.7 Optional gpu-unlock
-Upstream, checked 2026-10-29:
-- **Linux, gpu-unlock 2.0.0:** kernel module loaded at boot with a kernel command-line
-  parameter. Ampere (RTX 30) stable, Ada (RTX 40) and Turing (RTX 20) experimental,
-  Blackwell (RTX 50) unsupported, laptops mixed.
-- **Windows, Windows-GPU-UNLOCK 0.3.1 (source-only pre-release):** a UEFI tool picked from
-  a boot entry before Windows starts. It needs Secure Boot off, BitLocker off, a separate
-  FAT32 EFI partition, Python and clang, and firmware files the user obtains. Success is
-  reported per card and system (RTX 3060–3090 Ti), not per model.
-- Both remove a cap on FP16/BF16/TF32 tensor math. Upstream's own reports show little gain
-  for quantized llama.cpp models (0–15%) and none for token decoding, which dominates
-  tutor replies.
-
-Tasks:
-- [ ] Check exact compatibility against the pinned upstream versions: PCI device IDs,
-      OS, kernel and headers or UEFI and boot setup, driver, Secure Boot and disk
-      encryption. Never assume every CUDA card qualifies.
-- [ ] Explain before enabling: administrator rights, boot changes, a reboot, what changes
-      and how to undo it; then run the allowed steps through the administrator prompt
-      after consent.
-- [ ] Enable only on an explicit request, never silently.
-- [ ] Verify after reboot (Linux kernel log; the Windows tool's own check). Offer disable
-      (Linux: remove the boot parameter; Windows: boot the normal Windows entry and the
-      port's restore script), uninstall, and recovery steps.
-- [ ] Benchmark the app's real workload with and without it on llama.cpp and the chosen
-      model; recommend it only with a measured gain. Never promise a speedup.
-- [ ] If it is unavailable or fails, local mode runs normally when it is otherwise viable.
-
-### 8.8 Validation
-- [ ] Minimum profile per feature (tutor, study plan, quiz/correction, handout, vision),
-      set from measurements on real machines, not universal RAM/VRAM numbers.
-- [ ] A short trial run after install and after any fingerprint change: model loads, peak
-      memory with STT/TTS loaded, time to first token, tokens per second, one valid JSON
-      answer, and the vision probe when a vision model is installed.
-- [ ] Out-of-memory and start failures: detect them, stop cleanly, explain, and offer a
-      smaller model or shorter context.
-- [ ] Tests for the supervisor, catalog checks, config generation (loopback only, no
-      external providers) and availability rules with simulated processes.
-- [ ] Fill the compatibility matrix with at least one verified row per supported backend.
-- [ ] Measure LiteLLM's overhead against calling `llama-server` directly (latency to first
-      token, memory) and record it.
-
-### Decisions (2026-10-29, owner)
-- **Inference engine:** `llama.cpp` server, with an exception like LiteLLM's.
-- **LiteLLM packaging:** embedded in the installer (pinned Python runtime and hashed
-  wheels, no Docker, nothing installed system-wide).
-- **LiteLLM stays** as the proxy even with a single local engine; its overhead is
-  measured and recorded (8.8), not a reason to drop it.
-- **gpu-unlock on Linux and Windows:** the Windows port is included in the exception.
-- **Privileged steps:** the app asks for consent, then calls the system's administrator
-  prompt (UAC on Windows, `pkexec`/polkit on Linux). Steps the app must not do for the
-  student, such as turning off Secure Boot or BitLocker or changing firmware settings, are
-  explained with instructions and checked afterwards, never done silently.
-- **Network features stay on in local mode:** Wikipedia pictures in handouts and update
-  checks keep working. The local-mode promise covers AI requests; Settings says which
-  other services the app still reaches.
-- **Catalog and matrix: one manifest, used like a lockfile** (recommended by the agent;
-  the owner wants components installed like package dependencies):
-  - A versioned `local-ai.toml` in the repo lists every pinned component (LiteLLM,
-    llama.cpp builds per platform/backend, models) with source, revision, license,
-    SHA-256 and sizes, plus the compatibility matrix rows.
-  - The packaging scripts read it to fetch and verify what the installer embeds: LiteLLM
-    and the llama.cpp CPU and Vulkan builds.
-  - The app embeds the same file at build time (`include_str!`). After diagnosis it
-    fetches what is too large or too specific for the installer the same way, with
-    consent: models, and the CUDA or ROCm build of llama.cpp when such a GPU is found.
-  - Changes only through a release, so each version ships the set that was tested with it.
-    A generated `docs/local-ai-compatibility.md` shows the matrix for people.
-
-### Still open
-- Installer size with LiteLLM and llama.cpp embedded, and Windows antivirus behaviour with
-  the embedded Python; measure in 8.1.
-- How far Windows-GPU-UNLOCK can be guided: it needs Secure Boot off, BitLocker off, a
-  separate FAT32 EFI partition and firmware files the user obtains; decide whether the
-  app offers it on Windows or only links to its instructions after the benchmark.
-
-### Acceptance criteria
-- **Compatible hardware:** diagnosis recommends a catalog model; after consent it downloads,
-  verifies, starts LiteLLM and the engine on loopback, passes the trial run, and a lesson,
-  a quiz and a study plan work with nothing sent outside the machine.
-- **GPU without gpu-unlock support:** the GPU is used through its normal backend, or CPU if
-  none works; gpu-unlock is shown as unavailable with the reason and nothing else is
-  blocked.
-- **Insufficient computer:** local mode stays disabled with the measured reason (for example
-  "4 GB free, the smallest supported setup needs 6 GB with voice loaded") and the
-  possible action (free memory, use an external API); no partial install is left.
-- **Interrupted download:** resumes from where it stopped or restarts cleanly; a corrupt or
-  partial file never counts as installed; cancel removes the temporary files.
-- **Service failure:** a crash or failed start of LiteLLM or the engine shows a clear
-  status, restarts within the limit, then stops with an explanation and actions; no
-  silent switch to an external API; no orphan processes after exit.
-- **No vision model:** text features work; scanned-edital OCR and written-answer reading show
-  "needs a vision model" with the option to install one; no image ever reaches a text
-  model.
-
-## Phase 9 — Proxy mode: several keys and models with fallback (planned, not started)
-
-**Goal:** the student registers several AI services, keys and models, including many free
-plans, and puts them in an order. The app sends each request to the first one and, when
-it fails or hits its limit, moves to the next, so lessons keep going without the student
-changing settings. Free plans have low daily limits; stacked together they can cover a
-study day without paying.
-
-**Status:** planning only. Today the app has one provider, one key and one model per task
-(`AiConfig`, `ModelSet`). Proxy mode builds on Phase 8: the same LiteLLM proxy on
-loopback, supervised by `kg-engine`, with llama.cpp running the local model, so the local
-model can be the first or the last link of the chain.
-
-```text
-Know Giver ──loopback──> LiteLLM (proxy mode)
-                           ├─ 1. Groq free (key A)
-                           ├─ 2. Gemini free (key B)
-                           ├─ 3. OpenRouter :free model (key C)
-                           └─ 4. llama.cpp on this computer (always available, slower)
-```
-
-### 9.1 Settings
-- [ ] A "Proxy mode" option in Settings → AI and in the first run's AI step, next to a
-      single service and "on this computer".
-- [ ] A list of entries, each with provider (from `PROVIDERS`), key, model and an
-      optional name; add, edit, remove, reorder by dragging, turn an entry off without
-      deleting it. Free plans from the Free tab can be added in one click with their
-      suggested model.
-- [ ] A connection check per entry (the existing test) and for the whole chain.
-- [ ] Separate chains per task where it matters: text tasks, structured JSON (study plan,
-      quizzes, grading) and vision. A vision chain holds only models that see images; a
-      text model never receives an image, even as a fallback.
-- [ ] Keys stored like today's key, then in the system keychain (see Next ideas); never
-      shown in full after saving, never in logs.
-
-### 9.2 Fallback rules
-- [ ] Move to the next entry on rate limit (429), quota exhausted, timeout, server error
-      or a model the account cannot use; never on a bad request the next one would also
-      reject.
-- [ ] Remember an exhausted entry until its limit resets (the `Retry-After` header or
-      the plan's daily reset) and skip it meanwhile, so each request does not wait on it.
-- [ ] A reply that fails the app's checks (invalid JSON, wrong scores or quotes) can be
-      retried on the next entry, with a limit.
-- [ ] A streamed lesson reply that fails midway restarts from the next entry without the
-      student hearing the half sentence twice.
-- [ ] When every entry fails: a clear message with each entry's reason, as errors are
-      shown today.
-
-### 9.3 Proxy configuration
-- [ ] Generate the LiteLLM config (`model_list`, `router_settings`, `fallbacks`,
-      cooldowns, retries and timeouts) from the app's settings; loopback only, random
-      master key, admin UI, telemetry and spend database off, as in 8.4. Keys go to
-      the process through environment variables (`os.environ/…` in the config), never
-      written into the config file.
-- [ ] Without Phase 8 installed (no local model), proxy mode still works with external
-      entries only; LiteLLM ships with the installer either way (see Decisions in Phase 8).
-- [ ] Map LiteLLM errors to the `AiError` kinds the UI translates.
-
-### 9.4 Transparency and rules
-- [ ] Show which entry answered each request (a small label in lessons and a log in
-      Settings) and how much of each free plan was used today, when the service reports
-      it.
-- [ ] Show each entry's data note (free plans that may train on what is sent, from
-      `Provider::free_tier`); the order the student sets is the order data goes out.
-- [ ] Do not offer several keys of the same service to get around its limits: several
-      accounts on one free plan usually break its terms. The chain mixes services; more
-      than one key per service is for the student's own separate accounts (for example
-      work and personal) and the UI says so.
-- [ ] Mainland China: only services offered there (`Provider::offered`).
-- [ ] Update `docs/legal` (all languages and regions) to say requests may go to several
-      services in the student's order, and bump `TERMS_VERSION`.
-
-### Acceptance criteria
-- With three free entries and the first at its limit, a lesson, a quiz and a study plan
-  complete on the second without the student doing anything, and the label shows which
-  one answered.
-- A vision request never reaches a text-only entry.
-- With every external entry failing and a local model installed, the request completes
-  on this computer; without one, the message lists each entry's reason.
-- No key appears in logs, in the LiteLLM config left on disk after exit, or in error
-  messages.
+Carried over from Know Giver and kept because they serve schools and students; the
+rest of the inherited work (managed local AI, proxy of keys, other languages and
+regions, account sign-ins) was dropped from this roadmap on 2026-11-13.
 
 ## Phase 10 — Lesson types: straight to the point, balanced, in depth (planned, not started)
 
@@ -657,16 +587,6 @@ to do.
     with an unknown day. Handouts read and topics mastered have no day on record, so a
     grant found on start says the day is unknown.
 
-- [ ] Achievements (medals) computed in code from saved data, never by the AI:
-  - consistency: first lesson, 7 and 30 days in a row, study hours per week;
-  - performance: quiz above 80 % on a topic, a whole subject mastered, a written answer
-    with a high score, improvement on a weak topic;
-  - coverage: every topic of the edital studied once, the full plan reviewed before the
-    exam date;
-  - voice and writing: first voice lesson, first handwritten answer corrected.
-  Each has an icon, a name, a description, the unlock date and its rarity among the
-  student's own achievements (Steam shows the share of players; here there is no
-  server, so no global share).
 - [ ] Hidden achievements shown as "secret" until unlocked, a few only.
 - [ ] Goals the student sets: hours per week, topics per week, a target quiz score by a
       date; the study plan suggests realistic values from the exam date and the
@@ -743,25 +663,9 @@ the app; the grade matches a hand count.
   screenshots in the five languages (`challenges_snapshots`), and with the release
   build on a copy of a real 0.37 database. Not yet clicked through by hand on an
   installed build; F11 and the hover not checked on macOS and Linux.
-- Account sign-ins (0.37.0):
-  - Checked live on Windows on 2026-11-03 (`cargo run -p kg-engine --example
-    accounts_live -- page.jpg`): ChatGPT sign-in, model list, lessons and a handwritten
-    page read as JSON; Claude Code lessons and the same page; Copilot lessons.
-  - ChatGPT: a token refresh after an hour, and sign-out with revocation.
-  - Claude Code: `claude auth login` started from the app on a computer that never signed
-    in, and the in-app install with the official installer on Windows, macOS and Linux.
-  - Copilot: the bundled CLI returns an empty model list (and auth info the SDK cannot
-    read) although lessons work, so Settings only offers the suggested models. Recheck
-    after the next `github-copilot-sdk` update.
-  - The Inno Setup task that installs Claude Code (compiled in CI, not run).
-- Exam culture by region (v0.34.0): someone who studied for exams in each region should
-  review its note (`crates/ai/src/culture.rs`): boards, question formats, written-test
-  conventions and grading scales. Notes are in Portuguese and English only; Japanese and
-  Chinese prompts get the English note.
-- Free plans (v0.34.0): checked on 2026-10-30 from public pages and third-party summaries.
-  Confirm each with a real free key: Gemini, Mistral Experiment, Groq, NVIDIA, GitHub
-  Models (`models.github.ai/inference`), OpenRouter `:free` models, Zhipu GLM-4.7-Flash and
-  SiliconFlow. Cerebras ended its free plan in July 2026 and is not listed as free.
+- Brazilian exam culture (v0.34.0): a teacher who prepares students for ENEM, vestibulares
+  and concursos should review the Brazil note (`crates/ai/src/culture.rs`): boards,
+  question formats, written-test conventions and grading scales.
 - Updates and one-line installs (v0.33.0): need the first published release.
   - The release job, its asset names and `SHA256SUMS.txt` on a real tag.
   - `scripts/install.sh` on macOS (Apple silicon) and Linux, and `scripts/install.ps1` on
@@ -771,30 +675,9 @@ the app; the grade matches a hand count.
   - No Intel macOS or ARM Linux package yet: those systems get the release page.
   - Desktop shortcut question and uninstallers (v0.33.1): the Inno uninstaller's study-data
     question on Windows, and `uninstall.sh` on macOS and Linux.
-- Chinese and Japanese (v0.32.0): a native speaker should review each language.
-  - Japanese, Simplified and Traditional UI texts and prompts. Traditional was converted
-    from Simplified with OpenCC (Taiwan phrasing) and corrected by hand; Hong Kong usage
-    differs in places.
-  - Lessons, quizzes, handouts and grades with a real model in each language.
-  - Fonts on macOS and Linux (the font paths there are not tested).
-- Mainland China AI services (v0.32.0): endpoints, key pages and model names of Zhipu
-  BigModel, Alibaba Bailian, Moonshot (mainland), Baidu Qianfan, Tencent Hunyuan and
-  Volcano Engine Ark were written from memory; confirm each with a real key.
-- Legal texts for Japan, Taiwan, Hong Kong, Singapore and the Partner Access Terms
-  (v0.32.0): drafts that need review by a local lawyer in each place before a public
-  launch there.
-- First run with real keys (v0.31.0):
-  - **Load my models** on each provider: which `/models` lists answer, and Anthropic's
-    with a Bearer key;
-  - the suggested model names, which change often (checked 2026-10-29);
-  - Claude through Anthropic's OpenAI-compatible endpoint, with `temperature` left out;
-  - GPT-5 with `max_completion_tokens`;
-  - an existing install going through the setup and keeping its plans.
 - Written answers with real handwriting and the owner's vision model (v0.29.0–v0.30.1):
   transcript faithfulness, photo warning thresholds, grades against a human correction;
   see [docs/validation-discursive.md](docs/validation-discursive.md).
-- English prompts with the real model (v0.30.0): markers kept, lessons, handouts and
-  quizzes in English.
 - Vision requests with short reasoning (v0.30.1): a dense page read on the first try.
 - Lesson depth with the real model (v0.27.0): does the tutor cover every key point and
   every quiz subject before `ETAPA:`, and how long do Normal and Full lessons take?
@@ -815,77 +698,24 @@ the app; the grade matches a hand count.
 - Voice loop with a real microphone and speakers.
 - Installer build/run; Inno Setup 6 compiler was prepared locally but the final release
   installer was not built before the user requested closing work.
-- CUDA execution and native Linux/macOS packages (tooling is implemented).
 
-## Next ideas
-- [ ] Voices in Chinese and Japanese:
-  - speech recognition with SenseVoice (zh, yue, ja) on the sherpa-onnx runtime;
-  - Kokoro's Mandarin voices; check whether its Japanese voices run on sherpa-onnx;
-  - Cantonese through a cloud voice;
-  - turn end on `。？！`; per-language fillers (「えーと」, 「嗯」);
-  - Traditional to Simplified before a Mandarin voice.
-- [ ] Count characters instead of words for Chinese and Japanese written answers (字数,
-      原稿用紙): unreadable threshold, rewrite detection, line limits.
-- [ ] Whiteboard pictures from the Wikipedia of the app's language (today Portuguese).
-- [ ] Code-side prompt snippets (`PromptLanguage::pick`) in Chinese and Japanese; today
-      they fall back to English inside prompts that are otherwise translated.
-- [ ] Native Anthropic Messages API client for Claude: Anthropic calls its
-      OpenAI-compatible endpoint a testing aid, not a production path (`response_format`
-      and `reasoning_effort` are ignored there; no prompt caching).
-- [x] Connect GitHub Copilot through the official Copilot SDK and its supported CLI
-      account sign-in. Do not reuse private CLI tokens or reverse-engineer endpoints;
-      sign-in credentials remain managed by the CLI and the computer's credential store.
-- [x] ChatGPT sign-in through OpenAI's *Sign in with ChatGPT* for open-source and local
-      apps (dynamic registration as "Know Giver", not the Codex CLI's client), requests on
-      the Responses API with the student's plan.
-- [x] Claude through the unmodified Claude Code binary, signed in with the student's own
-      Claude account (Anthropic allows this; using Claude.ai credentials directly in a
-      third-party app is not allowed). The owner accepted Anthropic's Commercial Terms for
-      running Claude Code in the product and chose to show the Claude logo on its sign-in.
-- [ ] Faster Claude Code answers: each request starts `claude -p` (about 3 s to the first
-      word in a live check); a long-lived `--input-format stream-json` session per lesson
-      would save the start-up.
-- [ ] Periodic checks that the account sign-ins still work; today only offline tests run
-      in CI, and the three breaks found on 2026-11-03 (host ID format, Copilot SDK's
-      sign-in folder, `GITHUB_TOKEN` overriding the sign-in) were caught by hand:
-  - weekly GitHub Actions job without credentials: the ChatGPT authorize URL with our
-    real parameters does not answer `invalid_authorize_request`, OpenAI's keys and
-    sign-in metadata load, every flag we pass still appears in the latest `claude
-    --help`, and the workspace builds and tests against the latest `github-copilot-sdk`;
-    a failure opens an issue;
-  - optional weekly run on a signed-in computer (scheduled task) of `cargo run -p
-    kg-engine --example accounts_live -- page.jpg`, with a short lesson per account and a
-    handwritten page through each vision service and the local OCR, saving a report. It
-    uses a little of each plan; credentials never go to CI.
-- [ ] DeepSeek account sign-in in the *Sign in with an account* tab, like ChatGPT, Claude
-      and Copilot, so a student with a DeepSeek account needs no API key. First check that
-      DeepSeek documents a sign-in flow third-party apps may use, and its terms for it;
-      never reuse the web app's private tokens. Until then DeepSeek stays an API-key
-      provider.
-- [ ] Store the API key in the system keychain instead of the local database.
-- [ ] Have a lawyer review `docs/legal` (LGPD; GDPR/UK GDPR; US state laws) before a
-      public release.
-- [ ] Security audit before a public release:
+## Before a public release
+- [ ] Security audit:
   - updater (engine `update.rs`): releases are checked by SHA-256 from the same release,
     not signed; consider signing (minisign or code signing on Windows and macOS) and
     check that a download cannot write or run anything outside its temporary folder;
   - one-line installs (`scripts/install.ps1`, `scripts/install.sh`): what they run, from
     where, with which rights; the uninstaller only removes its own files;
-  - API keys: stored in the local database today (see the keychain item above); never in
+  - keys and tokens (device token, licence, any API key typed in Settings): never in
     logs, crash messages or exported files;
+  - downloads of models and runtimes: pin a SHA-256 for every file, as the voice programs
+    and the OCR model already are;
   - untrusted input: editais, past exams and photos of written answers can carry prompt
     injection; check that the model's answers cannot trigger file, network or process
     actions, and that links opened from the UI are only `https`;
-  - child processes (Piper, later llama.cpp and LiteLLM): fixed paths, no shell, arguments
+  - child processes (Piper, sherpa-onnx, llama.cpp for OCR): fixed paths, no shell, arguments
     never built from user or model text;
   - local data: SQLite file and model folders in `%LOCALAPPDATA%` or the platform
     equivalent, with the user's permissions only;
   - dependencies: `cargo audit` and `cargo deny` (advisories, licenses, sources) in CI;
   - CI and releases: workflow token permissions, pinned actions, who can push tags.
-- [x] Streaming AI client with silent whiteboard metadata and sentence callbacks.
-- [x] Stream sentences into lesson playback before the full reply arrives (v0.17.0:
-      first sentence at 2.7 s instead of 10.8 s in a live check).
-- [x] Optional GPU (CUDA) build of candle; benchmark on supported hardware remains pending.
-      With managed local AI (Phase 8), Whisper on the GPU shares VRAM with the model.
-- [x] OCR fallback for scanned editais (vision model).
-- [x] Linux/macOS native packaging scripts and CI; native execution remains unverified.

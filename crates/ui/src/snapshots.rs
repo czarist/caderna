@@ -3,6 +3,10 @@
 //!
 //! KG_SNAPSHOT_DIR=<dir> cargo test -p kg-ui snapshots -- --ignored --test-threads=1
 //!
+//! `KG_SNAPSHOT_SIZE=1920x1080` changes the size of the screen snapshots,
+//! `KG_SNAPSHOT_BOARD_SCALE=1.92` the pixel density of the whiteboard and
+//! `KG_SNAPSHOT_LOCALE=pt-BR` limits them to one language.
+//!
 //! One thread: the UI language is global, so parallel tests mix languages.
 
 use chrono::Days;
@@ -408,6 +412,137 @@ fn render(harness: &mut Harness<'_, KnowGiverApp>, dir: Option<&std::path::Path>
     }
 }
 
+/// Window size for the screen snapshots. `KG_SNAPSHOT_SIZE=1920x1080` renders
+/// them at another size, for example Full HD pictures for the website.
+fn screen_size(default: [f32; 2]) -> [f32; 2] {
+    std::env::var("KG_SNAPSHOT_SIZE")
+        .ok()
+        .and_then(|size| {
+            let (width, height) = size.split_once('x')?;
+            Some([width.trim().parse().ok()?, height.trim().parse().ok()?])
+        })
+        .unwrap_or(default)
+}
+
+/// Pixel density of the whiteboard snapshot, whose layout has a fixed size.
+/// `KG_SNAPSHOT_BOARD_SCALE=1.92` renders it 1920 pixels wide.
+fn board_scale() -> f32 {
+    std::env::var("KG_SNAPSHOT_BOARD_SCALE")
+        .ok()
+        .and_then(|scale| scale.trim().parse().ok())
+        .unwrap_or(1.0)
+}
+
+/// Languages to render. `KG_SNAPSHOT_LOCALE=pt-BR` renders only that one.
+fn locales() -> impl Iterator<Item = &'static str> {
+    let only = std::env::var("KG_SNAPSHOT_LOCALE").ok();
+    crate::i18n::LOCALES
+        .into_iter()
+        .filter(move |locale| only.as_deref().is_none_or(|only| only == *locale))
+}
+
+/// True/false items from another past exam on the quiz topic, with their
+/// answers, so the quiz opens without a model: Portuguese for pt-BR, the
+/// English grammar demo for the others.
+fn quiz_questions(english: bool) -> [(&'static str, usize); 3] {
+    if english {
+        [
+            (
+                "In “Each of the students have a seat”, the verb agrees with its subject.",
+                1,
+            ),
+            (
+                "In “There are many reasons to study”, the verb agrees with “reasons”.",
+                0,
+            ),
+            (
+                "In “The list of names are on the desk”, the verb agrees with its subject.",
+                1,
+            ),
+        ]
+    } else {
+        [
+            (
+                "Em “Refiro-me àquela proposta”, o acento grave está empregado corretamente.",
+                0,
+            ),
+            (
+                "Em “Começou à chover cedo”, o uso do acento grave está correto.",
+                1,
+            ),
+            (
+                "Em “Dirigiu-se a Brasília”, a ausência do acento grave está correta.",
+                0,
+            ),
+        ]
+    }
+}
+
+/// A quiz in progress, before and after the answer, in every language.
+#[test]
+#[ignore = "needs a GPU; run with --ignored"]
+fn quiz_snapshots() {
+    let out = std::env::var_os("KG_SNAPSHOT_DIR").map(std::path::PathBuf::from);
+    for locale in locales() {
+        let data = tempfile::tempdir().unwrap();
+        let paths = AppPaths::new(data.path());
+        seed(&paths, locale);
+        // The engine reads past exams when it opens, so they go in first.
+        let mut store = Store::open(&paths.database()).unwrap();
+        let plan = store.list_plans().unwrap()[0].id;
+        let topic = store.load_plan(plan).unwrap().subjects[0].topics[1].id;
+        let questions: Vec<NewBoardQuestion> = quiz_questions(locale != "pt-BR")
+            .into_iter()
+            .enumerate()
+            .map(|(i, (prompt, correct))| NewBoardQuestion {
+                number: Some(21 + i as u32),
+                prompt: prompt.into(),
+                options: vec![
+                    tr(locale, "Certo", "True").into(),
+                    tr(locale, "Errado", "False").into(),
+                ],
+                correct: Some(correct),
+                topic_id: Some(topic),
+                relevance: Relevance::Relevant,
+                reason: String::new(),
+            })
+            .collect();
+        store
+            .insert_board_document(
+                plan,
+                DocumentKind::Exam,
+                tr(locale, "prova-tjce-2023.pdf", "past-exam-2024.pdf"),
+                "texto",
+                &questions,
+                &[],
+                chrono::Local::now().date_naive(),
+            )
+            .unwrap();
+        drop(store);
+        crate::i18n::set(locale);
+        let mut harness = Harness::builder()
+            .with_size(screen_size([1180.0, 760.0]))
+            .build_eframe(|cc| KnowGiverApp::with_paths(cc, paths.clone(), AiConfig::default()));
+        crate::i18n::set(locale);
+        render(&mut harness, None, "warm-up");
+        harness.state_mut().clear_toasts();
+        harness.state_mut().dispatch(Command::StartQuiz(topic));
+        harness.state_mut().ui.screen = Screen::Quiz;
+        render(
+            &mut harness,
+            out.as_deref(),
+            &format!("{locale}-quiz-question"),
+        );
+        harness.state_mut().dispatch(Command::AnswerQuiz(0));
+        render(
+            &mut harness,
+            out.as_deref(),
+            &format!("{locale}-quiz-answered"),
+        );
+    }
+    crate::i18n::set(crate::i18n::DEFAULT_LOCALE);
+}
+
 /// The challenges screen, tall enough for the showcase, in every language.
 #[test]
 #[ignore = "needs a GPU; run with --ignored"]
@@ -438,13 +573,13 @@ fn challenges_snapshots() {
 fn snapshots() {
     let out = std::env::var_os("KG_SNAPSHOT_DIR").map(std::path::PathBuf::from);
 
-    for locale in crate::i18n::LOCALES {
+    for locale in locales() {
         let data = tempfile::tempdir().unwrap();
         let paths = AppPaths::new(data.path());
         seed(&paths, locale);
         crate::i18n::set(locale);
         let mut harness = Harness::builder()
-            .with_size([1180.0, 760.0])
+            .with_size(screen_size([1180.0, 760.0]))
             .build_eframe(|cc| KnowGiverApp::with_paths(cc, paths.clone(), AiConfig::default()));
         // The app applies the saved language on start; override it here.
         crate::i18n::set(locale);
@@ -1202,16 +1337,19 @@ fn seed_writing(
 #[ignore = "needs a GPU; run with --ignored"]
 fn writing_snapshots() {
     let out = std::env::var_os("KG_SNAPSHOT_DIR").map(std::path::PathBuf::from);
-    for locale in crate::i18n::LOCALES {
+    for locale in locales() {
         let data = tempfile::tempdir().unwrap();
         let paths = AppPaths::new(data.path());
         seed(&paths, locale);
         let (graded, review) = seed_writing(&paths, locale);
         crate::i18n::set(locale);
         let mut harness = Harness::builder()
-            .with_size([1180.0, 4600.0])
+            .with_size(screen_size([1180.0, 4600.0]))
             .build_eframe(|cc| KnowGiverApp::with_paths(cc, paths.clone(), AiConfig::default()));
         crate::i18n::set(locale);
+        // The seed unlocks stickers; keep their notices off the screenshots.
+        render(&mut harness, None, "warm-up");
+        harness.state_mut().clear_toasts();
         harness.state_mut().ui.screen = Screen::Discursive;
         render(&mut harness, out.as_deref(), &format!("{locale}-writing"));
         for (attempt, name) in [(graded, "writing-graded"), (review, "writing-review")] {
@@ -1642,12 +1780,13 @@ fn board_demo(locale: &str) -> [&'static str; 6] {
 #[ignore = "needs a GPU; run with --ignored"]
 fn whiteboard_snapshots() {
     let out = std::env::var_os("KG_SNAPSHOT_DIR").map(std::path::PathBuf::from);
-    for locale in crate::i18n::LOCALES {
+    for locale in locales() {
         crate::i18n::set(locale);
         let entries = board_demo(locale);
         let mut fonts_ready = false;
         let mut harness = Harness::builder()
             .with_size([1000.0, 660.0])
+            .with_pixels_per_point(board_scale())
             .build_ui(move |ui| {
                 crate::theme::apply(ui.ctx());
                 ui.ctx().set_theme(egui::Theme::Light);
@@ -1935,14 +2074,14 @@ fn seed_mock(paths: &AppPaths, locale: &'static str) -> kg_engine::MockAttemptId
 #[ignore = "needs a GPU; run with --ignored"]
 fn mock_snapshots() {
     let out = std::env::var_os("KG_SNAPSHOT_DIR").map(std::path::PathBuf::from);
-    for locale in crate::i18n::LOCALES {
+    for locale in locales() {
         let data = tempfile::tempdir().unwrap();
         let paths = AppPaths::new(data.path());
         seed(&paths, locale);
         let attempt = seed_mock(&paths, locale);
         crate::i18n::set(locale);
         let mut harness = Harness::builder()
-            .with_size([1180.0, 760.0])
+            .with_size(screen_size([1180.0, 760.0]))
             .build_eframe(|cc| KnowGiverApp::with_paths(cc, paths.clone(), AiConfig::default()));
         crate::i18n::set(locale);
         render(&mut harness, None, "warm-up");

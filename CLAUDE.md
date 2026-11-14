@@ -65,7 +65,7 @@ The user uploads an exam notice (edital PDF), the AI generates a study plan and 
 - Before committing: `cargo fmt --all`, `cargo clippy --workspace --all-targets -- -D warnings` and `cargo test --workspace`; CI runs the same checks on every push to `dev` and before a release
 
 ## Git workflow
-- Three long-lived branches, each a build channel of brands with a panel (`KG_CHANNEL`, `.github/workflows/channels.yml`): `main` is production (`[server] url`), `hom` homologation (`[server] hom_url`), `dev` development (`[server] dev_url`, `http://localhost:8080`). Each push builds that channel's installers and replaces its download (release `latest-<channel>`); production publishes only after the brand's legal review. Each channel installs as a program of its own (name, data folder, executable, installer GUID and credential entry get `HOM`/`DEV`), shows its name in a strip and in the window title, and only production updates itself. The licence brand (`slug`) is the same in every channel.
+- Three long-lived branches, each a build channel of brands with a panel (`KG_CHANNEL`, `.github/workflows/channels.yml`): `main` is production (`[server] url`), `hom` homologation (`[server] hom_url`), `dev` development (`[server] dev_url`, `http://localhost:8080`). Running that workflow by hand on a branch (`gh workflow run channels.yml --ref <branch>`) builds that channel's installers and replaces its download; pushes no longer build them (release `latest-<channel>`); production publishes only after the brand's legal review. Each channel installs as a program of its own (name, data folder, executable, installer GUID and credential entry get `HOM`/`DEV`), shows its name in a strip and in the window title, and only production updates itself. The licence brand (`slug`) is the same in every channel.
 - `dev` collects finished work; the owner merges `dev` into `hom` for homologation and `hom` into `main` on GitHub.
 - Start every task on a short-lived branch from `dev`: `git switch dev && git pull && git switch -c <type>/<short-name>` (types: `feat`, `fix`, `docs`, `chore`).
 - Commit on that branch, then merge it into `dev` and push `dev`: `git switch dev && git merge --no-ff <branch> && git push origin dev`. Delete the task branch afterwards (`git branch -d <branch>`; also on `origin` if it was pushed).
@@ -101,7 +101,7 @@ uses OpenAI's *Sign in with ChatGPT* registration under the app's own name, neve
 client's ID or private tokens. Live check: `cargo run -p kg-ai --example account_check --
 <chatgpt|claude-code|copilot> [model]`.
 
-Planned for managed local AI (ROADMAP Phase 8), not built; do not describe them as available
+Once planned for managed local AI (dropped from the ROADMAP on 2026-11-13), not built; do not describe them as available
 until they ship:
 - LiteLLM (<https://github.com/BerriAI/litellm>): local proxy, embedded in the installer
 - llama.cpp for text models, beyond OCR
