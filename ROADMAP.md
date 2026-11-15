@@ -1,5 +1,36 @@
 # Roadmap — Know Giver White-Label
 
+## Planned — Replace local transcription with Nemotron 3.5 0.6B
+
+Decision (2026-11-15): replace the current local STT pipeline with
+`nvidia/nemotron-3.5-asr-streaming-0.6b` to address inaccurate transcription and
+language confusion. Planned, not implemented; improved accuracy and speed must be
+verified on the target hardware before making it the default.
+
+- [ ] Integrate Nemotron through a suitable local runtime; evaluate
+      [NeMo-Speech.cpp](https://github.com/NVIDIA/NeMo-Speech.cpp) and quantized GGUF
+      weights, with Rust orchestration and an isolated child process where practical.
+      Rust is preferred, not mandatory: justified C/C++ dependencies are allowed.
+- [ ] Target entry-level Intel/AMD CPUs with 8 GB total system RAM and no dedicated
+      GPU. Keep CPU execution available; evaluate optional Vulkan acceleration on AMD
+      integrated and discrete GPUs, including shared-memory pressure.
+- [ ] Explicitly select the student's spoken language (pt-BR first), rather than
+      relying on automatic detection. Validate capture, resampling, silence handling
+      and utterance boundaries so existing audio problems do not carry over.
+- [ ] Compare the current pipeline and Nemotron on identical recordings: Brazilian
+      accents, exam terminology, numbers, noise, pauses and short answers. Record
+      transcription errors, language confusion, peak RAM/VRAM, cold-start time and
+      delay after speech on actual entry-level hardware; define release thresholds
+      from these measurements, not server GPU benchmarks.
+- [ ] Validate supported spoken languages and document gaps across all five app
+      locales; STT support alone does not enable unavailable TTS voices.
+- [ ] Pin the selected runtime/model versions and checksums in `local-ai.toml`;
+      review licences, downloads and packaging on Windows, Linux and macOS.
+      Keep the current pipeline as a fallback during migration; switch the default
+      after accuracy, latency and memory acceptance checks pass.
+
+Model reference: <https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b>.
+
 ## Current Status
 
 Version 0.3.0 of the white-label base, forked from Know Giver 0.39.3 on 2026-11-08; 0.2.0
