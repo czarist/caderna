@@ -255,7 +255,7 @@ Needs a brand with a panel (`[server]`); without one the app works as before.
       (ABNT in Portuguese, all five languages); handouts saved earlier keep their pages.
 - [ ] Check references against a bibliographic database before showing them.
 
-## Phase W8 — Lesson planning for teachers (planned, not started)
+## Phase W8 — Lesson planning for teachers (started)
 
 **Goal:** a "Planejamento" module in the teacher's area where the teacher schedules the
 classes of a classroom from the plan's content: on which days and times each class
@@ -388,7 +388,12 @@ Needs a brand with a panel (`[server]`) to publish; the planning itself works lo
 - [ ] Panel: feature tests for the schedule API, versioning, the student download and the
       client area pages.
 
-### Decisions to take before starting
+### Decisions (taken 2026-11-16)
+
+Owner's choices: its own module "Planejamento de aulas" (`Module::Planning`); schools
+only view schedules in the client area (editing stays in the teacher's app); all topics
+open by default; Owner (no panel) gets it as a personal calendar later. W8 is the next
+phase of work.
 
 - Module name and whether it is sold apart (proposed: "Planejamento de aulas", its own
   module) or comes with Criação de conteúdos.
@@ -508,7 +513,9 @@ owner's sign-off before it starts (see Decisions).
 - [ ] Only compiled addresses are reachable; the custom port works only for development.
 - [ ] Panel: token creation, hash only stored, code exchange, revocation, audit log.
 
-### Decisions to take before starting
+### Decisions (taken 2026-11-16)
+
+The owner accepted the proposals below (sign-off for changing the panel-address rule).
 
 - Changing the "never read on the student's computer" rule: the addresses stay compiled
   in, only the choice between them moves to runtime behind the token (proposed: accept).

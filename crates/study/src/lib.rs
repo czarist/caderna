@@ -13,6 +13,7 @@ pub mod plan;
 pub mod quiz;
 pub mod reading;
 pub mod review;
+pub mod schedule;
 pub mod store;
 pub mod sync;
 
