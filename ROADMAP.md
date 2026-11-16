@@ -153,8 +153,13 @@ A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
       the panel, with the legal version bumped.
 - [x] Apply the panel's pictures (icon, cover, reminder art, mark, handout watermark) and
       texts at runtime, as soon as they arrive, after checking them.
-- [ ] The device token's credential-store entry is one per brand, so two data folders
-      (`KG_DATA_DIR`) on one computer share it; key it by data folder too.
+- [x] The device token's credential-store entry is keyed by data folder: the standard
+      folder keeps `device-token`, another folder (`KG_DATA_DIR`) gets its own entry, so
+      two copies on one computer (a teacher and a student) never share or replace it.
+      Live check: `cargo run -p kg-engine --example two_instances -- <code> <code>`.
+- [x] Panel: desktop app releases (*Versões do app*) per channel with checksums; the
+      newest published production build is on `/baixar` and in the client area, and CI
+      can upload builds with a token (`PUT /api/releases/…`).
 - [x] Panel address per build: `[server] dev_url` (localhost) for `cargo run` and tests,
       `[server] url` or `KG_SERVER_URL` for releases; never read on the student's computer.
 - [x] Modules per licence from the panel (Videoaula, Criação de conteúdos): hidden in the

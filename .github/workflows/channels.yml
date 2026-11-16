@@ -127,3 +127,21 @@ jobs:
           gh release delete "$TAG" --cleanup-tag --yes || true
           gh release create "$TAG" release/* --target "$GITHUB_SHA" \
             --title "$NAME ($short)" --notes "$notes" "${kind[@]}"
+      # The panel's "Versões do app" (CADERNA-DASHBOARD) keeps the same files for /baixar and
+      # the client area. Runs only where the panel is online: set the repository variable
+      # PANEL_URL (e.g. https://hom.caderna.ia.br) and the secret RELEASES_UPLOAD_TOKEN.
+      - name: Send the build to the panel
+        if: vars.PANEL_URL != ''
+        env:
+          PANEL_URL: ${{ vars.PANEL_URL }}
+          UPLOAD_TOKEN: ${{ secrets.RELEASES_UPLOAD_TOKEN }}
+        run: |
+          test -n "$UPLOAD_TOKEN"
+          case "$GITHUB_REF_NAME" in main) channel=production ;; hom) channel=hom ;; *) channel=dev ;; esac
+          version="$(find artifacts -type f -name '*-setup.exe' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)"
+          test -n "$version"
+          for file in release/*; do
+            curl -fsS -X PUT --data-binary "@$file" -H "Content-Type: application/octet-stream" -H "Authorization: Bearer $UPLOAD_TOKEN" "$PANEL_URL/api/releases/$channel/$version/files/$(basename "$file")"
+            echo
+          done
+          curl -fsS -X POST -H "Accept: application/json" -H "Authorization: Bearer $UPLOAD_TOKEN" "$PANEL_URL/api/releases/$channel/$version/publish"

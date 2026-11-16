@@ -323,7 +323,16 @@ mod tests {
                 "{at}: AI errors"
             );
             assert!(
-                says(text, &["limites da IA", "limits of the AI", "限界", "限制"]),
+                says(
+                    text,
+                    &[
+                        "limites da IA",
+                        "qualidade depende do modelo",
+                        "limits of the AI",
+                        "限界",
+                        "限制"
+                    ]
+                ),
                 "{at}: limits of the chosen AI"
             );
         }

@@ -14,8 +14,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     // Also to a file: release builds have no console to read it from.
     let log = log_file();
-    let fresh_log = log.as_ref().and_then(|file| file.try_clone().ok());
     let subscriber = tracing_subscriber::fmt().with_env_filter(filter);
+    let log_ready = log.is_some();
     match log {
         Some(file) => subscriber
             .with_ansi(false)
@@ -40,8 +40,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     };
     // The log is per run; it is only emptied once this copy is the one running.
-    if let Some(file) = fresh_log
-        && let Err(err) = file.set_len(0)
+    // An append-only handle cannot truncate on Windows, so a writable one does;
+    // the log's appends then start again at the beginning.
+    if log_ready
+        && let Err(err) = std::fs::OpenOptions::new()
+            .write(true)
+            .open(kg_ui::AppPaths::detect().log_file())
+            .and_then(|file| file.set_len(0))
     {
         tracing::warn!(%err, "could not clear the previous log");
     }
