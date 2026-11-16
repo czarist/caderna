@@ -29,6 +29,7 @@ pub enum Icon {
     Award,
     Timer,
     Users,
+    Calendar,
 }
 
 impl Icon {
@@ -37,6 +38,7 @@ impl Icon {
             Self::Edital => include_image!("../assets/icons/file-text.svg"),
             Self::Plan => include_image!("../assets/icons/map.svg"),
             Self::Users => include_image!("../assets/icons/users.svg"),
+            Self::Calendar => include_image!("../assets/icons/calendar.svg"),
             Self::Board => include_image!("../assets/icons/landmark.svg"),
             Self::Lesson => include_image!("../assets/icons/mic.svg"),
             Self::Quiz => include_image!("../assets/icons/list-checks.svg"),

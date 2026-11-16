@@ -1965,3 +1965,122 @@ fn a_student_receives_courses_keeps_progress_and_creates_no_plans() {
         .unwrap();
     assert!(engine.plans().is_empty());
 }
+
+fn schedule_spec() -> crate::ScheduleSpec {
+    use chrono::{NaiveDate, NaiveTime, Weekday};
+    crate::ScheduleSpec {
+        start: NaiveDate::from_ymd_opt(2026, 3, 2).unwrap(),
+        end: NaiveDate::from_ymd_opt(2026, 6, 30).unwrap(),
+        classes: vec![crate::ClassTime {
+            weekday: Weekday::Mon,
+            start: NaiveTime::from_hms_opt(19, 0, 0).unwrap(),
+            minutes: 100,
+        }],
+        blocked: Default::default(),
+        holidays: crate::HolidayCalendar::Brazil,
+        review_every: 0,
+        mock_exam: false,
+    }
+}
+
+#[test]
+fn a_teacher_plans_classes_without_ai_edits_undoes_and_exports() {
+    let (mut engine, dir) = engine_with_plan();
+    let plan = engine.active_plan().unwrap().id;
+    let topics = engine.active_plan().unwrap().topics().count();
+    engine
+        .handle(Command::GenerateSchedule {
+            plan,
+            classroom: 0,
+            spec: Box::new(schedule_spec()),
+        })
+        .unwrap();
+    let saved = engine.class_schedule(plan, 0).expect("saved");
+    let placed: std::collections::HashSet<_> = saved
+        .schedule
+        .sessions
+        .iter()
+        .flat_map(|s| s.topics.clone())
+        .collect();
+    assert_eq!(placed.len(), topics, "every topic has a class");
+    assert_eq!(saved.schedule.shortfall_minutes, 0);
+    let titles = engine.schedule_topic_titles(plan);
+    assert!(placed.iter().all(|key| titles.contains_key(key)));
+
+    let mut edited = saved.schedule.clone();
+    edited.sessions[0].status = crate::SessionStatus::Given;
+    edited.sessions[0].plan.objectives = vec!["Reconhecer funções".into()];
+    engine
+        .handle(Command::SaveSchedule {
+            plan,
+            classroom: 0,
+            schedule: Box::new(edited.clone()),
+        })
+        .unwrap();
+    engine
+        .handle(Command::ReplanSchedule { plan, classroom: 0 })
+        .unwrap();
+    let replanned = engine.class_schedule(plan, 0).unwrap().schedule;
+    assert_eq!(
+        replanned.sessions[0], edited.sessions[0],
+        "a given class stays"
+    );
+
+    engine
+        .handle(Command::UndoSchedule { plan, classroom: 0 })
+        .unwrap();
+    assert_eq!(engine.class_schedule(plan, 0).unwrap().schedule, edited);
+
+    let path = dir.path().join("aulas.ics");
+    engine
+        .handle(Command::ExportScheduleCalendar {
+            plan,
+            classroom: 0,
+            path: path.clone(),
+            labels: Box::new(crate::CalendarLabels {
+                class: "Aula".into(),
+                review: "Revisão".into(),
+                mock_exam: "Simulado".into(),
+                objectives: "Objetivos".into(),
+                homework: "Tarefa".into(),
+            }),
+        })
+        .unwrap();
+    let ics = std::fs::read_to_string(path).unwrap();
+    assert!(ics.contains("Reconhecer funções"));
+
+    engine
+        .handle(Command::DeleteSchedule { plan, classroom: 0 })
+        .unwrap();
+    assert!(engine.class_schedule(plan, 0).is_none());
+}
+
+#[test]
+fn students_and_licences_without_planning_cannot_plan_classes() {
+    let (mut engine, _dir) = engine_with_plan();
+    let plan = engine.active_plan().unwrap().id;
+    let generate = |plan| Command::GenerateSchedule {
+        plan,
+        classroom: 0,
+        spec: Box::new(schedule_spec()),
+    };
+    if !kg_brand::has_server() {
+        // Without a panel every module is open and nobody is a student.
+        engine.handle(generate(plan)).unwrap();
+        return;
+    }
+    engine.set_modules_for_test(&["lessons", "content"]);
+    assert!(matches!(
+        engine.handle(generate(plan)),
+        Err(EngineError::ModuleDisabled(crate::Module::Planning))
+    ));
+    engine.set_modules_for_test(&["planning"]);
+    engine.set_role_for_test("student");
+    assert!(matches!(
+        engine.handle(generate(plan)),
+        Err(EngineError::TeachersOnly)
+    ));
+    engine.set_role_for_test("teacher");
+    engine.handle(generate(plan)).unwrap();
+    assert!(engine.class_schedule(plan, 0).is_some());
+}

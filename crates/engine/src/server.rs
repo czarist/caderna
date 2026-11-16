@@ -832,6 +832,12 @@ impl crate::Engine {
         self.panel.session.role = Some(role.to_owned());
     }
 
+    /// Sets the licence's modules as if the panel had sent them, for tests.
+    #[cfg(test)]
+    pub(crate) fn set_modules_for_test(&mut self, modules: &[&str]) {
+        self.panel.session.modules = Some(modules.iter().map(|m| (*m).to_owned()).collect());
+    }
+
     /// The brand from the panel: the one kept at an earlier start, or the
     /// newer one the panel sent during this session.
     pub fn panel_brand(&self) -> Option<&PanelBrand> {

@@ -60,6 +60,12 @@ impl Command {
                 | Self::ReuseBoardDocument(_)
                 | Self::SetBoardItem { .. }
                 | Self::PublishPlan { .. }
+                | Self::GenerateSchedule { .. }
+                | Self::SaveSchedule { .. }
+                | Self::ReplanSchedule { .. }
+                | Self::UndoSchedule { .. }
+                | Self::DeleteSchedule { .. }
+                | Self::ExportScheduleCalendar { .. }
                 | Self::LoadClassrooms
         )
     }
