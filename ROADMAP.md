@@ -33,9 +33,11 @@ Model reference: <https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b>
 
 ## Current Status
 
-Version 0.3.0 of the white-label base, forked from Know Giver 0.39.3 on 2026-11-08; 0.2.0
-added classes in the cloud (Phase W7); 0.3.0 adds voice downloads on Linux and macOS and
-Cebraspe-style true/false quizzes.
+Version 0.4.0 of the white-label base, forked from Know Giver 0.39.3 on 2026-11-08; 0.2.0
+added classes in the cloud (Phase W7); 0.3.0 voice downloads on Linux and macOS and
+Cebraspe-style true/false quizzes; 0.4.0 the Caderna panel (Phase W6: online licences,
+access codes, modules and student restrictions per school, charges and subscriptions,
+build channels, app releases on the panel) and one device token per data folder.
 Everything Know Giver does is here (edital → plan, voice lessons with whiteboard,
 handouts and reader, quizzes and reviews, mock exams, written answers with local OCR,
 challenges, five UI languages, account sign-ins, tray and reminders). Know Giver's own

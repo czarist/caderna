@@ -9,6 +9,8 @@ repository.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-16
+
 ### Added
 - **Snapshot options for the website.** The screen snapshots take `KG_SNAPSHOT_SIZE`
   (for example `1920x1080`), `KG_SNAPSHOT_LOCALE` (one language) and
@@ -63,6 +65,9 @@ repository.
   - a `scheduler` service in Docker for the daily billing run.
 
 ### Changed
+- Caderna terms and privacy policy `2026-11-16.1` (users agree again): local photo
+  reading uses the graphics card through Vulkan on Windows and Linux, and nothing of it
+  leaves the computer.
 - Channel builds (`.github/workflows/channels.yml`) run only by hand
   (`gh workflow run channels.yml --ref <branch>`), no longer on every push, to save
   Actions minutes; releases still build from a `v*` tag.

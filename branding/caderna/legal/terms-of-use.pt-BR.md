@@ -1,6 +1,6 @@
 # Termos de Uso do {{app}}
 
-Versão {{version}} · Última atualização: 13 de novembro de 2026.
+Versão {{version}} · Última atualização: 16 de novembro de 2026.
 
 Estes Termos regem o uso do aplicativo {{app}}, do painel da escola (área do cliente) e do
 site do {{app}}. Leia com atenção: ao aceitar, você concorda com eles e com a Política de
@@ -145,7 +145,10 @@ O aplicativo pode usar serviços de terceiros: a Wikipédia e a Wikimedia Common
 quadro e das apostilas, com autor e licença), o GitHub (atualizações), sites de onde baixa
 modelos de voz, fala e leitura de imagens, e um serviço de voz na nuvem, se o Usuário o
 ativar. O reconhecimento de fala e a leitura local de fotos (PaddleOCR-VL com llama.cpp)
-rodam no próprio computador. Não respondemos pela disponibilidade nem pelo conteúdo desses
+rodam no próprio computador. No Windows e no Linux, a leitura local de fotos usa a placa de
+vídeo pelo Vulkan quando há uma compatível, com o driver já instalado no computador, e volta
+ao processador se ela não funcionar; no macOS, usa o processador. Nem o llama.cpp nem o
+Vulkan enviam as fotos a nós ou a terceiros. Não respondemos pela disponibilidade nem pelo conteúdo desses
 serviços.
 
 ## 12. Crianças e adolescentes
