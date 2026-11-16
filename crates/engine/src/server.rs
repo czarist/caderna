@@ -646,7 +646,15 @@ fn vault_account(data_dir: Option<&std::path::Path>) -> String {
     match data_dir {
         None => "device-token".to_owned(),
         Some(dir) => {
-            let digest = Sha256::digest(dir.to_string_lossy().as_bytes());
+            // The same folder however it was typed: separators, `.`, a
+            // trailing slash, and letter case on Windows.
+            let absolute = std::path::absolute(dir).unwrap_or_else(|_| dir.to_path_buf());
+            let normal: std::path::PathBuf = absolute.components().collect();
+            let mut text = normal.to_string_lossy().into_owned();
+            if cfg!(windows) {
+                text = text.to_lowercase();
+            }
+            let digest = Sha256::digest(text.as_bytes());
             let short: String = digest.iter().take(6).map(|b| format!("{b:02x}")).collect();
             format!("device-token-{short}")
         }
@@ -1147,6 +1155,17 @@ mod tests {
             a,
             vault_account(Some(std::path::Path::new("C:/data/teacher")))
         );
+        // However the same folder is typed, it is the same entry.
+        assert_eq!(
+            a,
+            vault_account(Some(std::path::Path::new("C:/data/./teacher/")))
+        );
+        if cfg!(windows) {
+            assert_eq!(
+                a,
+                vault_account(Some(std::path::Path::new(r"c:\Data\Teacher")))
+            );
+        }
     }
 
     /// A scripted panel that records the calls it gets.
