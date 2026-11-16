@@ -29,6 +29,8 @@ pub struct PlanningUi {
     plan: Option<PlanId>,
     classroom: i64,
     form: Option<Form>,
+    /// The teacher asked to change the days of an existing calendar.
+    changing_days: bool,
     /// The class whose details are open, with its edit buffers.
     editing: Option<Editing>,
     error: Option<String>,
@@ -188,7 +190,10 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
         choose(ui, engine, state, plan);
         ui.add_space(12.0);
         let saved = engine.class_schedule(plan, state.classroom);
-        match (&saved, state.form.is_some()) {
+        if saved.is_none() && state.changing_days {
+            state.changing_days = false;
+        }
+        match (&saved, state.changing_days) {
             (None, _) | (Some(_), true) => {
                 let spec = saved.as_ref().map(|s| &s.schedule.spec);
                 form_card(ui, state, spec, plan, saved.is_some(), &mut actions);
@@ -221,6 +226,7 @@ fn choose(ui: &mut egui::Ui, engine: &Engine, state: &mut PlanningUi, plan: Plan
                     if ui.selectable_label(p.id == plan, &p.title).clicked() {
                         state.plan = Some(p.id);
                         state.form = None;
+                        state.changing_days = false;
                         state.editing = None;
                     }
                 }
@@ -245,6 +251,7 @@ fn choose(ui: &mut egui::Ui, engine: &Engine, state: &mut PlanningUi, plan: Plan
                 {
                     state.classroom = 0;
                     state.form = None;
+                    state.changing_days = false;
                 }
                 for classroom in classrooms {
                     if ui
@@ -253,6 +260,7 @@ fn choose(ui: &mut egui::Ui, engine: &Engine, state: &mut PlanningUi, plan: Plan
                     {
                         state.classroom = classroom.id;
                         state.form = None;
+                        state.changing_days = false;
                     }
                 }
             });
@@ -341,6 +349,7 @@ fn form_card(
                         });
                         state.error = None;
                         state.editing = None;
+                        state.changing_days = false;
                         keep = false;
                     }
                     Err(message) => state.error = Some(message),
@@ -348,6 +357,7 @@ fn form_card(
             }
             if has_schedule && ui.button(t!("planning.cancel")).clicked() {
                 state.error = None;
+                state.changing_days = false;
                 keep = false;
             }
         });
@@ -408,6 +418,7 @@ fn toolbar(
             }
             if ui.button(t!("planning.change_days")).clicked() {
                 state.form = Some(Form::from_spec(&schedule.spec));
+                state.changing_days = true;
             }
             if ui
                 .button(t!("planning.export"))
