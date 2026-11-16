@@ -76,6 +76,9 @@ repository.
   pictures and handout brand), without restarting the app.
 
 ### Fixed
+- Two copies of the app on one computer (`KG_DATA_DIR`), such as a teacher and a
+  student, keep separate device tokens in the credential store instead of
+  replacing each other's; the standard data folder keeps its entry.
 - CI frees disk space on the runners before building.
 
 ## [0.3.0] - 2026-11-10

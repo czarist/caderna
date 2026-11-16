@@ -35,7 +35,9 @@ try {
     $brandFile = Join-Path $brandDir 'brand.toml'
     if (-not (Test-Path -LiteralPath $brandFile)) { throw "Brand file not found: $brandFile" }
     $env:KG_BRAND_DIR = $brandDir
-    $target = if ($env:CARGO_TARGET_DIR) { [System.IO.Path]::GetFullPath($env:CARGO_TARGET_DIR) } else { Join-Path $root 'target' }
+    # Cargo's own answer, so CARGO_TARGET_DIR and a local .cargo/config.toml target-dir both count.
+    $target = (cargo metadata --format-version 1 --no-deps | ConvertFrom-Json).target_directory
+    if ($LASTEXITCODE -ne 0 -or -not $target) { throw 'cargo metadata failed' }
     cargo build -p kg-brand --example metadata
     if ($LASTEXITCODE -ne 0) { throw 'Invalid brand metadata' }
     $metadata = Join-Path $target 'debug\examples\metadata.exe'
@@ -76,7 +78,7 @@ try {
     if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
     New-Item -ItemType Directory -Force $stage | Out-Null
     # Cargo always builds know-giver.exe; the package carries the brand's name.
-    Copy-Item (Join-Path $target 'release\know-giver.exe') (Join-Path $stage "$appExe.exe")
+    Copy-Item (Join-Path $target 'release\know-giver.exe') (Join-Path $stage "$appExe.exe") -ErrorAction Stop
     & (Join-Path $PSScriptRoot 'sign-windows.ps1') -Path (Join-Path $stage "$appExe.exe") -Required:$RequireSignature
     Copy-Item (Join-Path $target 'release\local-runtime') $stage -Recurse
     foreach ($dll in @('vcruntime140.dll', 'vcruntime140_1.dll')) {

@@ -667,10 +667,11 @@ impl Engine {
                 Store::open_in_memory()?
             }
         };
+        let vault = server::Vault::system(&paths);
         let mut engine = Self::with_store(store, paths, env_ai, notices);
         engine.start_demo(demo::clock_file());
         engine.load_license();
-        engine.start_panel(server::Vault::System, true);
+        engine.start_panel(vault, true);
         Ok(engine)
     }
 

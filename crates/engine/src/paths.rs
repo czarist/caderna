@@ -21,10 +21,20 @@ impl AppPaths {
         if let Some(dir) = std::env::var_os("KG_DATA_DIR").filter(|d| !d.is_empty()) {
             return Self::new(dir);
         }
+        Self::standard()
+    }
+
+    /// The OS local data folder for this brand, ignoring `KG_DATA_DIR`.
+    pub fn standard() -> Self {
         let base = directories::BaseDirs::new()
             .map(|d| d.data_local_dir().to_path_buf())
             .unwrap_or_else(|| PathBuf::from("."));
         Self::new(base.join(kg_brand::DATA_DIR))
+    }
+
+    /// Whether this is the brand's standard data folder.
+    pub(crate) fn is_standard(&self) -> bool {
+        self.data_dir == Self::standard().data_dir
     }
 
     pub fn database(&self) -> PathBuf {

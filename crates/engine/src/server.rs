@@ -597,40 +597,58 @@ fn device_id(store: &mut kg_study::Store) -> String {
 /// Where the device token is kept: the operating system's credential store
 /// (Windows Credential Manager, macOS Keychain, Linux kernel keyring), or
 /// only memory. When it is lost the app renews it with the licence key.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum Vault {
-    System,
+    /// The credential store, under this data folder's account.
+    System(String),
     Memory,
 }
 
 impl Vault {
-    fn entry() -> Option<keyring::Entry> {
-        keyring::Entry::new(&format!("{}-panel", kg_brand::INSTALL_SLUG), "device-token")
+    /// The credential store entry for this data folder.
+    pub(crate) fn system(paths: &crate::AppPaths) -> Self {
+        let dir = (!paths.is_standard()).then_some(paths.data_dir.as_path());
+        Self::System(vault_account(dir))
+    }
+
+    fn entry(&self) -> Option<keyring::Entry> {
+        let Self::System(account) = self else {
+            return None;
+        };
+        keyring::Entry::new(&format!("{}-panel", kg_brand::INSTALL_SLUG), account)
             .map_err(|err| tracing::warn!(%err, "credential store unavailable"))
             .ok()
     }
 
-    fn load(self) -> Option<String> {
-        if self == Self::Memory {
-            return None;
-        }
-        Self::entry()?.get_password().ok()
+    fn load(&self) -> Option<String> {
+        self.entry()?.get_password().ok()
     }
 
-    fn save(self, token: &str) {
-        if self == Self::System
-            && let Some(entry) = Self::entry()
+    fn save(&self, token: &str) {
+        if let Some(entry) = self.entry()
             && let Err(err) = entry.set_password(token)
         {
             tracing::warn!(%err, "could not keep the device token in the credential store");
         }
     }
 
-    fn clear(self) {
-        if self == Self::System
-            && let Some(entry) = Self::entry()
-        {
+    fn clear(&self) {
+        if let Some(entry) = self.entry() {
             let _ = entry.delete_credential();
+        }
+    }
+}
+
+/// The credential-store account for a data folder. The standard folder keeps
+/// the original name; another folder (`KG_DATA_DIR`) gets its own entry, so
+/// two data folders on one computer never share or replace a device token.
+fn vault_account(data_dir: Option<&std::path::Path>) -> String {
+    match data_dir {
+        None => "device-token".to_owned(),
+        Some(dir) => {
+            let digest = Sha256::digest(dir.to_string_lossy().as_bytes());
+            let short: String = digest.iter().take(6).map(|b| format!("{b:02x}")).collect();
+            format!("device-token-{short}")
         }
     }
 }
@@ -1117,6 +1135,19 @@ impl crate::Engine {
 mod tests {
     use super::*;
     use std::cell::RefCell;
+
+    #[test]
+    fn each_data_folder_keeps_its_own_device_token() {
+        assert_eq!(vault_account(None), "device-token");
+        let a = vault_account(Some(std::path::Path::new("C:/data/teacher")));
+        let b = vault_account(Some(std::path::Path::new("C:/data/student")));
+        assert_ne!(a, b);
+        assert!(a.starts_with("device-token-"));
+        assert_eq!(
+            a,
+            vault_account(Some(std::path::Path::new("C:/data/teacher")))
+        );
+    }
 
     /// A scripted panel that records the calls it gets.
     #[derive(Default)]

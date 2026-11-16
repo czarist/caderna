@@ -17,7 +17,9 @@ try {
         throw 'llama.cpp version, commit or repository is invalid in local-ai.toml'
     }
 
-    $target = if ($env:CARGO_TARGET_DIR) { [System.IO.Path]::GetFullPath($env:CARGO_TARGET_DIR) } else { Join-Path $root 'target' }
+    # Cargo's own answer, so CARGO_TARGET_DIR and a local .cargo/config.toml target-dir both count.
+    $target = (cargo metadata --format-version 1 --no-deps | ConvertFrom-Json).target_directory
+    if ($LASTEXITCODE -ne 0 -or -not $target) { throw 'cargo metadata failed' }
     $source = Join-Path $target 'local-ai-src\llama.cpp'
     $build = Join-Path $target 'local-ai-build'
     $runtime = Join-Path $target 'release\local-runtime'
