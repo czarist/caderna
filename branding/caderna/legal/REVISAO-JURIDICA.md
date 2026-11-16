@@ -16,6 +16,12 @@ e pede um novo aceite sempre que a versão muda.
 O Caderna é oferecido só no Brasil e só em português do Brasil. Não há versões em outros
 idiomas ou regiões.
 
+## Novidades da versão 2026-11-16.1 (placa de vídeo na leitura local de fotos)
+
+- Termos (seção 11) e Política (seção 4): a leitura local de fotos usa a placa de vídeo pelo
+  Vulkan no Windows e no Linux, com o driver já instalado, e o processador nos outros casos;
+  nada disso envia as fotos à Caderna nem a terceiros. Não muda o que sai do computador.
+
 ## Novidades da versão 2026-11-11.1 (restrições da escola e créditos das imagens)
 
 - A escola pode bloquear, para os alunos, a exportação das apostilas e as capturas de tela.

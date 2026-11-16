@@ -1,6 +1,6 @@
 # Política de Privacidade do {{app}}
 
-Versão {{version}} · Última atualização: 13 de novembro de 2026.
+Versão {{version}} · Última atualização: 16 de novembro de 2026.
 
 Esta Política explica como tratamos dados pessoais no aplicativo {{app}}, no painel da
 escola (área do cliente) e no site do {{app}}, de acordo com a Lei nº 13.709/2018 (Lei Geral
@@ -89,6 +89,11 @@ gravações de tela. Essa lista é lida no computador e não é guardada nem env
 | Wikipédia e Wikimedia Commons | Termo de busca de uma imagem e o nome do arquivo, para o crédito | Se as imagens estiverem ligadas |
 | GitHub, Hugging Face e sites das vozes | Pedidos de download, que mostram o IP e a versão do app | Ao procurar atualizações e baixar modelos |
 | Serviço de voz na nuvem | O texto que o tutor vai falar | Só se o usuário ativar a voz na nuvem |
+
+A leitura local de fotos (PaddleOCR-VL com llama.cpp) roda no computador do usuário. No
+Windows e no Linux ela usa a placa de vídeo pelo Vulkan, com o driver já instalado, quando há
+uma compatível, e o processador nos outros casos. Nem o llama.cpp nem o Vulkan enviam as
+fotos a nós ou a terceiros.
 
 O nome do computador não é enviado. O Painel guarda, por computador, o hash, o sistema, a
 versão e as datas de ativação e do último contato; por tarefa de IA, só o modelo, a
