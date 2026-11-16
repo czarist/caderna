@@ -122,11 +122,182 @@ pub struct Session {
     /// The teacher fixed it: replanning keeps it as it is.
     #[serde(default)]
     pub locked: bool,
+    /// What happens in it: suggested by the AI when the panel's AI is
+    /// reachable, then edited by the teacher. Empty until then.
+    #[serde(default)]
+    pub plan: SessionPlan,
+}
+
+/// Where a class happens.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case", tag = "mode", content = "link")]
+pub enum SessionMode {
+    #[default]
+    InPerson,
+    /// Online, with an `https` link.
+    Online(String),
+    SelfStudy,
+}
+
+/// What a class activity is.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ActivityKind {
+    Explanation,
+    /// Opens the topic's voice lesson in the student's app.
+    VoiceLesson,
+    HandoutReading,
+    Quiz,
+    SpokenReview,
+    WrittenAnswer,
+    MockExam,
+    Exercise,
+    Other,
+}
+
+impl ActivityKind {
+    /// Kinds the student can do alone and the app can tell were done.
+    pub fn works_as_homework(self) -> bool {
+        matches!(
+            self,
+            Self::VoiceLesson
+                | Self::HandoutReading
+                | Self::Quiz
+                | Self::WrittenAnswer
+                | Self::MockExam
+        )
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Activity {
+    pub kind: ActivityKind,
+    pub minutes: u32,
+    /// What to do, in the teacher's words.
+    pub text: String,
+    /// The topic it is about, when it opens something in the app.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub topic: Option<String>,
+}
+
+/// The teacher's plan for one class.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct SessionPlan {
+    #[serde(default)]
+    pub mode: SessionMode,
+    #[serde(default)]
+    pub objectives: Vec<String>,
+    #[serde(default)]
+    pub activities: Vec<Activity>,
+    #[serde(default)]
+    pub materials: Vec<String>,
+    /// Done by the students before the next class.
+    #[serde(default)]
+    pub homework: Vec<Activity>,
+    /// Shown to the students.
+    #[serde(default)]
+    pub note: String,
+    /// Only for the teacher; never published.
+    #[serde(default)]
+    pub private_note: String,
+}
+
+impl SessionPlan {
+    pub fn is_empty(&self) -> bool {
+        self.objectives.is_empty() && self.activities.is_empty() && self.homework.is_empty()
+    }
+
+    /// Minutes of the class activities.
+    pub fn activity_minutes(&self) -> u32 {
+        self.activities.iter().map(|a| a.minutes).sum()
+    }
 }
 
 impl Session {
     fn kept_by_replan(&self) -> bool {
         self.locked || self.status == SessionStatus::Given
+    }
+}
+
+/// When the students see a topic.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum ReleaseRule {
+    /// Every topic from the start (the app's behaviour without a schedule).
+    #[default]
+    AllOpen,
+    /// A topic opens on the day of its first class.
+    AsClassesHappen,
+}
+
+/// A classroom's schedule as the teacher keeps it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClassSchedule {
+    pub spec: ScheduleSpec,
+    pub sessions: Vec<Session>,
+    #[serde(default)]
+    pub release: ReleaseRule,
+    /// IANA time zone of the classroom.
+    #[serde(default = "default_time_zone")]
+    pub time_zone: String,
+    /// Shortfall of the last planning, for the screen's warning.
+    #[serde(default)]
+    pub shortfall_minutes: u32,
+    #[serde(default)]
+    pub unplaced: Vec<String>,
+}
+
+fn default_time_zone() -> String {
+    "America/Sao_Paulo".to_owned()
+}
+
+impl ClassSchedule {
+    pub fn new(spec: ScheduleSpec, planned: Schedule) -> Self {
+        Self {
+            spec,
+            sessions: planned.sessions,
+            release: ReleaseRule::default(),
+            time_zone: default_time_zone(),
+            shortfall_minutes: planned.shortfall_minutes,
+            unplaced: planned.unplaced,
+        }
+    }
+
+    /// Topics the students may open on `today` under the release rule.
+    pub fn topic_open(&self, topic: &str, today: NaiveDate) -> bool {
+        match self.release {
+            ReleaseRule::AllOpen => true,
+            ReleaseRule::AsClassesHappen => {
+                let first = self
+                    .sessions
+                    .iter()
+                    .filter(|s| {
+                        s.kind == SessionKind::Class && s.status != SessionStatus::Cancelled
+                    })
+                    .filter(|s| s.topics.iter().any(|t| t == topic))
+                    .map(|s| s.date)
+                    .min();
+                // A topic with no class stays open: nothing says when to open it.
+                first.is_none_or(|day| day <= today)
+            }
+        }
+    }
+
+    /// The next class on or after `today` that is not cancelled.
+    pub fn next_session(&self, today: NaiveDate) -> Option<&Session> {
+        self.sessions
+            .iter()
+            .filter(|s| s.date >= today && s.status == SessionStatus::Planned)
+            .min_by_key(|s| (s.date, s.start))
+    }
+
+    /// The copy that goes to students: no private notes.
+    pub fn for_students(&self) -> Self {
+        let mut copy = self.clone();
+        for session in &mut copy.sessions {
+            session.plan.private_note.clear();
+        }
+        copy
     }
 }
 
@@ -271,6 +442,15 @@ pub fn replan(
         .filter(|s| s.kind == SessionKind::Class)
         .count();
     let mut schedule = fill_from(slots, spec, &left, &mut keys, since_review);
+    // A session that kept its key and its topics keeps the teacher's plan.
+    for session in &mut schedule.sessions {
+        if let Some(old) = previous
+            .iter()
+            .find(|old| old.key == session.key && old.topics == session.topics)
+        {
+            session.plan = old.plan.clone();
+        }
+    }
     schedule.sessions.extend(kept);
     schedule.sessions.sort_by_key(|s| (s.date, s.start));
     schedule
@@ -306,6 +486,7 @@ fn fill_from(
             topics,
             status: SessionStatus::Planned,
             locked: false,
+            plan: SessionPlan::default(),
         };
         if current.is_none() {
             break;
@@ -378,6 +559,7 @@ fn fill_from(
             topics: all,
             status: SessionStatus::Planned,
             locked: false,
+            plan: SessionPlan::default(),
         });
     }
 
@@ -596,6 +778,48 @@ mod tests {
         let mut sorted = again.sessions.clone();
         sorted.sort_by_key(|s| (s.date, s.start));
         assert_eq!(sorted, again.sessions);
+    }
+
+    #[test]
+    fn topics_open_as_classes_happen_and_students_never_see_private_notes() {
+        let spec = mon_wed(d(2026, 3, 2), d(2026, 3, 31));
+        let mut schedule = ClassSchedule::new(spec.clone(), plan(&spec, &topics(&[100, 100, 100])));
+        schedule.sessions[0].plan.private_note = "turma agitada".into();
+        schedule.sessions[0].plan.note = "tragam calculadora".into();
+
+        assert!(
+            schedule.topic_open("t3", d(2026, 3, 1)),
+            "all open by default"
+        );
+        schedule.release = ReleaseRule::AsClassesHappen;
+        // t2 has its first class on Wednesday 4 March.
+        assert!(!schedule.topic_open("t2", d(2026, 3, 3)));
+        assert!(schedule.topic_open("t2", d(2026, 3, 4)));
+        assert!(schedule.topic_open("no-class", d(2026, 3, 1)));
+
+        assert_eq!(
+            schedule.next_session(d(2026, 3, 3)).map(|s| s.date),
+            Some(d(2026, 3, 4))
+        );
+        schedule.sessions[1].status = SessionStatus::Cancelled;
+        assert_eq!(
+            schedule.next_session(d(2026, 3, 3)).map(|s| s.date),
+            Some(d(2026, 3, 9))
+        );
+
+        let shared = schedule.for_students();
+        assert!(shared.sessions[0].plan.private_note.is_empty());
+        assert_eq!(shared.sessions[0].plan.note, "tragam calculadora");
+    }
+
+    #[test]
+    fn replanning_keeps_the_plan_of_a_session_with_the_same_topics() {
+        let spec = mon_wed(d(2026, 3, 2), d(2026, 3, 31));
+        let loads = topics(&[100, 100]);
+        let mut previous = plan(&spec, &loads).sessions;
+        previous[1].plan.objectives = vec!["Resolver equações".into()];
+        let again = replan(&spec, &loads, &previous, d(2026, 3, 1));
+        assert_eq!(again.sessions[1].plan.objectives, ["Resolver equações"]);
     }
 
     #[test]
