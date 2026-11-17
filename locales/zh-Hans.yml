@@ -123,6 +123,8 @@ nav:
   board: "历年真题"
   lesson: "课堂"
   quiz: "测验"
+  lesson_check: "检查课程"
+  quiz_check: "检查测验"
   review: "复习"
   progress: "进度"
   challenges: "成就"
@@ -844,6 +846,15 @@ settings:
     piper_note: "Piper 从项目官方的 GitHub 页面（rhasspy/piper）下载。"
     piper_unavailable: "Piper 没有可在 macOS 上运行的官方版本。请使用在 sherpa-onnx 上运行的 Kokoro 语音。"
     unavailable: "此系统不可用"
+  developer:
+    title: "开发者模式"
+    hint: "不论许可证如何，以学生或老师的视角查看应用。在关闭应用前有效。"
+    student: "进入学生视图"
+    teacher: "进入老师视图"
+    licence: "返回许可证视图"
+    now_student: "当前：学生视图。"
+    now_teacher: "当前：老师视图。"
+    now_licence: "当前：许可证决定的视图。"
 
 models:
   kokoro_runtime: "Sherpa-ONNX（Kokoro 与 Parakeet）"

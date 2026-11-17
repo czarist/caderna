@@ -10,6 +10,9 @@ repository.
 ## [Unreleased]
 
 ### Added
+- Settings → *Developer mode* (with a valid developer token): *Open the student's view*
+  and *Open the teacher's view*, and back to the licence's. In the teacher's view the
+  sidebar says *Check lessons* and *Check quizzes*.
 - **Developer area: views and presentation mode (Phase W9).** With a valid developer
   token, the area forces the student or teacher view (every module open, whatever the
   licence) and lists the panel's clients with a brand; *Present* shows the app with
