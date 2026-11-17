@@ -357,6 +357,12 @@ impl KnowGiverApp {
         self.toasts.clear();
     }
 
+    /// The messages on screen, for tests.
+    #[cfg(test)]
+    pub(crate) fn toast_texts(&self) -> Vec<&str> {
+        self.toasts.iter().map(|t| t.text.as_str()).collect()
+    }
+
     fn push_toast(&mut self, text: String, is_error: bool) {
         self.toasts.push(Toast {
             text,
