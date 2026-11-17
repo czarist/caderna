@@ -1965,3 +1965,198 @@ fn a_student_receives_courses_keeps_progress_and_creates_no_plans() {
         .unwrap();
     assert!(engine.plans().is_empty());
 }
+
+fn schedule_spec() -> crate::ScheduleSpec {
+    use chrono::{NaiveDate, NaiveTime, Weekday};
+    crate::ScheduleSpec {
+        start: NaiveDate::from_ymd_opt(2026, 3, 2).unwrap(),
+        end: NaiveDate::from_ymd_opt(2026, 6, 30).unwrap(),
+        classes: vec![crate::ClassTime {
+            weekday: Weekday::Mon,
+            start: NaiveTime::from_hms_opt(19, 0, 0).unwrap(),
+            minutes: 100,
+        }],
+        blocked: Default::default(),
+        holidays: crate::HolidayCalendar::Brazil,
+        review_every: 0,
+        mock_exam: false,
+    }
+}
+
+#[test]
+fn a_teacher_plans_classes_without_ai_edits_undoes_and_exports() {
+    let (mut engine, dir) = engine_with_plan();
+    let plan = engine.active_plan().unwrap().id;
+    let topics = engine.active_plan().unwrap().topics().count();
+    engine
+        .handle(Command::GenerateSchedule {
+            plan,
+            classroom: 0,
+            spec: Box::new(schedule_spec()),
+        })
+        .unwrap();
+    let saved = engine.class_schedule(plan, 0).expect("saved");
+    let placed: std::collections::HashSet<_> = saved
+        .schedule
+        .sessions
+        .iter()
+        .flat_map(|s| s.topics.clone())
+        .collect();
+    assert_eq!(placed.len(), topics, "every topic has a class");
+    assert_eq!(saved.schedule.shortfall_minutes, 0);
+    let titles = engine.schedule_topic_titles(plan);
+    assert!(placed.iter().all(|key| titles.contains_key(key)));
+
+    let mut edited = saved.schedule.clone();
+    edited.sessions[0].status = crate::SessionStatus::Given;
+    edited.sessions[0].plan.objectives = vec!["Reconhecer funções".into()];
+    engine
+        .handle(Command::SaveSchedule {
+            plan,
+            classroom: 0,
+            schedule: Box::new(edited.clone()),
+        })
+        .unwrap();
+    engine
+        .handle(Command::ReplanSchedule { plan, classroom: 0 })
+        .unwrap();
+    let replanned = engine.class_schedule(plan, 0).unwrap().schedule;
+    assert_eq!(
+        replanned.sessions[0], edited.sessions[0],
+        "a given class stays"
+    );
+
+    engine
+        .handle(Command::UndoSchedule { plan, classroom: 0 })
+        .unwrap();
+    assert_eq!(engine.class_schedule(plan, 0).unwrap().schedule, edited);
+
+    let path = dir.path().join("aulas.ics");
+    engine
+        .handle(Command::ExportScheduleCalendar {
+            plan,
+            classroom: 0,
+            path: path.clone(),
+            labels: Box::new(crate::CalendarLabels {
+                class: "Aula".into(),
+                review: "Revisão".into(),
+                mock_exam: "Simulado".into(),
+                objectives: "Objetivos".into(),
+                homework: "Tarefa".into(),
+            }),
+        })
+        .unwrap();
+    let ics = std::fs::read_to_string(path).unwrap();
+    assert!(ics.contains("Reconhecer funções"));
+
+    engine
+        .handle(Command::DeleteSchedule { plan, classroom: 0 })
+        .unwrap();
+    assert!(engine.class_schedule(plan, 0).is_none());
+}
+
+#[test]
+fn students_and_licences_without_planning_cannot_plan_classes() {
+    let (mut engine, _dir) = engine_with_plan();
+    let plan = engine.active_plan().unwrap().id;
+    let generate = |plan| Command::GenerateSchedule {
+        plan,
+        classroom: 0,
+        spec: Box::new(schedule_spec()),
+    };
+    if !kg_brand::has_server() {
+        // Without a panel every module is open and nobody is a student.
+        engine.handle(generate(plan)).unwrap();
+        return;
+    }
+    engine.set_modules_for_test(&["lessons", "content"]);
+    assert!(matches!(
+        engine.handle(generate(plan)),
+        Err(EngineError::ModuleDisabled(crate::Module::Planning))
+    ));
+    engine.set_modules_for_test(&["planning"]);
+    engine.set_role_for_test("student");
+    assert!(matches!(
+        engine.handle(generate(plan)),
+        Err(EngineError::TeachersOnly)
+    ));
+    engine.set_role_for_test("teacher");
+    engine.handle(generate(plan)).unwrap();
+    assert!(engine.class_schedule(plan, 0).is_some());
+}
+
+#[test]
+fn a_student_receives_the_classroom_agenda_and_topics_open_with_their_classes() {
+    let (mut engine, _dir) = engine();
+    engine.set_role_for_test("student");
+    if !kg_brand::has_server() {
+        return;
+    }
+    let topics = serde_json::json!([
+        {"key": "t1", "title": "Funções", "difficulty": "medium", "week": 1},
+        {"key": "t2", "title": "Geometria", "difficulty": "hard", "week": 2}
+    ]);
+    let summary = serde_json::json!([{"id": 42, "title": "ENEM 2027", "version": 1}]);
+    engine
+        .apply_class_json(
+            summary,
+            serde_json::json!([course_json(1, topics)]),
+            serde_json::json!([]),
+        )
+        .unwrap();
+    let plan = engine.active_plan().unwrap().clone();
+    let geometry = plan.topics().nth(1).unwrap().1.id;
+    let functions = plan.topics().next().unwrap().1.id;
+
+    let today = Engine::today();
+    let day = |offset: i64| {
+        (today + chrono::Duration::days(offset))
+            .format("%Y-%m-%d")
+            .to_string()
+    };
+    let schedule = serde_json::json!([{
+        "course_id": 42, "classroom_id": 7, "version": 2,
+        "schedule": {
+            "spec": {"start": day(-7), "end": day(30),
+                     "classes": [{"weekday": "Mon", "start": "19:00:00", "minutes": 100}]},
+            "release": "as_classes_happen",
+            "sessions": [
+                {"key": "s1", "date": day(-7), "start": "19:00:00", "minutes": 100,
+                 "kind": "class", "topics": ["t1"], "status": "given"},
+                {"key": "s2", "date": day(3), "start": "19:00:00", "minutes": 100,
+                 "kind": "class", "topics": ["t2"],
+                 "plan": {"mode": {"mode": "online", "link": "https://meet.example.com/x"},
+                          "note": "Tragam régua",
+                          "homework": [{"kind": "quiz", "minutes": 15, "text": "Quiz de funções"}]}}
+            ]
+        }
+    }]);
+    engine.apply_schedule_json(schedule.clone()).unwrap();
+
+    let agenda = engine.agenda(today);
+    assert_eq!(agenda.len(), 1);
+    assert_eq!(agenda[0].session.key, "s2");
+    assert_eq!(agenda[0].topics, ["Geometria"]);
+    assert_eq!(agenda[0].session.plan.note, "Tragam régua");
+
+    assert_eq!(
+        engine.topic_opens_on(functions),
+        None,
+        "its class already happened"
+    );
+    assert_eq!(
+        engine.topic_opens_on(geometry),
+        Some(today + chrono::Duration::days(3))
+    );
+    assert!(matches!(
+        engine.handle(Command::StartLesson(geometry)),
+        Err(EngineError::TopicNotOpen(_))
+    ));
+
+    // The same version again changes nothing; a schedule no longer sent goes.
+    engine.apply_schedule_json(schedule).unwrap();
+    assert_eq!(engine.class_schedules(plan.id).len(), 1);
+    engine.apply_schedule_json(serde_json::json!([])).unwrap();
+    assert!(engine.class_schedules(plan.id).is_empty());
+    assert_eq!(engine.topic_opens_on(geometry), None);
+}

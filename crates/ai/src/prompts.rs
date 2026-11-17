@@ -30,6 +30,7 @@ pub struct Prompts {
     pub discursive_difficulties: &'static str,
     pub exam_format: &'static str,
     pub exam_questions: &'static str,
+    pub lesson_planning: &'static str,
 }
 
 macro_rules! prompts {
@@ -72,6 +73,7 @@ macro_rules! prompts {
             )),
             exam_format: include_str!(concat!("../prompts/", $dir, "/exam_format.md")),
             exam_questions: include_str!(concat!("../prompts/", $dir, "/exam_questions.md")),
+            lesson_planning: include_str!(concat!("../prompts/", $dir, "/lesson_planning.md")),
         }
     };
 }

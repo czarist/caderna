@@ -11,6 +11,7 @@ pub mod handout;
 pub mod lesson;
 pub mod mock;
 pub mod plan;
+pub mod planning;
 pub mod progress;
 pub mod quiz;
 pub mod reader;

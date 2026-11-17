@@ -220,6 +220,7 @@ pub fn module_name(module: kg_engine::Module) -> String {
     match module {
         kg_engine::Module::Lessons => t!("modules.lessons"),
         kg_engine::Module::Content => t!("modules.content"),
+        kg_engine::Module::Planning => t!("modules.planning"),
     }
     .into_owned()
 }

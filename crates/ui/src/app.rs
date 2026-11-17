@@ -32,6 +32,8 @@ pub enum Screen {
     Challenges,
     /// Teachers: publish plans to classrooms and see the students.
     Classes,
+    /// Teachers: the classes' calendar and plan of each class (Phase W8).
+    Planning,
     Settings,
 }
 
@@ -48,6 +50,7 @@ impl Screen {
             | Self::Review
             | Self::Discursive
             | Self::Mock => Some(Module::Content),
+            Self::Planning => Some(Module::Planning),
             _ => None,
         }
     }
@@ -57,7 +60,7 @@ impl Screen {
         self.module().is_none_or(|m| engine.module_enabled(m))
     }
 
-    const ALL: [Self; 14] = [
+    const ALL: [Self; 15] = [
         Self::Today,
         Self::Edital,
         Self::Plan,
@@ -71,6 +74,7 @@ impl Screen {
         Self::Progress,
         Self::Challenges,
         Self::Classes,
+        Self::Planning,
         Self::Settings,
     ];
 
@@ -90,6 +94,7 @@ impl Screen {
             Self::Progress => Icon::Progress,
             Self::Challenges => Icon::Award,
             Self::Classes => Icon::Users,
+            Self::Planning => Icon::Calendar,
             Self::Settings => Icon::Settings,
         }
     }
@@ -111,6 +116,7 @@ impl Screen {
             Self::Progress => t!("nav.progress"),
             Self::Challenges => t!("nav.challenges"),
             Self::Classes => t!("nav.classes"),
+            Self::Planning => t!("nav.planning"),
             Self::Settings => t!("nav.settings"),
         }
         .into_owned()
@@ -167,6 +173,8 @@ pub struct UiState {
     pub publish_to: std::collections::HashSet<i64>,
     /// The classrooms were asked for on this visit to the Classes screen.
     pub classes_requested: bool,
+    /// Planning screen: plan, classroom, the form and the class being edited.
+    pub planning: crate::screens::planning::PlanningUi,
     /// Choices of the required first run, before they are saved.
     pub setup: crate::screens::setup::SetupUi,
     /// Step of the guided tour on screen.
@@ -294,6 +302,7 @@ impl KnowGiverApp {
                 publish_plan: None,
                 publish_to: std::collections::HashSet::new(),
                 classes_requested: false,
+                planning: Default::default(),
                 setup: Default::default(),
                 tour_step: 0,
                 reader: Default::default(),
@@ -659,6 +668,7 @@ pub(crate) struct Badges {
     /// Modules the licence opens.
     lessons: bool,
     content: bool,
+    planning: bool,
     /// Teacher, student or neither (no classes).
     role: kg_engine::ClassRole,
 }
@@ -679,6 +689,7 @@ impl Badges {
             demo: engine.demo(),
             lessons: engine.module_enabled(kg_engine::Module::Lessons),
             content: engine.module_enabled(kg_engine::Module::Content),
+            planning: engine.module_enabled(kg_engine::Module::Planning),
             role: engine.role(),
         }
     }
@@ -686,7 +697,7 @@ impl Badges {
     /// Screens that depend on being a teacher or a student.
     pub(crate) fn shows_for_role(&self, screen: Screen) -> bool {
         match screen {
-            Screen::Classes => self.role == kg_engine::ClassRole::Teacher,
+            Screen::Classes | Screen::Planning => self.role == kg_engine::ClassRole::Teacher,
             Screen::Board => self.role.creates_plans(),
             _ => true,
         }
@@ -697,6 +708,7 @@ impl Badges {
         match screen.module() {
             Some(kg_engine::Module::Lessons) => self.lessons,
             Some(kg_engine::Module::Content) => self.content,
+            Some(kg_engine::Module::Planning) => self.planning,
             None => true,
         }
     }
@@ -1066,6 +1078,7 @@ impl eframe::App for KnowGiverApp {
                     Screen::Progress => screens::progress::show(self, ui),
                     Screen::Challenges => screens::challenges::show(self, ui),
                     Screen::Classes => screens::classes::show(self, ui),
+                    Screen::Planning => screens::planning::show(self, ui),
                     Screen::Settings => screens::settings::show(self, ui),
                 }
             });

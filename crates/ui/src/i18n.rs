@@ -238,6 +238,15 @@ pub fn notice(notice: &Notice) -> (String, bool) {
     let text = match notice {
         Notice::Error(err) => return (error_message(err), true),
         Notice::PlanCreated => t!("notice.plan_created"),
+        Notice::SchedulePublished => t!("planning.published"),
+        Notice::SessionsPlanned { applied, failed } if *failed > 0 => t!(
+            "planning.suggested_some",
+            applied = applied,
+            failed = failed
+        ),
+        Notice::SessionsPlanned { applied, .. } => {
+            t!("planning.suggested", applied = applied)
+        }
         Notice::SettingsSaved => t!("notice.settings_saved"),
         Notice::ConnectionOk => t!("notice.connection_ok"),
         Notice::AccountConnected(kind) => {
@@ -331,6 +340,9 @@ pub fn error_message(err: &EngineError) -> String {
         EngineError::Panel(_) => t!("panel.error.unexpected"),
         EngineError::TeachersOnly => t!("classes.teachers_only"),
         EngineError::PanelOffline => t!("classes.panel_offline"),
+        EngineError::ScheduleNeedsClassroom => t!("planning.needs_classroom"),
+        EngineError::ScheduleNeedsCourse => t!("planning.needs_course"),
+        EngineError::TopicNotOpen(day) => t!("planning.topic_opens", date = date(*day)),
         EngineError::Restricted(kg_engine::Restriction::ExportHandouts) => {
             t!("restrictions.export_handouts")
         }

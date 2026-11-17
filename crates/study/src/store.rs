@@ -341,6 +341,26 @@ const MIGRATIONS: &[&str] = &[
         key TEXT NOT NULL
     );
 ",
+    // Lesson planning (Phase W8): a schedule per plan and classroom, kept as
+    // JSON (`kg_study::schedule::ClassSchedule`), and its undo history.
+    r"
+    CREATE TABLE class_schedules (
+        id INTEGER PRIMARY KEY,
+        plan_id INTEGER NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
+        classroom_id INTEGER NOT NULL,
+        schedule TEXT NOT NULL,
+        published_version INTEGER,
+        updated_at TEXT NOT NULL,
+        UNIQUE (plan_id, classroom_id)
+    );
+    CREATE TABLE class_schedule_history (
+        id INTEGER PRIMARY KEY,
+        schedule_id INTEGER NOT NULL REFERENCES class_schedules(id) ON DELETE CASCADE,
+        schedule TEXT NOT NULL,
+        saved_at TEXT NOT NULL
+    );
+    CREATE INDEX class_schedule_history_schedule ON class_schedule_history(schedule_id);
+",
 ];
 
 mod challenges;
@@ -348,6 +368,8 @@ mod cloud;
 pub use cloud::{CourseLink, CoursePlan, CourseSubject, CourseTopic};
 mod discursive;
 mod mock;
+mod schedule;
+pub use schedule::SavedSchedule;
 
 /// Handle to the app database.
 #[derive(Debug)]
@@ -497,6 +519,19 @@ impl Store {
             })
         })
         .collect()
+    }
+
+    /// The plan a topic belongs to.
+    pub fn plan_of_topic(&self, topic: TopicId) -> Result<Option<PlanId>> {
+        Ok(self
+            .conn
+            .query_row(
+                "SELECT s.plan_id FROM topics t JOIN subjects s ON s.id = t.subject_id
+                 WHERE t.id = ?1",
+                [topic.0],
+                |r| r.get(0).map(PlanId),
+            )
+            .optional()?)
     }
 
     pub fn load_plan(&self, id: PlanId) -> Result<StudyPlan> {

@@ -16,6 +16,15 @@ e pede um novo aceite sempre que a versão muda.
 O Caderna é oferecido só no Brasil e só em português do Brasil. Não há versões em outros
 idiomas ou regiões.
 
+## Novidades da versão 2026-11-16.2 (Planejamento de aulas)
+
+- Política (seções 3 e 4): o Painel passa a receber o calendário de aulas que o professor
+  publica para cada turma (datas, horários, tópicos, objetivos, atividades, materiais,
+  tarefas, recados e link de aulas on-line). As anotações privadas do professor não saem do
+  computador dele.
+- Termos (papéis): o professor monta e publica o calendário; as sugestões da IA para cada
+  aula podem ter erros e devem ser conferidas antes de publicar.
+
 ## Novidades da versão 2026-11-16.1 (placa de vídeo na leitura local de fotos)
 
 - Termos (seção 11) e Política (seção 4): a leitura local de fotos usa a placa de vídeo pelo

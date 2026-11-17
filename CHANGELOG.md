@@ -9,6 +9,29 @@ repository.
 
 ## [Unreleased]
 
+### Added
+- **Lesson planning (Phase W8), module "Planejamento de aulas".** A Planejamento screen
+  for teachers builds a classroom's class calendar from a plan, in code and without AI:
+  class days and times, Brazilian holidays (Carnaval, Sexta-feira Santa and Corpus
+  Christi from Easter) and blocked days left out, topics spread by size, a review every
+  few classes and a closing mock exam, with the shortfall said up front. Each class can
+  be marked given or cancelled, fixed, and gets objectives, materials, an online link, a
+  note to students and a private note; replan from today keeps given and fixed classes;
+  undo; `.ics` export. The AI plans the empty classes through the panel (objectives,
+  activities with minutes, homework), checked in code. Publishing sends the calendar to
+  the school's panel without private notes; students see their next classes on Today and,
+  when the teacher chooses, topics open on the day of their first class.
+- Examples `activate`, `planning_live` and `classes_live` for live checks with two
+  copies of the app.
+
+### Changed
+- Caderna terms and privacy policy `2026-11-16.2` (users agree again): the panel receives
+  the class calendars teachers publish; private notes never leave the computer.
+
+### Fixed
+- A student's class sync failed when a course had an empty syllabus name or a class an
+  empty note: the panel sends empty texts as `null`, now read as empty.
+
 ## [0.4.0] - 2026-11-16
 
 ### Added

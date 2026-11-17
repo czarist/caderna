@@ -23,6 +23,7 @@ mod modules;
 mod ocr;
 mod panel_brand;
 mod paths;
+mod planning;
 mod plans;
 mod practice;
 mod prepare;
@@ -74,7 +75,12 @@ pub use kg_handout::{
 };
 pub use kg_pdf::{Edital, EditalText, PdfError, Role};
 pub use kg_study::CourseLink;
+pub use kg_study::SavedSchedule;
 pub use kg_study::discursive::{REWRITE_RATIO, change_ratio, marks as transcript_marks};
+pub use kg_study::schedule::{
+    Activity, ActivityKind, ClassSchedule, ClassTime, DEFAULT_REVIEW_EVERY, HolidayCalendar,
+    ReleaseRule, ScheduleSpec, Session, SessionKind, SessionMode, SessionPlan, SessionStatus,
+};
 pub use kg_study::{
     AnswerStyle, ExamFormat, ExamSection, FormatError, FormatSource, MockAttempt, MockAttemptId,
     MockError, MockExam, MockExamId, MockQuestion, MockResult, SectionResult,
@@ -105,6 +111,7 @@ pub use modules::Module;
 pub use ocr::{OcrError, OcrModelStatus};
 pub use panel_brand::{PanelBrand, load_panel_brand};
 pub use paths::AppPaths;
+pub use planning::{AgendaItem, CalendarLabels};
 pub use practice::{QuizSession, QuizStep, REVIEW_ROUNDS, ReviewSession, ReviewStep};
 pub use prepare::{PrepareJob, PrepareRequest, PrepareSummary, slug};
 pub use progress::Milestone;
@@ -353,6 +360,47 @@ pub enum Command {
     /// wrong answers into the mistakes notebook.
     FinishMock([String; 2]),
     DeleteMockAttempt(MockAttemptId),
+    /// Plans a classroom's classes from a plan (no AI; classroom 0 for none).
+    GenerateSchedule {
+        plan: PlanId,
+        classroom: i64,
+        spec: Box<ScheduleSpec>,
+    },
+    /// Keeps the teacher's edits to a schedule.
+    SaveSchedule {
+        plan: PlanId,
+        classroom: i64,
+        schedule: Box<ClassSchedule>,
+    },
+    /// Plans again from today, keeping given and locked classes.
+    ReplanSchedule {
+        plan: PlanId,
+        classroom: i64,
+    },
+    UndoSchedule {
+        plan: PlanId,
+        classroom: i64,
+    },
+    DeleteSchedule {
+        plan: PlanId,
+        classroom: i64,
+    },
+    /// The AI plans every class still empty (through the panel).
+    SuggestSessionPlans {
+        plan: PlanId,
+        classroom: i64,
+    },
+    /// Sends a classroom's schedule to the panel (school and students).
+    PublishSchedule {
+        plan: PlanId,
+        classroom: i64,
+    },
+    ExportScheduleCalendar {
+        plan: PlanId,
+        classroom: i64,
+        path: PathBuf,
+        labels: Box<CalendarLabels>,
+    },
 
     /// Writes an already formatted progress report.
     ExportProgress {
@@ -376,6 +424,12 @@ pub enum EngineError {
     TeachersOnly,
     #[error("the panel is not connected")]
     PanelOffline,
+    #[error("a schedule is published for a classroom")]
+    ScheduleNeedsClassroom,
+    #[error("publish the plan to the classroom before its schedule")]
+    ScheduleNeedsCourse,
+    #[error("the topic opens on {0}")]
+    TopicNotOpen(NaiveDate),
     #[error(transparent)]
     Study(#[from] StudyError),
     #[error(transparent)]
@@ -440,6 +494,13 @@ pub enum EngineError {
 #[derive(Debug)]
 pub enum Notice {
     Error(EngineError),
+    /// A classroom's schedule reached the panel.
+    SchedulePublished,
+    /// The AI planned `applied` classes; `failed` stayed empty.
+    SessionsPlanned {
+        applied: usize,
+        failed: usize,
+    },
     PlanCreated,
     SettingsSaved,
     ConnectionOk,
@@ -540,6 +601,7 @@ pub(crate) enum Event {
     },
     Discursive(discursive::DiscursiveEvent),
     Mock(mock::MockEvent),
+    Planning(planning::PlanningEvent),
     EditalRevalidated {
         plan: PlanId,
         result: Result<Edital, EngineError>,
@@ -619,6 +681,7 @@ pub struct Engine {
     board_job: Option<BoardJob>,
     discursive: discursive::DiscursiveState,
     mock: mock::MockState,
+    planning: planning::PlanningState,
     /// Plan whose notice is being read again.
     revalidating: Option<PlanId>,
     streak: u32,
@@ -783,6 +846,7 @@ impl Engine {
             board_job: None,
             discursive: discursive::DiscursiveState::default(),
             mock: mock::MockState::default(),
+            planning: planning::PlanningState::default(),
             revalidating: None,
             streak: 0,
             studied_today: false,
@@ -948,6 +1012,13 @@ impl Engine {
         // Students use what their classrooms give them.
         if command.creates_plans() && !self.role().creates_plans() {
             return Err(EngineError::TeachersOnly);
+        }
+        // A classroom that opens topics as the classes happen.
+        if let Command::StartLesson(topic) | Command::StartQuiz(topic) | Command::StartReview(topic) =
+            &command
+            && let Some(day) = self.topic_opens_on(*topic)
+        {
+            return Err(EngineError::TopicNotOpen(day));
         }
         match command {
             Command::ImportEdital(path) => self.import_edital(path),
@@ -1201,6 +1272,29 @@ impl Engine {
             Command::ReadExamFormat => self.read_exam_format(),
             Command::SaveExamFormat(format) => self.save_exam_format(format),
             Command::GenerateMock(title) => self.generate_mock(title),
+            Command::GenerateSchedule {
+                plan,
+                classroom,
+                spec,
+            } => self.generate_schedule(plan, classroom, *spec),
+            Command::SaveSchedule {
+                plan,
+                classroom,
+                schedule,
+            } => self.save_schedule(plan, classroom, &schedule),
+            Command::ReplanSchedule { plan, classroom } => self.replan_schedule(plan, classroom),
+            Command::UndoSchedule { plan, classroom } => self.undo_schedule(plan, classroom),
+            Command::DeleteSchedule { plan, classroom } => self.delete_schedule(plan, classroom),
+            Command::SuggestSessionPlans { plan, classroom } => {
+                self.suggest_session_plans(plan, classroom)
+            }
+            Command::PublishSchedule { plan, classroom } => self.publish_schedule(plan, classroom),
+            Command::ExportScheduleCalendar {
+                plan,
+                classroom,
+                path,
+                labels,
+            } => self.export_schedule_calendar(plan, classroom, path, &labels),
             Command::CancelMock => {
                 self.cancel_mock();
                 Ok(())
@@ -1303,6 +1397,10 @@ impl Engine {
                 }
                 Event::Discursive(event) => self.on_discursive_event(event),
                 Event::Mock(event) => self.on_mock_event(event),
+                Event::Planning(event) => {
+                    self.on_planning_event(event);
+                    Ok(())
+                }
                 Event::EditalRevalidated { plan, result } => {
                     self.on_edital_revalidated(plan, result)
                 }

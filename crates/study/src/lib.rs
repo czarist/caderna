@@ -13,6 +13,7 @@ pub mod plan;
 pub mod quiz;
 pub mod reading;
 pub mod review;
+pub mod schedule;
 pub mod store;
 pub mod sync;
 
@@ -50,7 +51,9 @@ pub use quiz::{
 };
 pub use reading::{Highlight, HighlightColor, HighlightId, Reading, ReadingId};
 pub use review::{ReviewGrade, ReviewState};
-pub use store::{CourseLink, CoursePlan, CourseSubject, CourseTopic, Store, StoreError};
+pub use store::{
+    CourseLink, CoursePlan, CourseSubject, CourseTopic, SavedSchedule, Store, StoreError,
+};
 
 /// Errors raised by study rules.
 ///

@@ -11,6 +11,8 @@ pub enum Module {
     /// Handouts, quizzes, reviews, mock exams, written answers and exam
     /// board material ("Criação de conteúdos").
     Content,
+    /// Class schedules for teachers ("Planejamento de aulas", Phase W8).
+    Planning,
 }
 
 impl Module {
@@ -19,6 +21,7 @@ impl Module {
         match self {
             Self::Lessons => "lessons",
             Self::Content => "content",
+            Self::Planning => "planning",
         }
     }
 }
@@ -42,6 +45,14 @@ impl Command {
             | Self::StartAttempt(..)
             | Self::GenerateMock(_)
             | Self::StartMock(_) => Module::Content,
+            Self::GenerateSchedule { .. }
+            | Self::SaveSchedule { .. }
+            | Self::ReplanSchedule { .. }
+            | Self::UndoSchedule { .. }
+            | Self::DeleteSchedule { .. }
+            | Self::SuggestSessionPlans { .. }
+            | Self::PublishSchedule { .. }
+            | Self::ExportScheduleCalendar { .. } => Module::Planning,
             _ => return None,
         })
     }

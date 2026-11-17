@@ -2118,3 +2118,56 @@ fn mock_snapshots() {
         );
     }
 }
+
+#[test]
+#[ignore = "needs a GPU; run with --ignored"]
+fn planning_snapshots() {
+    use chrono::{NaiveDate, NaiveTime, Weekday};
+    let out = std::env::var_os("KG_SNAPSHOT_DIR").map(std::path::PathBuf::from);
+    for locale in locales() {
+        let data = tempfile::tempdir().unwrap();
+        let paths = AppPaths::new(data.path());
+        seed(&paths, locale);
+        crate::i18n::set(locale);
+        let mut harness = Harness::builder()
+            .with_size(screen_size([1180.0, 900.0]))
+            .build_eframe(|cc| KnowGiverApp::with_paths(cc, paths.clone(), AiConfig::default()));
+        crate::i18n::set(locale);
+        harness.state_mut().ui.screen = Screen::Planning;
+        render(&mut harness, None, "warm-up");
+        harness.state_mut().clear_toasts();
+        render(
+            &mut harness,
+            out.as_deref(),
+            &format!("{locale}-planning-form"),
+        );
+
+        let plan = match &harness.state().engine {
+            Ok(engine) => engine.active_plan().map(|p| p.id),
+            Err(_) => None,
+        }
+        .unwrap();
+        let start = NaiveDate::from_ymd_opt(2026, 3, 2).unwrap();
+        let spec = kg_engine::ScheduleSpec {
+            start,
+            end: NaiveDate::from_ymd_opt(2026, 6, 30).unwrap(),
+            classes: [Weekday::Mon, Weekday::Wed]
+                .map(|weekday| kg_engine::ClassTime {
+                    weekday,
+                    start: NaiveTime::from_hms_opt(19, 0, 0).unwrap(),
+                    minutes: 100,
+                })
+                .to_vec(),
+            blocked: Default::default(),
+            holidays: kg_engine::HolidayCalendar::Brazil,
+            review_every: 4,
+            mock_exam: true,
+        };
+        harness.state_mut().dispatch(Command::GenerateSchedule {
+            plan,
+            classroom: 0,
+            spec: Box::new(spec),
+        });
+        render(&mut harness, out.as_deref(), &format!("{locale}-planning"));
+    }
+}

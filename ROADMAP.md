@@ -255,7 +255,7 @@ Needs a brand with a panel (`[server]`); without one the app works as before.
       (ABNT in Portuguese, all five languages); handouts saved earlier keep their pages.
 - [ ] Check references against a bibliographic database before showing them.
 
-## Phase W8 — Lesson planning for teachers (planned, not started)
+## Phase W8 — Lesson planning for teachers (in progress, 0.5.0)
 
 **Goal:** a "Planejamento" module in the teacher's area where the teacher schedules the
 classes of a classroom from the plan's content: on which days and times each class
@@ -265,6 +265,15 @@ course; students see their class calendar, what to prepare and their homework; t
 teacher sees who did it.
 
 Needs a brand with a panel (`[server]`) to publish; the planning itself works locally.
+
+**Done (2026-11-16):** calendar, holidays and topic distribution in code; the Planejamento
+screen (generate, edit objectives/materials/notes/link, mark given or cancelled, fix,
+replan, undo, .ics export); the AI plans each class through the panel, checked in code;
+publishing to the panel, the school's read-only agenda, the student's agenda on Today and
+topics opening with their classes. Live checks: `planning_live` and `classes_live`
+examples. **Still open:** editing activities and homework in the UI (today they come from
+the AI and are read-only), "what was really covered", the printable PDF, homework status in
+the progress sync and in Desempenho, class reminders, the note on a changed schedule.
 
 ### Concepts
 
@@ -291,17 +300,17 @@ Needs a brand with a panel (`[server]`) to publish; the planning itself works lo
 
 ### Generating the schedule (code first, AI second)
 
-- [ ] Session calendar computed in code (`kg_study::schedule`): class days between start
+- [x] Session calendar computed in code (`kg_study::schedule`): class days between start
       and end, minus blocked days and holidays. Holidays per region computed in code
       (Brazil: national fixed dates plus Carnaval, Sexta-feira Santa and Corpus Christi from
       Easter); state and city holidays added by the teacher as blocked days.
-- [ ] Topic distribution computed in code: topics in the plan's order, weighted by their
+- [x] Topic distribution computed in code: topics in the plan's order, weighted by their
       size (handout length or estimated lesson minutes) and by the notice's weight when the
       plan has it (mock-exam sections, Phase 12); a review session every N sessions
       (default 6) and a mock exam before the end when the plan has an exam format.
       Too many topics for the sessions is said up front, with the shortfall in hours and
       options: more sessions, longer sessions, or mark topics as self-study.
-- [ ] Per session, the AI suggests objectives, activities with minutes, materials from
+- [x] Per session, the AI suggests objectives, activities with minutes, materials from
       what the plan already has (handouts, quiz banks, board material) and homework
       (`lesson_planning` prompt in every `crates/ai/prompts/<lang>/`, JSON, same keys and
       placeholders; teaching culture from `culture.rs` and the plan's `ExamPurpose`).
@@ -309,39 +318,39 @@ Needs a brand with a panel (`[server]`) to publish; the planning itself works lo
       minutes add up to at most the session length, materials exist, homework activities
       are of known kinds; a failed check asks once more, then falls back to an empty session
       with only the topics. Batches of sessions, like mock-exam questions.
-- [ ] pt-BR plan-of-class conventions in the prompt note: objetivos (verbs of Bloom's
+- [x] pt-BR plan-of-class conventions in the prompt note: objetivos (verbs of Bloom's
       taxonomy), conteúdo, metodologia, recursos, avaliação; the other regions follow their
       own culture note (Portuguese and English through `PromptLanguage::pick`).
-- [ ] Shared base (W7) is not used for schedules: they depend on the school's calendar.
+- [x] Shared base (W7) is not used for schedules: they depend on the school's calendar.
 
 ### Teacher's editing
 
-- [ ] New "Planejamento" screen in the teacher's area (beside Classes): a calendar view
+- [x] New "Planejamento" screen in the teacher's area (beside Classes): a calendar view
       (month and week) and a list view; select a plan and a classroom; the wizard asks
       start, end, days, times, length, blocked days and release rule, then generates.
 - [ ] Edit a session: topics, objectives, activities (add, remove, reorder, minutes),
       materials, homework, notes, kind and link. Move it to another day by dragging or by a
       date field; split a session in two or merge two.
-- [ ] Lock sessions; **replan**: when a session is cancelled or moved, or a topic took
+- [x] Lock sessions; **replan**: when a session is cancelled or moved, or a topic took
       longer, the following unlocked sessions are redistributed in code; given and locked
       sessions never move. Show a summary of what changed before applying.
 - [ ] Mark a session as given (with what was really covered, if different), so the
       replanning starts from the truth.
-- [ ] Undo for the last changes; the schedule is saved locally as edited (SQLite tables
+- [x] Undo for the last changes; the schedule is saved locally as edited (SQLite tables
       `class_schedule`, `class_session`, `class_session_topic`, `class_session_activity`,
       with migrations), so nothing is lost before publishing.
 - [ ] Export: printable PDF (Typst, `crates/handout/templates/lesson_plan.typ`): the
       schedule as a table and one page per session in the plan-of-class format; and an
       iCalendar file (`.ics`) of the sessions for the teacher's calendar.
-- [ ] Engine commands (`GenerateSchedule`, `EditSession`, `ReplanSchedule`,
+- [x] Engine commands (`GenerateSchedule`, `EditSession`, `ReplanSchedule`,
       `PublishSchedule`, `ExportSchedulePdf`, `ExportScheduleIcs`) refused for students
       (`Command::creates_plans`) and when the licence lacks the module.
-- [ ] Owner role (no panel): decide whether a student studying alone may use the same
+- [x] Owner role (no panel): decide whether a student studying alone may use the same
       screen as a personal study calendar (see Decisions).
 
 ### Panel (CADERNA-DASHBOARD)
 
-- [ ] Tables for schedules and sessions tied to a course and a classroom; API
+- [x] Tables for schedules and sessions tied to a course and a classroom; API
       `PUT /api/v1/courses/{course}/schedules/{classroom}` (teacher, whole schedule,
       bumps a version like courses) and the schedule inside what students download at
       every check. Private teacher notes never leave the teacher's computer.
@@ -349,15 +358,15 @@ Needs a brand with a panel (`[server]`) to publish; the planning itself works lo
       app from saved study; merged without duplicates like the rest of `kg_study::sync`.
 - [ ] Client area: "Agenda" per classroom (read-only for the school), and in "Desempenho"
       per session: how many students did the preparation and the homework.
-- [ ] New licence module "Planejamento de aulas" (`Module::Planning`), chosen per client
+- [x] New licence module "Planejamento de aulas" (`Module::Planning`), chosen per client
       in `allowed_modules` like Videoaula and Criação de conteúdos; README API contract and
       AGENTS.md updated in both languages.
 
 ### Students' side
 
-- [ ] "Agenda" on Today: next class (day, time, kind, link), what to prepare before it,
+- [x] "Agenda" on Today: next class (day, time, kind, link), what to prepare before it,
       homework due and late; a calendar of the classroom's sessions in the plan screen.
-- [ ] Topics follow the release rule; a closed topic shows the day it opens.
+- [x] Topics follow the release rule; a closed topic shows the day it opens.
 - [ ] Reminders through the existing study reminders: the day before a class with
       homework still open, and an hour before an online class (both can be turned off).
 - [ ] A changed schedule (republished) shows a quiet note with what moved.
@@ -366,29 +375,34 @@ Needs a brand with a panel (`[server]`) to publish; the planning itself works lo
 
 ### Legal, languages and docs
 
-- [ ] Caderna privacy policy and terms (pt-BR, `branding/caderna/legal/`): the panel now
+- [x] Caderna privacy policy and terms (pt-BR, `branding/caderna/legal/`): the panel now
       keeps schedules and each student's homework status, visible to the school's
       teachers; bump the legal version and `TERMS_VERSION`. `REVISAO-JURIDICA.md` gets the
       item for the lawyer.
-- [ ] Every UI text in the five `locales/*.yml`; the prompt in the five prompt folders;
+- [x] Every UI text in the five `locales/*.yml`; the prompt in the five prompt folders;
       README sections (all `README*.md`) and screenshots of the Planejamento screen and
       the student's Agenda in each language.
 
 ### Tests
 
-- [ ] `kg_study::schedule`: calendar with holidays and blocked days, Easter-based dates
+- [x] `kg_study::schedule`: calendar with holidays and blocked days, Easter-based dates
       over several years, distribution by weight, review and mock-exam placement,
       shortfall report, replan never moving given or locked sessions, stable session keys
       across republishing.
-- [ ] Checks of the AI's answer (wrong topic key, minutes over the length, unknown
+- [x] Checks of the AI's answer (wrong topic key, minutes over the length, unknown
       material) with a fake client; prompt parity (`cargo test -p kg-ai`) and locale
       parity (`cargo test -p kg-ui`).
-- [ ] Engine: students and closed modules refused; release rule hides and opens topics
+- [x] Engine: students and closed modules refused; release rule hides and opens topics
       by date (fixed clock); homework done computed from saved study; sync round-trip.
-- [ ] Panel: feature tests for the schedule API, versioning, the student download and the
+- [x] Panel: feature tests for the schedule API, versioning, the student download and the
       client area pages.
 
-### Decisions to take before starting
+### Decisions (taken 2026-11-16)
+
+Owner's choices: its own module "Planejamento de aulas" (`Module::Planning`); schools
+only view schedules in the client area (editing stays in the teacher's app); all topics
+open by default; Owner (no panel) gets it as a personal calendar later. W8 is the next
+phase of work.
 
 - Module name and whether it is sold apart (proposed: "Planejamento de aulas", its own
   module) or comes with Criação de conteúdos.
@@ -508,7 +522,9 @@ owner's sign-off before it starts (see Decisions).
 - [ ] Only compiled addresses are reachable; the custom port works only for development.
 - [ ] Panel: token creation, hash only stored, code exchange, revocation, audit log.
 
-### Decisions to take before starting
+### Decisions (taken 2026-11-16)
+
+The owner accepted the proposals below (sign-off for changing the panel-address rule).
 
 - Changing the "never read on the student's computer" rule: the addresses stay compiled
   in, only the choice between them moves to runtime behind the token (proposed: accept).

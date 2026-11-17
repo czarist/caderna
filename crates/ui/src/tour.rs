@@ -8,7 +8,7 @@ use crate::app::{KnowGiverApp, Screen};
 use crate::theme;
 
 /// Screens shown in the tour, in sidebar order.
-const STEPS: [Screen; 14] = [
+const STEPS: [Screen; 15] = [
     Screen::Today,
     Screen::Edital,
     Screen::Plan,
@@ -22,6 +22,7 @@ const STEPS: [Screen; 14] = [
     Screen::Progress,
     Screen::Challenges,
     Screen::Classes,
+    Screen::Planning,
     Screen::Settings,
 ];
 
@@ -51,6 +52,7 @@ fn text(screen: Screen) -> (String, String) {
         Screen::Progress => (t!("tour.progress.title"), t!("tour.progress.text")),
         Screen::Challenges => (t!("tour.challenges.title"), t!("tour.challenges.text")),
         Screen::Classes => (t!("tour.classes.title"), t!("tour.classes.text")),
+        Screen::Planning => (t!("tour.planning.title"), t!("tour.planning.text")),
         Screen::Settings | Screen::Welcome | Screen::Setup => {
             (t!("tour.settings.title"), t!("tour.settings.text"))
         }
