@@ -61,6 +61,8 @@ mod widgets;
 mod working;
 
 #[cfg(test)]
+mod e2e;
+#[cfg(test)]
 mod snapshots;
 
 pub use app::KnowGiverApp;
