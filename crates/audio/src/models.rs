@@ -12,6 +12,11 @@ use serde::{Deserialize, Serialize};
 use crate::AudioError;
 
 const HF: &str = "https://huggingface.co";
+/// The rhasspy/piper-voices revision the voices come from (2026-10-30). Later
+/// ones retrain the voices for Piper 1.5, whose configs the Piper we ship
+/// (2023.11.14-2) refuses ("aɪ is not a single codepoint"), so `main` broke
+/// every voice installed after 2026-11-09.
+const PIPER_VOICES_REV: &str = "b4e358ffcb232591bf73a540e70f7de528e4174a";
 /// OpenVoiceOS "Dii" pt-BR voice (CC BY-NC-ND 4.0), pinned to a revision.
 const DII_BASE: &str = "https://huggingface.co/OpenVoiceOS/pipertts_pt-BR_dii/resolve/38281189bdbc6a0346041925b56da6d71d6fba3d/dii_pt-BR";
 const KOKORO_MODEL_DIR: &str = "kokoro-multi-lang-v1_0";
@@ -212,7 +217,7 @@ impl PiperVoice {
             Self::Dii => return DII_BASE.to_owned(),
         };
         format!(
-            "{HF}/rhasspy/piper-voices/resolve/main/pt/pt_BR/{speaker}/medium/{}",
+            "{HF}/rhasspy/piper-voices/resolve/{PIPER_VOICES_REV}/pt/pt_BR/{speaker}/medium/{}",
             self.id()
         )
     }
@@ -347,7 +352,9 @@ impl ModelStore {
             }
             ModelId::Voice(v) => {
                 let (onnx, json) = self.voice_files(v);
-                onnx.is_file() && json.is_file()
+                // A voice made for a newer Piper counts as missing, so it is
+                // downloaded again from the pinned revision.
+                onnx.is_file() && json.is_file() && crate::piper::config_supported(&json)
             }
             ModelId::PiperRuntime => self.piper_exe().is_some(),
             ModelId::KokoroRuntime => self.kokoro_exe().is_some(),
@@ -886,9 +893,16 @@ mod tests {
         fs::create_dir_all(onnx.parent().unwrap()).unwrap();
         fs::write(&onnx, b"x").unwrap();
         assert!(!store.is_installed(ModelId::Voice(PiperVoice::Faber)));
-        fs::write(&json, b"{}").unwrap();
+        // A config for a newer Piper does not count: it is downloaded again.
+        fs::write(&json, r#"{"phoneme_id_map":{"aɪ":[1]}}"#).unwrap();
+        assert!(!store.is_installed(ModelId::Voice(PiperVoice::Faber)));
+        let config = r#"{"phoneme_id_map":{"a":[1]}}"#;
+        fs::write(&json, config).unwrap();
         assert!(store.is_installed(ModelId::Voice(PiperVoice::Faber)));
-        assert_eq!(store.size_on_disk(ModelId::Voice(PiperVoice::Faber)), 3);
+        assert_eq!(
+            store.size_on_disk(ModelId::Voice(PiperVoice::Faber)),
+            1 + config.len() as u64
+        );
         store.remove(ModelId::Voice(PiperVoice::Faber)).unwrap();
         assert!(!store.is_installed(ModelId::Voice(PiperVoice::Faber)));
     }
