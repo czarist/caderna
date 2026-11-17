@@ -1610,6 +1610,20 @@ channel:
   dev: "DESENVOLVIMENTO"
 
 planning:
+  add_activity: "Adicionar atividade"
+  add_homework: "Adicionar tarefa"
+  remove: "Tirar"
+  minutes_over: "As atividades somam %{used} min, mais que os %{length} min da aula."
+  activity_kind:
+    explanation: "Explicação"
+    voice_lesson: "Videoaula no app"
+    handout_reading: "Leitura da apostila"
+    quiz: "Quiz"
+    spoken_review: "Revisão falada"
+    written_answer: "Resposta escrita"
+    mock_exam: "Simulado"
+    exercise: "Exercícios em aula"
+    other: "Outra"
   publish: "Publicar para a turma"
   publish_hint: "Envia o calendário à turma pelo painel. As anotações só suas não vão."
   published: "Calendário publicado para a turma."

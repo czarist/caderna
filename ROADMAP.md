@@ -271,8 +271,7 @@ screen (generate, edit objectives/materials/notes/link, mark given or cancelled,
 replan, undo, .ics export); the AI plans each class through the panel, checked in code;
 publishing to the panel, the school's read-only agenda, the student's agenda on Today and
 topics opening with their classes. Live checks: `planning_live` and `classes_live`
-examples. **Still open:** editing activities and homework in the UI (today they come from
-the AI and are read-only), "what was really covered", the printable PDF, homework status in
+examples. **Still open:** "what was really covered", the printable PDF, homework status in
 the progress sync and in Desempenho, class reminders, the note on a changed schedule.
 
 ### Concepts

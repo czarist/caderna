@@ -1610,6 +1610,20 @@ channel:
   dev: "开发环境"
 
 planning:
+  add_activity: "添加活动"
+  add_homework: "添加作业"
+  remove: "移除"
+  minutes_over: "活动共 %{used} 分钟，超过本课的 %{length} 分钟。"
+  activity_kind:
+    explanation: "讲解"
+    voice_lesson: "应用内语音课"
+    handout_reading: "阅读讲义"
+    quiz: "测验"
+    spoken_review: "口头复习"
+    written_answer: "书面作答"
+    mock_exam: "模拟考试"
+    exercise: "课堂练习"
+    other: "其他"
   publish: "发布给班级"
   publish_hint: "通过面板把日历发送给班级。你的个人备注不会发送。"
   published: "日历已发布给班级。"
