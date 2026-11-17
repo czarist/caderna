@@ -2384,3 +2384,47 @@ fn a_lesson_type_is_suggested_remembered_and_changed_mid_lesson() {
     assert_eq!(engine.lesson().unwrap().length(), LessonLength::Normal);
     assert_eq!(engine.topic_lesson_length(topic), LessonLength::Normal);
 }
+
+#[test]
+fn a_teacher_gets_their_own_courses_back_on_a_new_computer() {
+    let (mut engine, _dir) = engine();
+    engine.set_role_for_test("teacher");
+    if !kg_brand::has_server() {
+        return;
+    }
+    let topics = serde_json::json!([
+        {"key": "t1", "title": "Funções", "difficulty": "medium", "week": 1}
+    ]);
+    let mut course = course_json(3, topics);
+    course["mine"] = serde_json::json!(true);
+    let progress = serde_json::json!([
+        {"course_id": null, "data": {"study_millis": {"2026-11-10": 1800000}}}
+    ]);
+    let uploads = engine
+        .apply_teacher_json(serde_json::json!([course.clone()]), progress.clone())
+        .unwrap();
+    let plan = engine
+        .active_plan()
+        .expect("the course became a plan")
+        .clone();
+    assert_eq!(plan.title, "ENEM 2027");
+    let link = engine.course_link(plan.id).unwrap();
+    assert_eq!(link.course_id, 42);
+    assert!(!link.assigned, "published from here, not received");
+    assert!(
+        engine
+            .store
+            .overall_progress()
+            .unwrap()
+            .study_millis
+            .contains_key("2026-11-10"),
+        "study time follows the teacher"
+    );
+    assert!(uploads.iter().any(|(course, _)| *course == Some(42)));
+
+    // Already here: nothing is made twice.
+    engine
+        .apply_teacher_json(serde_json::json!([course]), progress)
+        .unwrap();
+    assert_eq!(engine.plans().len(), 1);
+}

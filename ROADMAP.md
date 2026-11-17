@@ -248,7 +248,9 @@ Needs a brand with a panel (`[server]`); without one the app works as before.
       the handout reviewer and shown in the PDF.
 - [x] Caderna privacy policy and terms describe classes, the cloud progress and the shared
       base; legal version `2026-11-10.1`.
-- [ ] Teachers' own progress and plans across their computers (today only students sync).
+- [x] Teachers' own progress and plans across their computers: at every panel check a
+      teacher's own courses missing here come back as plans published from here, and the
+      progress of those plans and the study time merge like a student's.
 - [x] Moderation flow for the shared base beyond removal (reports from schools): "Reportar"
       in the reader for handouts from the shared base (reason and note); three schools hide
       the material until an admin keeps it or removes it in Base comum. Quiz banks are not

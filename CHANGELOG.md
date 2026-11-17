@@ -61,6 +61,9 @@ repository.
   broken or other, with an optional note); the school's panel hides material three
   schools reported until an admin decides.
 - The progress export (Markdown) ends with the profile: level, study time, streak and goals.
+- Teachers on a new computer get their own published courses back as plans, and their
+  progress on them and study time follow them like a student's (privacy policy
+  `2026-11-17.3`).
 - Examples `activate`, `planning_live` and `classes_live` for live checks with two
   copies of the app.
 

@@ -698,6 +698,7 @@ pub(crate) enum Event {
     },
     PanelChecked(Result<server::CheckIn, server::PanelError>),
     PanelSignedOut(Result<(), server::PanelError>),
+    TeacherDownloaded(Result<classes::TeacherDownload, server::PanelError>),
     ClassesDownloaded(Result<classes::SyncDownload, server::PanelError>),
     ProgressUploaded(Result<(), server::PanelError>),
     PlanPublished {
@@ -1556,6 +1557,7 @@ impl Engine {
                 }
                 Event::PanelSignedOut(result) => self.on_panel_signed_out(result),
                 Event::ClassesDownloaded(result) => self.on_classes_downloaded(result),
+                Event::TeacherDownloaded(result) => self.on_teacher_downloaded(result),
                 Event::ProgressUploaded(result) => {
                     self.on_progress_uploaded(result);
                     Ok(())

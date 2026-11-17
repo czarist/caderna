@@ -1,6 +1,6 @@
 # Política de Privacidade do {{app}}
 
-Versão {{version}} · Última atualização: 17 de novembro de 2026 (2).
+Versão {{version}} · Última atualização: 17 de novembro de 2026 (3).
 
 Esta Política explica como tratamos dados pessoais no aplicativo {{app}}, no painel da
 escola (área do cliente) e no site do {{app}}, de acordo com a Lei nº 13.709/2018 (Lei Geral
@@ -54,7 +54,9 @@ de Proteção de Dados, LGPD). Ela faz parte dos Termos de Uso.
   prova, apostilas e questões) e, com o Planejamento de aulas, o calendário de aulas de cada
   turma (datas, horários, tópicos, objetivos, atividades, materiais, tarefas, recados aos
   alunos e o link de aulas on-line). As anotações que o professor marca como só dele ficam
-  no computador dele e nunca vão ao Painel.
+  no computador dele e nunca vão ao Painel. Como o aluno, o professor também guarda no
+  Painel o progresso nos planos que publicou e o tempo de estudo, para recuperar os planos
+  e o progresso num outro computador.
 - Do aluno: o progresso nos planos das turmas (situação e agenda de revisão de cada tópico,
   resultados de quizzes, resumos de aulas, revisões, caderno de erros), o tempo de estudo
   por dia e, quando a turma tem calendário de aulas, se o aluno estudou os tópicos de cada

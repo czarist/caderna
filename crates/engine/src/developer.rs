@@ -274,6 +274,11 @@ pub(crate) fn resolve(file: &DeveloperFile, device: &str, now: DateTime<Utc>) ->
     }
 }
 
+/// This computer's hashed id, as developer tokens bound to a device carry it.
+pub fn this_device() -> String {
+    crate::server::machine_hash()
+}
+
 /// The panel this run talks to: the compiled address of the environment,
 /// or `http://127.0.0.1:<port>` for development with a custom port.
 pub fn panel_url() -> String {
