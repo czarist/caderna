@@ -4,7 +4,7 @@
 //! mentioned in the tour or the README for students.
 
 use egui::RichText;
-use kg_engine::{Command, DeveloperError, Environment};
+use kg_engine::{Command, DeveloperError, Environment, UseRole};
 
 use super::Actions;
 use crate::app::KnowGiverApp;
@@ -22,6 +22,8 @@ struct AreaState {
     copy: bool,
     fresh: bool,
     clicks: u32,
+    /// The client picked for presentation mode.
+    client: Option<i64>,
 }
 
 fn state_id() -> egui::Id {
@@ -227,6 +229,8 @@ pub fn window(app: &mut KnowGiverApp, ctx: &egui::Context) {
                     actions.send(Command::SyncClasses);
                 }
             });
+            ui.add_space(8.0);
+            presentation(ui, engine, &mut state, &mut actions);
             let modules: Vec<&str> = kg_engine::Module::ALL
                 .iter()
                 .filter(|m| engine.module_enabled(**m))
@@ -237,6 +241,88 @@ pub fn window(app: &mut KnowGiverApp, ctx: &egui::Context) {
     state.open = open;
     ctx.data_mut(|d| d.insert_temp(state_id(), state));
     actions.run(app);
+}
+
+/// The student or teacher view, and presentation mode with a client's brand.
+fn presentation(
+    ui: &mut egui::Ui,
+    engine: &kg_engine::Engine,
+    state: &mut AreaState,
+    actions: &mut Actions,
+) {
+    ui.label(RichText::new(t!("developer.presentation")).strong());
+    ui.horizontal_wrapped(|ui| {
+        ui.label(t!("developer.view"));
+        let current = engine.developer_view();
+        for (view, label) in [
+            (None, t!("developer.view_licence")),
+            (Some(UseRole::Student), t!("developer.view_student")),
+            (Some(UseRole::Teacher), t!("developer.view_teacher")),
+        ] {
+            if ui.selectable_label(current == view, label).clicked() && current != view {
+                actions.send(Command::DeveloperView(view));
+            }
+        }
+    });
+    let busy = engine.presentation_busy();
+    match engine.presentation_clients() {
+        None => {
+            ui.horizontal(|ui| {
+                if ui
+                    .add_enabled(!busy, egui::Button::new(t!("developer.clients_load")))
+                    .clicked()
+                {
+                    actions.send(Command::DeveloperClients);
+                }
+                if busy {
+                    ui.spinner();
+                }
+            });
+        }
+        Some([]) => widgets::hint(ui, &t!("developer.clients_none")),
+        Some(clients) => {
+            let presenting = engine.presenting();
+            if state.client.is_none() {
+                state.client = presenting.or(clients.first().map(|c| c.id));
+            }
+            let name = |id: Option<i64>| {
+                clients
+                    .iter()
+                    .find(|c| Some(c.id) == id)
+                    .map(|c| c.name.clone())
+                    .unwrap_or_default()
+            };
+            ui.horizontal_wrapped(|ui| {
+                ui.label(t!("developer.client"));
+                egui::ComboBox::from_id_salt("developer_client")
+                    .selected_text(name(state.client))
+                    .show_ui(ui, |ui| {
+                        for client in clients {
+                            ui.selectable_value(&mut state.client, Some(client.id), &client.name);
+                        }
+                    });
+                let changed = presenting != state.client;
+                if ui
+                    .add_enabled(
+                        !busy && changed && state.client.is_some(),
+                        egui::Button::new(t!("developer.present")),
+                    )
+                    .clicked()
+                {
+                    actions.send(Command::DeveloperPresent(state.client));
+                }
+                if presenting.is_some() && ui.button(t!("developer.present_stop")).clicked() {
+                    actions.send(Command::DeveloperPresent(None));
+                }
+                if busy {
+                    ui.spinner();
+                }
+            });
+            if let Some(id) = presenting {
+                widgets::hint(ui, &t!("developer.presenting", client = name(Some(id))));
+            }
+        }
+    }
 }
 
 fn open_folder(path: &std::path::Path) {

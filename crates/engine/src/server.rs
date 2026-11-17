@@ -464,7 +464,7 @@ pub(crate) struct BrandDownload {
 /// brand, which is tried again at the next check; a picture that arrives but
 /// is not usable or not safe is left out (the app's own stays), so one bad
 /// file does not hold back the names, colours and texts.
-fn download_images(
+pub(crate) fn download_images(
     api: &dyn PanelApi,
     json: &serde_json::Value,
 ) -> Result<Vec<(&'static str, Vec<u8>)>, PanelError> {
@@ -504,7 +504,7 @@ fn access_code(typed: &str) -> Option<String> {
 }
 
 /// The panel's company name, colour and watermark for the handouts.
-fn set_handout_brand(brand: &PanelBrand) {
+pub(crate) fn set_handout_brand(brand: &PanelBrand) {
     kg_handout::set_brand(kg_handout::HandoutBrand {
         company: brand.company_name.clone(),
         color: brand.company_color,
@@ -794,6 +794,11 @@ impl crate::Engine {
         if !kg_brand::has_server() {
             return true;
         }
+        // Showing the app from the developer area: every module, whatever
+        // this licence has, so each view can be shown in full.
+        if self.developer_view().is_some() || self.presenting().is_some() {
+            return true;
+        }
         self.panel
             .session
             .modules
@@ -835,6 +840,12 @@ impl crate::Engine {
     pub fn role(&self) -> crate::ClassRole {
         if !kg_brand::has_server() {
             return crate::ClassRole::Owner;
+        }
+        // Forced from the developer area, to show either view.
+        match self.developer_view() {
+            Some(crate::UseRole::Teacher) => return crate::ClassRole::Teacher,
+            Some(crate::UseRole::Student) => return crate::ClassRole::Student,
+            None => {}
         }
         match self.panel.session.role.as_deref() {
             Some("teacher") => crate::ClassRole::Teacher,
@@ -888,10 +899,25 @@ impl crate::Engine {
         self.panel.session.modules = Some(modules.iter().map(|m| (*m).to_owned()).collect());
     }
 
-    /// The brand from the panel: the one kept at an earlier start, or the
-    /// newer one the panel sent during this session.
+    /// The brand from the panel: a client's while presenting (developer
+    /// area), otherwise the one kept at an earlier start, or the newer one
+    /// the panel sent during this session.
     pub fn panel_brand(&self) -> Option<&PanelBrand> {
-        self.panel.brand.as_ref()
+        self.presentation_brand().or(self.panel.brand.as_ref())
+    }
+
+    /// The UI shows the brand again (presentation mode started or ended).
+    pub(crate) fn mark_brand_changed(&mut self) {
+        self.panel.brand_changed = true;
+    }
+
+    /// Back to the licence's own brand after presenting another client's.
+    pub(crate) fn restore_panel_brand(&mut self) {
+        match &self.panel.brand {
+            Some(brand) => set_handout_brand(brand),
+            None => kg_handout::set_brand(kg_handout::HandoutBrand::default()),
+        }
+        self.panel.brand_changed = true;
     }
 
     /// Whether the panel sent a new brand since the last call, so the UI
@@ -1156,9 +1182,12 @@ impl crate::Engine {
                     }
                     // Shown now, even if it could not be kept for the next start.
                     if self.panel.brand.as_ref() != Some(&brand) {
-                        set_handout_brand(&brand);
+                        // While presenting, the client's brand stays on screen.
+                        if self.presenting().is_none() {
+                            set_handout_brand(&brand);
+                            self.panel.brand_changed = true;
+                        }
                         self.panel.brand = Some(brand);
-                        self.panel.brand_changed = true;
                     }
                 }
                 if let Some(modules) = check.modules {
