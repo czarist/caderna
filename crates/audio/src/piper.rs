@@ -85,6 +85,22 @@ impl PiperServer {
     }
 }
 
+/// Whether the Piper we ship can read this voice config: every phoneme a
+/// single character. Configs for Piper 1.5 add diphthongs ("aɪ", "aʊ"…)
+/// that make it stop before saying anything.
+pub(crate) fn config_supported(voice_config: &Path) -> bool {
+    std::fs::read_to_string(voice_config)
+        .ok()
+        .and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok())
+        .is_some_and(|json| supported(&json))
+}
+
+fn supported(json: &serde_json::Value) -> bool {
+    json["phoneme_id_map"]
+        .as_object()
+        .is_some_and(|map| map.keys().all(|k| k.chars().count() == 1))
+}
+
 impl PiperTts {
     /// `voice_config` is the `.onnx.json` next to the voice model.
     pub fn new(
@@ -97,6 +113,11 @@ impl PiperTts {
             std::fs::read_to_string(voice_config).map_err(|e| AudioError::io(voice_config, e))?;
         let json: serde_json::Value = serde_json::from_str(&raw)
             .map_err(|e| AudioError::Tts(format!("bad voice config: {e}")))?;
+        if !supported(&json) {
+            return Err(AudioError::Tts(
+                "the voice was made for a newer Piper; download it again".into(),
+            ));
+        }
         let sample_rate = json["audio"]["sample_rate"]
             .as_u64()
             .and_then(|r| u32::try_from(r).ok())
@@ -269,5 +290,19 @@ impl PiperTts {
             samples: soften(&samples, self.sample_rate),
             sample_rate: self.sample_rate,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn configs_for_a_newer_piper_are_refused() {
+        let old = serde_json::json!({"phoneme_id_map": {"a": [14], "ɪ": [74]}});
+        let new = serde_json::json!({"phoneme_id_map": {"a": [14], "aɪ": [161]}});
+        assert!(supported(&old));
+        assert!(!supported(&new));
+        assert!(!supported(&serde_json::json!({})));
     }
 }

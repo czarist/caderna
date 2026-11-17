@@ -82,6 +82,11 @@ repository.
   copies of the app.
 
 ### Fixed
+- "The speech synthesizer failed" on every sentence: the Piper voices were downloaded from
+  `rhasspy/piper-voices` `main`, which since 2026-11-09 retrains them for Piper 1.5 with
+  configs the Piper we ship refuses. Voices now come from the 2026-10-30 revision; one
+  already downloaded from the newer one counts as missing, so the lesson offers to
+  download it again.
 - The school's icon from the panel now shows on the Windows taskbar and in the tray, at
   start and whenever the brand changes; before, the taskbar kept the executable's own
   icon and the tray never changed. The executable's file icon (desktop and Start menu
