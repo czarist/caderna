@@ -321,6 +321,8 @@ lesson:
   open_settings: "開啟設定"
   need_stt: "要和老師對話，請在設定中下載語音識別模型。"
   need_tts: "要聽老師說話，請在設定中下載一個語音及其程式。"
+  need_downloads: "語音課程還需要下載語音辨識和老師的聲音。沒有它們，也可以在聊天中打字學習。"
+  download_now: "立即下載"
   voice_language: "這種語言暫不支援語音課堂。請輸入你的回答，老師會用文字回覆。"
   phase:
     idle: "就緒"

@@ -21,6 +21,14 @@ pub fn set_presenting(on: bool) {
     PRESENTING.store(on, std::sync::atomic::Ordering::Relaxed);
 }
 
+/// Changes every time another brand is laid over the build's, so the
+/// taskbar and tray icons follow it.
+static GENERATION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+pub fn generation() -> u64 {
+    GENERATION.load(std::sync::atomic::Ordering::Relaxed)
+}
+
 fn presenting() -> bool {
     PRESENTING.load(std::sync::atomic::Ordering::Relaxed)
 }
@@ -36,6 +44,7 @@ pub fn apply(brand: Option<&PanelBrand>) -> bool {
             Ok(mut current) => *current = None,
             Err(poisoned) => *poisoned.into_inner() = None,
         }
+        GENERATION.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         return true;
     };
     if panel() == Some(brand) {
@@ -46,6 +55,7 @@ pub fn apply(brand: Option<&PanelBrand>) -> bool {
         Ok(mut current) => *current = Some(brand),
         Err(poisoned) => *poisoned.into_inner() = Some(brand),
     }
+    GENERATION.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     true
 }
 

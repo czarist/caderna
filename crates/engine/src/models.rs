@@ -3,7 +3,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
-use kg_audio::{AudioError, ModelId, TtsBackend, Voice};
+use kg_audio::{AudioError, ModelId, SttEngine, TtsBackend, Voice};
 
 use crate::{Engine, EngineError, Event, Notice};
 
@@ -107,6 +107,29 @@ impl Engine {
         self.voice.reset_tts();
         self.models.remove(id)?;
         Ok(())
+    }
+
+    /// What a voice lesson still needs downloaded, with the settings as they
+    /// are: the speech recognition and, when the tutor speaks with a local
+    /// voice, that voice and its program. Empty for typed-only languages.
+    pub fn missing_speech_models(&self) -> Vec<ModelId> {
+        if !self.local_speech_language() {
+            return Vec::new();
+        }
+        let mut wanted = vec![match self.settings.stt_engine {
+            SttEngine::Parakeet => ModelId::Parakeet,
+            SttEngine::Whisper => ModelId::Whisper(self.settings.whisper_model),
+        }];
+        if self.settings.voice_enabled && self.settings.tts_backend == TtsBackend::Local {
+            let voice = self.settings.voice;
+            wanted.push(voice.runtime_id());
+            wanted.push(voice.model_id());
+        }
+        wanted.dedup();
+        wanted
+            .into_iter()
+            .filter(|id| !matches!(self.model_status(*id), ModelStatus::Installed { .. }))
+            .collect()
     }
 
     /// True when speech recognition can run.

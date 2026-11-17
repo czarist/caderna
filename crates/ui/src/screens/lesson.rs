@@ -850,6 +850,7 @@ fn no_lesson(ui: &mut egui::Ui, engine: &Engine, actions: &mut Actions) {
         }
         return;
     };
+    model_warnings(ui, engine, actions);
     widgets::hint(ui, &t!("lesson.none"));
     ui.add_space(8.0);
     ui.label(RichText::new(t!("lesson.suggestions")).family(theme::strong_family()));
@@ -911,9 +912,49 @@ fn model_warnings(ui: &mut egui::Ui, engine: &Engine, actions: &mut Actions) {
         warn(ui, &t!("lesson.voice_language"));
         return;
     }
-    if !engine.stt_ready() {
-        warn(ui, &t!("lesson.need_stt"));
+    let missing = engine.missing_speech_models();
+    if !missing.is_empty() {
+        // What a voice lesson needs, offered right here.
+        widgets::callout(ui, p.highlight, |ui| {
+            ui.label(t!("lesson.need_downloads"));
+            let progress: Vec<f32> = missing
+                .iter()
+                .map(|id| match engine.model_status(*id) {
+                    kg_engine::ModelStatus::Downloading(f) => f,
+                    kg_engine::ModelStatus::Installed { .. } => 1.0,
+                    kg_engine::ModelStatus::Missing => 0.0,
+                })
+                .collect();
+            let downloading = missing.iter().any(|id| {
+                matches!(
+                    engine.model_status(*id),
+                    kg_engine::ModelStatus::Downloading(_)
+                )
+            });
+            ui.horizontal(|ui| {
+                if downloading {
+                    let done = progress.iter().sum::<f32>() / progress.len() as f32;
+                    ui.add(
+                        egui::ProgressBar::new(done)
+                            .show_percentage()
+                            .desired_width(260.0)
+                            .desired_height(8.0),
+                    );
+                    ui.ctx()
+                        .request_repaint_after(std::time::Duration::from_millis(250));
+                } else if widgets::primary_button(ui, &t!("lesson.download_now")).clicked() {
+                    for id in &missing {
+                        actions.send(Command::DownloadModel(*id));
+                    }
+                }
+                if ui.small_button(t!("lesson.open_settings")).clicked() {
+                    actions.go_to(Screen::Settings);
+                }
+            });
+        });
+        return;
     }
+    // A cloud voice without its settings.
     if engine.settings().voice_enabled && !engine.tts_ready() {
         warn(ui, &t!("lesson.need_tts"));
     }

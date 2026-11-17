@@ -321,6 +321,8 @@ lesson:
   open_settings: "Abrir configurações"
   need_stt: "Para falar com o tutor, baixe um modelo de reconhecimento de voz em Configurações."
   need_tts: "Para ouvir o tutor, baixe uma voz e o programa dela em Configurações."
+  need_downloads: "Para a aula por voz, falta baixar o reconhecimento de fala e a voz do professor. Sem eles, dá para estudar digitando no chat."
+  download_now: "Baixar agora"
   voice_language: "Aulas por voz ainda não estão disponíveis neste idioma. Digite suas respostas; o tutor responde por escrito."
   phase:
     idle: "Pronto"
