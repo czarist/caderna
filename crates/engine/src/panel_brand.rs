@@ -154,8 +154,8 @@ pub(crate) fn image_urls(value: &serde_json::Value) -> Vec<(&'static str, Option
                     url.len() <= 1000
                         && !url.contains(char::is_whitespace)
                         && (url.starts_with("https://")
-                            || (!kg_brand::SERVER_URL.is_empty()
-                                && url.starts_with(&format!("{}/", kg_brand::SERVER_URL))))
+                            || (!crate::developer::panel_url().is_empty()
+                                && url.starts_with(&format!("{}/", crate::developer::panel_url()))))
                 })
                 .map(str::to_owned);
             (*file, url)

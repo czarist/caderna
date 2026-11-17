@@ -77,6 +77,21 @@ pub struct LessonTurn {
     pub text: String,
 }
 
+/// Why a lesson type is suggested.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LengthReason {
+    /// Never studied: in depth.
+    New,
+    /// Quiz scores under 60 %: in depth.
+    LowScores,
+    /// Mastered: straight to the point.
+    Mastered,
+    /// The exam is two weeks away or less: straight to the point.
+    ExamClose,
+    /// Nothing special: the last type or the one in Settings.
+    Usual,
+}
+
 /// An ongoing lesson about one topic.
 #[derive(Debug)]
 pub struct LessonSession {
@@ -151,6 +166,11 @@ impl Partial {
 }
 
 impl LessonSession {
+    /// The lesson's type.
+    pub fn length(&self) -> kg_ai::LessonLength {
+        self.context.length
+    }
+
     /// Microphone level while listening, `0.0..=1.0`.
     pub fn input_level(&self) -> f32 {
         if self.phase != LessonPhase::Listening {
@@ -378,6 +398,120 @@ impl Engine {
         self.open_lesson(topic_id, None)
     }
 
+    /// The lesson type for `topic`: the last one chosen for it, otherwise the
+    /// one in Settings.
+    pub fn topic_lesson_length(&self, topic: TopicId) -> kg_ai::LessonLength {
+        self.store
+            .lesson_type(topic)
+            .ok()
+            .flatten()
+            .and_then(|(key, _)| kg_ai::LessonLength::from_key(&key))
+            .unwrap_or(self.settings.lesson_length)
+    }
+
+    /// The last type chosen for `topic` and when, for its history.
+    pub fn last_lesson_type(
+        &self,
+        topic: TopicId,
+    ) -> Option<(kg_ai::LessonLength, chrono::NaiveDate)> {
+        let (key, day) = self.store.lesson_type(topic).ok().flatten()?;
+        Some((kg_ai::LessonLength::from_key(&key)?, day))
+    }
+
+    /// A type to suggest for `topic`, and why: in depth for a topic never
+    /// studied or with low quiz scores, straight to the point for a topic
+    /// mastered or an exam two weeks away. The student always decides.
+    pub fn suggested_lesson_length(&self, topic: TopicId) -> (kg_ai::LessonLength, LengthReason) {
+        use kg_ai::LessonLength;
+        let found = self.active.as_ref().and_then(|plan| {
+            plan.topics()
+                .find(|(_, t)| t.id == topic)
+                .map(|(_, t)| (plan, t))
+        });
+        let Some((plan, info)) = found else {
+            return (self.settings.lesson_length, LengthReason::Usual);
+        };
+        let exam = plan.created_on + chrono::Duration::weeks(i64::from(plan.weeks));
+        let days_left = (exam - Self::today()).num_days();
+        let (right, total) = self.store.topic_quiz_totals(topic).unwrap_or((0, 0));
+        if info.status == TopicStatus::Done {
+            (LessonLength::Quick, LengthReason::Mastered)
+        } else if (0..=14).contains(&days_left) {
+            (LessonLength::Quick, LengthReason::ExamClose)
+        } else if info.status == TopicStatus::NotStarted && !info.lesson_taken() {
+            (LessonLength::Full, LengthReason::New)
+        } else if total >= 5 && right * 100 < total * 60 {
+            (LessonLength::Full, LengthReason::LowScores)
+        } else {
+            (self.topic_lesson_length(topic), LengthReason::Usual)
+        }
+    }
+
+    pub(crate) fn choose_lesson_length(
+        &mut self,
+        topic: TopicId,
+        length: kg_ai::LessonLength,
+    ) -> Result<(), EngineError> {
+        self.store
+            .set_lesson_type(topic, length.key(), Self::today())?;
+        Ok(())
+    }
+
+    /// Changes the open lesson's type. Steps already taught stay; going
+    /// shorter merges the remaining steps two by two to fit the new type,
+    /// going deeper keeps them and teaches each one more fully.
+    pub(crate) fn change_lesson_length(&mut self, length: kg_ai::LessonLength) {
+        let Some(lesson) = self.lesson.as_mut() else {
+            return;
+        };
+        if lesson.context.length == length {
+            return;
+        }
+        lesson.context.length = length;
+        let first = (lesson.step + 1).min(lesson.outline.len());
+        let remaining = lesson.outline.len() - first;
+        let room = length.max_steps().saturating_sub(first).max(1);
+        if remaining > room {
+            let notes = &lesson.context.step_notes;
+            let has_notes = notes.len() == lesson.outline.len();
+            let mut outline: Vec<String> = lesson.outline[..first].to_vec();
+            let mut merged_notes: Vec<String> = if has_notes {
+                notes[..first].to_vec()
+            } else {
+                Vec::new()
+            };
+            let per = remaining.div_ceil(room);
+            for chunk in (first..lesson.outline.len())
+                .collect::<Vec<_>>()
+                .chunks(per)
+            {
+                outline.push(
+                    chunk
+                        .iter()
+                        .map(|i| lesson.outline[*i].as_str())
+                        .collect::<Vec<_>>()
+                        .join(" · "),
+                );
+                if has_notes {
+                    merged_notes.push(
+                        chunk
+                            .iter()
+                            .map(|i| notes[*i].as_str())
+                            .collect::<Vec<_>>()
+                            .join("\n"),
+                    );
+                }
+            }
+            lesson.outline = outline.clone();
+            lesson.context.outline = outline;
+            lesson.context.step_notes = merged_notes;
+        }
+        let topic = lesson.topic_id;
+        if let Err(err) = self.choose_lesson_length(topic, length) {
+            tracing::warn!(%err, "could not remember the lesson type");
+        }
+    }
+
     /// Picks up the unfinished lesson on a topic, or starts one.
     pub(crate) fn resume_lesson(&mut self, topic_id: TopicId) -> Result<(), EngineError> {
         self.end_lesson()?;
@@ -404,7 +538,7 @@ impl Engine {
         let (mut context, topic_title) = self.topic_context(topic_id)?;
         // A written handout gives the lesson its plan up front, with what to
         // teach in each step; the quiz's questions say what must be covered.
-        context.length = self.settings.lesson_length;
+        context.length = self.topic_lesson_length(topic_id);
         let plan = self.handout_plan(topic_id, context.length);
         context.outline = plan.outline;
         context.step_notes = plan.notes;
@@ -975,6 +1109,13 @@ impl Engine {
             return;
         }
         self.stop_speaking();
+        // "Pode aprofundar", "mais rápido": the type changes before the tutor
+        // answers, so the answer already follows it.
+        if let Some(current) = self.lesson.as_ref().map(|l| l.context.length)
+            && let Some(length) = kg_ai::length_request(&text, current)
+        {
+            self.change_lesson_length(length);
+        }
         let reply = self.next_id();
         let Some(lesson) = self.lesson.as_mut() else {
             return;

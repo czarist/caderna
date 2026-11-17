@@ -301,6 +301,17 @@ pub fn notice(notice: &Notice) -> (String, bool) {
             return (t!("notice.exam_format_missing").into_owned(), true);
         }
         Notice::MockCreated => t!("notice.mock_created"),
+        Notice::SharedReported => t!("reader.report_sent"),
+        Notice::SharedReportFailed => return (t!("reader.report_failed").into_owned(), true),
+        Notice::DeveloperTokenSaved => t!("developer.token_saved"),
+        Notice::DeveloperSwitched => t!("developer.switched"),
+        Notice::DeveloperEnded => return (t!("developer.revoked").into_owned(), true),
+        Notice::MockCardRead { filled, doubtful } if *doubtful > 0 => t!(
+            "notice.mock_card_read_doubtful",
+            filled = filled,
+            doubtful = doubtful
+        ),
+        Notice::MockCardRead { filled, .. } => t!("notice.mock_card_read", filled = filled),
         Notice::PlanPublished { classrooms } => {
             t!("notice.plan_published", count = classrooms)
         }
@@ -430,6 +441,12 @@ pub fn error_message(err: &EngineError) -> String {
         EngineError::ExamFormat(_) => t!("error.mock.format"),
         EngineError::MockExam(_) | EngineError::MockShort => t!("error.mock.questions"),
         EngineError::MockSubject(subject) => t!("error.mock.subject", subject = subject),
+        EngineError::Card(kg_engine::OmrError::Image(_)) => t!("error.mock.card_image"),
+        EngineError::Card(kg_engine::OmrError::Markers) => t!("error.mock.card_markers"),
+        EngineError::CardOtherExam(code) => t!("error.mock.card_other", code = code),
+        EngineError::Developer(err) => {
+            return crate::screens::developer::error_text(*err);
+        }
     };
     text.into_owned()
 }
@@ -544,6 +561,19 @@ pub fn english_voice(voice: kg_engine::EnglishVoice) -> String {
         V::George => t!("settings.english_voice.george"),
     }
     .into_owned()
+}
+
+/// Why a lesson type is suggested, when there is a reason worth saying.
+pub fn length_reason(reason: kg_engine::LengthReason) -> Option<String> {
+    use kg_engine::LengthReason;
+    let text = match reason {
+        LengthReason::New => t!("lesson_type.reason_new"),
+        LengthReason::LowScores => t!("lesson_type.reason_low"),
+        LengthReason::Mastered => t!("lesson_type.reason_mastered"),
+        LengthReason::ExamClose => t!("lesson_type.reason_exam"),
+        LengthReason::Usual => return None,
+    };
+    Some(text.into_owned())
 }
 
 pub fn lesson_length_hint(length: kg_engine::LessonLength) -> String {

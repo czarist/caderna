@@ -1,6 +1,6 @@
 # Política de Privacidade do {{app}}
 
-Versão {{version}} · Última atualização: 16 de novembro de 2026 (2).
+Versão {{version}} · Última atualização: 17 de novembro de 2026 (2).
 
 Esta Política explica como tratamos dados pessoais no aplicativo {{app}}, no painel da
 escola (área do cliente) e no site do {{app}}, de acordo com a Lei nº 13.709/2018 (Lei Geral
@@ -56,8 +56,12 @@ de Proteção de Dados, LGPD). Ela faz parte dos Termos de Uso.
   alunos e o link de aulas on-line). As anotações que o professor marca como só dele ficam
   no computador dele e nunca vão ao Painel.
 - Do aluno: o progresso nos planos das turmas (situação e agenda de revisão de cada tópico,
-  resultados de quizzes, resumos de aulas, revisões, caderno de erros) e o tempo de estudo
-  por dia.
+  resultados de quizzes, resumos de aulas, revisões, caderno de erros), o tempo de estudo
+  por dia e, quando a turma tem calendário de aulas, se o aluno estudou os tópicos de cada
+  aula até o dia dela e quantas tarefas da aula fez (calculado no app a partir desse
+  progresso).
+- De quem reporta uma apostila da base comum: o motivo escolhido e a observação que a
+  pessoa escrever, ligados à Escola. O app pede que a observação não tenha dados pessoais.
 
 **No computador do usuário (não enviados ao Painel, salvo o descrito na seção 4)**
 
@@ -129,8 +133,9 @@ discursivas são estimativas sem efeito oficial.
   Painel e enviam os emails de acesso e de cobrança, sob contrato e com acesso restrito.
 - **Google (reCAPTCHA):** quando a verificação antispam está ativa no site, ela só é
   carregada se o visitante pedir, e o Google recebe dados técnicos do navegador.
-- **A própria Escola:** vê os professores e alunos que cadastrou e o progresso deles. Os
-  professores veem o nome e o resumo do progresso dos alunos das suas turmas.
+- **A própria Escola:** vê os professores e alunos que cadastrou e o progresso deles,
+  inclusive, por aula do calendário, quantos alunos da turma se prepararam e fizeram a
+  tarefa. Os professores veem o nome e o resumo do progresso dos alunos das suas turmas.
 - **Autoridades:** quando houver obrigação legal ou ordem judicial.
 
 ## 7. Transferência internacional

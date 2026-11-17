@@ -12,7 +12,8 @@ Rules:
 - "options" is the number of options in each multiple-choice question (for example 4 or 5); use 2 for true or false.
 - "wrong_cancels" is true if a wrong answer cancels a right one (or takes points away).
 - "essay" is true if the exam has an essay or written-answer questions.
+- "cutoff_percent" is the minimum score of the objective test as a percentage of the points, as the notice writes it (for example 50 for "50% of the points"), or 0. "cutoff_points" is the minimum score in points, as the notice writes it, or 0. Do not compute: copy the notice's number.
 - In "sections", one line per plan subject that is on the test, with its number of questions and the points of each question. If the syllabus groups several subjects in one block, split the block's questions among them, keeping the block's total.
 
 Reply only with valid JSON, with no text before or after, in this format:
-{"found": true, "minutes": 240, "style": "choice", "options": 5, "wrong_cancels": false, "essay": true, "sections": [{"subject": "...", "questions": 10, "weight": 1.0}]}
+{"found": true, "minutes": 240, "style": "choice", "options": 5, "wrong_cancels": false, "essay": true, "cutoff_percent": 0, "cutoff_points": 0, "sections": [{"subject": "...", "questions": 10, "weight": 1.0}]}

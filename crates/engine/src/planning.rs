@@ -10,8 +10,8 @@ use std::path::{Path, PathBuf};
 
 use kg_ai::{PlanningInput, SessionBrief, SessionDraft};
 use kg_study::schedule::{
-    Activity, ActivityKind, ClassSchedule, ScheduleSpec, Session, SessionKind, SessionPlan,
-    SessionStatus, TopicLoad, plan as plan_schedule, replan,
+    Activity, ActivityKind, ClassSchedule, ScheduleSpec, Session, SessionKind, SessionMode,
+    SessionPlan, SessionStatus, TopicLoad, plan as plan_schedule, replan,
 };
 use kg_study::{PlanId, SavedSchedule};
 
@@ -25,6 +25,16 @@ const BATCH: usize = 6;
 pub(crate) struct PlanningState {
     pub(crate) suggesting: Option<(PlanId, i64)>,
     pub(crate) publishing: Option<(PlanId, i64)>,
+    /// What moved in schedules the teacher republished, for a quiet note
+    /// on the student's Today.
+    pub(crate) changes: Vec<ScheduleNote>,
+}
+
+/// A republished schedule's changes, as the student's Today shows them.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ScheduleNote {
+    pub plan_title: String,
+    pub changes: Vec<kg_study::schedule::ScheduleChange>,
 }
 
 /// A schedule as the panel sends it to a student.
@@ -46,6 +56,27 @@ pub struct AgendaItem {
     pub topics: Vec<String>,
 }
 
+/// A reminder about a class of the student's schedule (Phase W8).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ClassReminder {
+    /// Shown once per id: plan, session and kind.
+    pub id: String,
+    pub kind: ClassReminderKind,
+    pub plan_title: String,
+    pub date: chrono::NaiveDate,
+    pub start: chrono::NaiveTime,
+    /// The online class's link.
+    pub link: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ClassReminderKind {
+    /// Tomorrow's class, with the previous class's homework still open.
+    HomeworkOpen,
+    /// An online class within the hour.
+    OnlineSoon,
+}
+
 #[derive(Debug)]
 pub(crate) enum PlanningEvent {
     Suggested {
@@ -62,6 +93,7 @@ pub(crate) enum PlanningEvent {
         classroom: i64,
         result: Result<i64, crate::server::PanelError>,
     },
+    PdfExported(Result<PathBuf, EngineError>),
 }
 
 /// Words the calendar file needs, in the app's language (the UI passes them).
@@ -264,6 +296,23 @@ impl Engine {
             if current.as_ref().and_then(|s| s.published_version) == Some(download.version) {
                 continue;
             }
+            if let Some(current) = &current {
+                let changes = download
+                    .schedule
+                    .changes_since(&current.schedule, now.date());
+                if !changes.is_empty() {
+                    let plan_title = self
+                        .plans()
+                        .iter()
+                        .find(|p| p.id == plan)
+                        .map(|p| p.title.clone())
+                        .unwrap_or_default();
+                    self.planning.changes.push(ScheduleNote {
+                        plan_title,
+                        changes,
+                    });
+                }
+            }
             self.store
                 .save_class_schedule(plan, download.classroom_id, &download.schedule, now)?;
             self.store.set_class_schedule_published(
@@ -283,6 +332,11 @@ impl Engine {
             }
         }
         Ok(())
+    }
+
+    /// Changes in republished schedules since the app started, oldest first.
+    pub fn schedule_changes(&self) -> &[ScheduleNote] {
+        &self.planning.changes
     }
 
     /// The student's next classes, one per schedule, soonest first.
@@ -310,6 +364,79 @@ impl Engine {
         }
         items.sort_by_key(|item| (item.session.date, item.session.start));
         items
+    }
+
+    /// Class reminders due at `now` for a student, as the settings allow:
+    /// the day before a class while the last class's homework is still
+    /// open, and in the hour before an online class.
+    pub fn class_reminders(&self, now: chrono::NaiveDateTime) -> Vec<ClassReminder> {
+        let settings = self.settings();
+        if self.role() != crate::ClassRole::Student
+            || !(settings.homework_reminders || settings.online_class_reminders)
+        {
+            return Vec::new();
+        }
+        let today = now.date();
+        let mut reminders = Vec::new();
+        for plan in self.plans() {
+            if !self.course_link(plan.id).is_some_and(|link| link.assigned) {
+                continue;
+            }
+            let progress = self.store.plan_progress(plan.id).ok();
+            for saved in self.class_schedules(plan.id) {
+                let schedule = &saved.schedule;
+                let work = progress
+                    .as_ref()
+                    .map(|p| p.schedule_work(schedule, today))
+                    .unwrap_or_default();
+                let planned = schedule
+                    .sessions
+                    .iter()
+                    .filter(|s| s.status == SessionStatus::Planned);
+                for session in planned {
+                    let id = |kind: &str| {
+                        format!("{}:{}:{}:{kind}", plan.id.0, saved.classroom, session.key)
+                    };
+                    let starts = session.date.and_time(session.start);
+                    if settings.online_class_reminders
+                        && let SessionMode::Online(link) = &session.plan.mode
+                        && starts > now
+                        && starts - chrono::Duration::hours(1) <= now
+                    {
+                        reminders.push(ClassReminder {
+                            id: id("online"),
+                            kind: ClassReminderKind::OnlineSoon,
+                            plan_title: plan.title.clone(),
+                            date: session.date,
+                            start: session.start,
+                            link: Some(link.clone()),
+                        });
+                    }
+                    if settings.homework_reminders && today.succ_opt() == Some(session.date) {
+                        // The homework of the class before this one.
+                        let open = schedule
+                            .sessions
+                            .iter()
+                            .filter(|s| (s.date, s.start) < (session.date, session.start))
+                            .filter(|s| !s.plan.homework.is_empty())
+                            .max_by_key(|s| (s.date, s.start))
+                            .and_then(|s| work.get(&s.key))
+                            .is_some_and(|w| w.homework_done < w.homework_total);
+                        if open {
+                            reminders.push(ClassReminder {
+                                id: id("homework"),
+                                kind: ClassReminderKind::HomeworkOpen,
+                                plan_title: plan.title.clone(),
+                                date: session.date,
+                                start: session.start,
+                                link: None,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        reminders
     }
 
     /// For a student, the day a topic opens when its classroom opens topics
@@ -347,6 +474,10 @@ impl Engine {
 
     pub(crate) fn on_planning_event(&mut self, event: PlanningEvent) {
         match event {
+            PlanningEvent::PdfExported(result) => match result {
+                Ok(path) => self.notices.push(crate::Notice::Exported(path)),
+                Err(err) => self.notices.push(crate::Notice::Error(err)),
+            },
             PlanningEvent::Published {
                 plan,
                 classroom,
@@ -801,6 +932,7 @@ mod tests {
             topics: topics.iter().map(|t| (*t).to_owned()).collect(),
             status: SessionStatus::Planned,
             locked: false,
+            covered: None,
             plan: SessionPlan::default(),
         }
     }

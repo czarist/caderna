@@ -12,7 +12,8 @@
 - "options" は選択式の各問の選択肢の数（例：4 または 5）。正誤問題なら 2。
 - 誤答が正答を打ち消す（または減点される）場合、"wrong_cancels" は true。
 - 論文・作文や記述式の問題がある場合、"essay" は true。
+- "cutoff_percent" は、要項に書かれた択一式試験の最低得点率（例：「得点の50%」なら 50）。なければ 0。"cutoff_points" は要項に書かれた最低点（点数）。なければ 0。計算せず、要項の数字をそのまま写すこと。
 - "sections" には、試験に出るプランの科目ごとに1行、問題数と1問あたりの配点を書くこと。要項が複数の科目を1つのまとまりにしている場合は、合計を保ったまま、その問題数を科目に分けること。
 
 有効なJSONだけで答え、前後に文章を書かないこと。形式：
-{"found": true, "minutes": 240, "style": "choice", "options": 5, "wrong_cancels": false, "essay": true, "sections": [{"subject": "...", "questions": 10, "weight": 1.0}]}
+{"found": true, "minutes": 240, "style": "choice", "options": 5, "wrong_cancels": false, "essay": true, "cutoff_percent": 0, "cutoff_points": 0, "sections": [{"subject": "...", "questions": 10, "weight": 1.0}]}

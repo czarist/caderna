@@ -15,10 +15,17 @@
 //! - study time takes the longest of each day.
 //!
 //! Dates are ISO strings (`2026-11-10`).
+//!
+//! The work on a classroom's schedule (Phase W8: preparation and homework per
+//! class) is not merged: it is computed again from the merged records and
+//! the schedule before every upload, for the school's "Desempenho".
 
 use std::collections::BTreeMap;
 
+use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
+
+use crate::schedule::{ActivityKind, ClassSchedule, SessionKind, SessionStatus};
 
 /// A topic's status and review schedule.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -123,6 +130,23 @@ pub struct PlanProgress {
     pub reviews: Vec<ReviewRecord>,
     #[serde(default)]
     pub mistakes: Vec<MistakeRecord>,
+    /// Session key → the student's work for that class, computed by
+    /// [`PlanProgress::schedule_work`]; never merged.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub homework: BTreeMap<String, SessionWork>,
+}
+
+/// What a student did around one class of the schedule.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SessionWork {
+    /// Studied one of the class's topics on or before its day.
+    #[serde(default)]
+    pub prepared: bool,
+    /// Homework items done on or after the class's day.
+    #[serde(default)]
+    pub homework_done: u32,
+    #[serde(default)]
+    pub homework_total: u32,
 }
 
 /// What `remote` has that `local` lacks, for [`crate::Store::apply_plan_progress`].
@@ -185,6 +209,82 @@ impl PlanProgress {
         }
     }
 
+    /// The student's work on every class of `schedule` up to `today`:
+    /// preparation (any lesson, quiz or review on the class's topics on or
+    /// before its day) and homework (a quiz for a quiz, a lesson for a voice
+    /// lesson, any study of the topic for the rest, on or after its day).
+    pub fn schedule_work(
+        &self,
+        schedule: &ClassSchedule,
+        today: NaiveDate,
+    ) -> BTreeMap<String, SessionWork> {
+        let studied = |topic: &str| {
+            self.lessons
+                .iter()
+                .map(|l| (l.topic.as_str(), l.taken_on.as_str()))
+                .chain(
+                    self.quizzes
+                        .iter()
+                        .map(|q| (q.topic.as_str(), q.taken_on.as_str())),
+                )
+                .chain(
+                    self.reviews
+                        .iter()
+                        .map(|r| (r.topic.as_str(), r.reviewed_on.as_str())),
+                )
+                .filter(move |(t, _)| *t == topic)
+                .map(|(_, day)| day)
+                .collect::<Vec<_>>()
+        };
+        let mut work = BTreeMap::new();
+        for session in &schedule.sessions {
+            if session.date > today || session.status == SessionStatus::Cancelled {
+                continue;
+            }
+            let day = session.date.format("%Y-%m-%d").to_string();
+            let prepared = session.kind != SessionKind::MockExam
+                && session.topics.iter().any(|topic| {
+                    studied(topic)
+                        .iter()
+                        .any(|d| d.get(..10) <= Some(day.as_str()))
+                });
+            let mut done = 0;
+            for item in &session.plan.homework {
+                let topics: Vec<&str> = match &item.topic {
+                    Some(topic) => vec![topic.as_str()],
+                    None => session.topics.iter().map(String::as_str).collect(),
+                };
+                let after = |d: &str| d.get(..10) >= Some(day.as_str());
+                let finished = topics.iter().any(|topic| match item.kind {
+                    ActivityKind::Quiz => self
+                        .quizzes
+                        .iter()
+                        .any(|q| q.topic == *topic && after(&q.taken_on)),
+                    ActivityKind::VoiceLesson => self
+                        .lessons
+                        .iter()
+                        .any(|l| l.topic == *topic && after(&l.taken_on)),
+                    _ => studied(topic).iter().any(|d| after(d)),
+                });
+                if finished {
+                    done += 1;
+                }
+            }
+            let total = u32::try_from(session.plan.homework.len()).unwrap_or(u32::MAX);
+            if prepared || total > 0 {
+                work.insert(
+                    session.key.clone(),
+                    SessionWork {
+                        prepared,
+                        homework_done: done,
+                        homework_total: total,
+                    },
+                );
+            }
+        }
+        work
+    }
+
     /// Answered questions and right answers, for the teacher's view.
     pub fn quiz_totals(&self) -> (u32, u32) {
         self.quizzes
@@ -240,6 +340,80 @@ mod tests {
             correct,
             total: 5,
         }
+    }
+
+    #[test]
+    fn schedule_work_counts_preparation_and_homework() {
+        use crate::schedule::{Activity, ScheduleSpec, Session, SessionPlan};
+        let day = |d: u32| NaiveDate::from_ymd_opt(2026, 3, d).unwrap_or_default();
+        let session = |key: &str, date: NaiveDate, topic: &str, homework: Vec<Activity>| Session {
+            key: key.into(),
+            date,
+            start: chrono::NaiveTime::from_hms_opt(19, 0, 0).unwrap_or_default(),
+            minutes: 60,
+            kind: SessionKind::Class,
+            topics: vec![topic.into()],
+            status: SessionStatus::Planned,
+            locked: false,
+            plan: SessionPlan {
+                homework,
+                ..SessionPlan::default()
+            },
+            covered: None,
+        };
+        let quiz_on = |topic: &str| Activity {
+            kind: ActivityKind::Quiz,
+            minutes: 15,
+            text: "Quiz".into(),
+            topic: Some(topic.into()),
+        };
+        let schedule = ClassSchedule::new(
+            ScheduleSpec {
+                start: day(1),
+                end: day(31),
+                classes: Vec::new(),
+                blocked: Default::default(),
+                holidays: crate::schedule::HolidayCalendar::None,
+                review_every: 0,
+                mock_exam: false,
+            },
+            crate::schedule::Schedule {
+                sessions: vec![
+                    session("s1", day(2), "a", vec![quiz_on("a")]),
+                    session("s2", day(9), "b", vec![quiz_on("b")]),
+                    session("s3", day(30), "c", vec![quiz_on("c")]),
+                ],
+                ..Default::default()
+            },
+        );
+        let progress = PlanProgress {
+            // Prepared s1 the day before; did s1's quiz after class; did
+            // s2's quiz before its class (preparation, not homework).
+            quizzes: vec![
+                quiz("a", "2026-03-01", 3),
+                quiz("a", "2026-03-04", 4),
+                quiz("b", "2026-03-08", 4),
+            ],
+            ..PlanProgress::default()
+        };
+        let work = progress.schedule_work(&schedule, day(10));
+        assert_eq!(
+            work["s1"],
+            SessionWork {
+                prepared: true,
+                homework_done: 1,
+                homework_total: 1
+            }
+        );
+        assert_eq!(
+            work["s2"],
+            SessionWork {
+                prepared: true,
+                homework_done: 0,
+                homework_total: 1
+            }
+        );
+        assert!(!work.contains_key("s3"), "future classes are left out");
     }
 
     fn topic(status: &str, last: Option<&str>) -> TopicProgress {

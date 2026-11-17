@@ -50,10 +50,19 @@ fn panel() -> Option<&'static PanelBrand> {
     }
 }
 
+/// The channel this run shows: the developer-mode environment when one is
+/// on (Phase W9), otherwise the build's channel.
+pub fn channel_id() -> &'static str {
+    match kg_engine::developer::active().environment {
+        kg_engine::Environment::Production => kg_brand::CHANNEL,
+        other => other.id(),
+    }
+}
+
 /// The build's channel in the UI language ("HOMOLOGAÇÃO", "DESENVOLVIMENTO");
 /// `None` in production and for brands without a panel.
 pub fn channel_label() -> Option<String> {
-    match kg_brand::CHANNEL {
+    match channel_id() {
         "hom" => Some(t!("channel.hom").into_owned()),
         "dev" => Some(t!("channel.dev").into_owned()),
         _ => None,

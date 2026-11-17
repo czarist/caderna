@@ -305,6 +305,14 @@ const fn c(key: &'static str, family: Family, target: u32) -> Challenge {
     }
 }
 
+/// The few achievements kept secret until won (Phase 11).
+pub const SECRET: [&str; 4] = [
+    "clean_notebook",
+    "perfect_quizzes_25",
+    "recoveries_100",
+    "stickers_100",
+];
+
 /// Every challenge. Keys are saved in the database: never rename one, and
 /// add new ones at the end of their family.
 pub const CATALOG: [Challenge; 164] = [
@@ -496,6 +504,11 @@ impl ChallengeId {
     /// Stable key saved in the database.
     pub fn key(self) -> &'static str {
         self.entry().key
+    }
+
+    /// A secret achievement: its name and goal stay hidden until won.
+    pub fn is_secret(self) -> bool {
+        SECRET.contains(&self.key())
     }
 
     pub fn family(self) -> Family {

@@ -15,6 +15,31 @@ const MAX_SUBJECT_NAME_CHARS: usize = 32;
 
 /// The command-line flag that opens the reminder popup.
 pub const REMINDER_FLAG: &str = "--reminder";
+/// After the locale: the popup is about a class (title, line, link).
+pub(crate) const CLASS_MARK: &str = "class";
+
+/// A class reminder as the popup receives it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ClassNotice {
+    pub(crate) title: String,
+    pub(crate) line: String,
+    pub(crate) link: Option<String>,
+}
+
+impl ClassNotice {
+    /// Reads what [`ReminderSchedule::show_class`] wrote after the mark.
+    pub(crate) fn from_args(args: &[String]) -> Option<Self> {
+        let (mark, rest) = args.split_first()?;
+        if mark != CLASS_MARK {
+            return None;
+        }
+        Some(Self {
+            title: rest.first()?.clone(),
+            line: rest.get(1).cloned().unwrap_or_default(),
+            link: rest.get(2).filter(|l| l.starts_with("https://")).cloned(),
+        })
+    }
+}
 
 #[derive(Debug)]
 pub(crate) struct ReminderSchedule {
@@ -40,6 +65,55 @@ impl ReminderSchedule {
         }
         self.last_eligible_at = now;
         true
+    }
+
+    /// Opens the popup about a class of the student's schedule: a title, a
+    /// line and, for an online class, its link.
+    pub(crate) fn show_class(
+        &mut self,
+        reminder: &kg_engine::ClassReminder,
+    ) -> std::io::Result<()> {
+        if let Some(child) = self.popup.as_mut() {
+            if child.try_wait()?.is_none() {
+                return Ok(());
+            }
+            self.popup = None;
+        }
+        let time = reminder.start.format("%H:%M").to_string();
+        let (title, line) = match reminder.kind {
+            kg_engine::ClassReminderKind::HomeworkOpen => (
+                t!("reminder.class.homework_title"),
+                t!(
+                    "reminder.class.homework_line",
+                    plan = reminder.plan_title,
+                    time = time
+                ),
+            ),
+            kg_engine::ClassReminderKind::OnlineSoon => (
+                t!("reminder.class.online_title"),
+                t!(
+                    "reminder.class.online_line",
+                    plan = reminder.plan_title,
+                    time = time
+                ),
+            ),
+        };
+        let mut command = Command::new(std::env::current_exe()?);
+        command
+            .arg(REMINDER_FLAG)
+            .arg(crate::i18n::current())
+            .arg(CLASS_MARK)
+            .arg(title.as_ref())
+            .arg(line.as_ref());
+        if let Some(link) = reminder
+            .link
+            .as_deref()
+            .filter(|l| l.starts_with("https://"))
+        {
+            command.arg(link);
+        }
+        self.popup = Some(command.spawn()?);
+        Ok(())
     }
 
     /// Opens the popup for `plan`, unless the last one is still open.

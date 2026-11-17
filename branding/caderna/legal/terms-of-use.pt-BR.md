@@ -1,6 +1,6 @@
 # Termos de Uso do {{app}}
 
-Versão {{version}} · Última atualização: 16 de novembro de 2026 (2).
+Versão {{version}} · Última atualização: 17 de novembro de 2026 (2).
 
 Estes Termos regem o uso do aplicativo {{app}}, do painel da escola (área do cliente) e do
 site do {{app}}. Leia com atenção: ao aceitar, você concorda com eles e com a Política de

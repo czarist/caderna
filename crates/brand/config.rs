@@ -25,7 +25,18 @@ pub struct BrandFile {
     #[serde(default)]
     pub server: ServerSection,
     #[serde(default)]
+    pub developer: DeveloperSection,
+    #[serde(default)]
     pub locale: LocaleSection,
+}
+
+/// Developer mode (Phase W9): the public half of the panel's developer-token
+/// key. Empty: the developer area cannot be opened.
+#[derive(Debug, Default, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DeveloperSection {
+    #[serde(default)]
+    pub public_key: String,
 }
 
 /// UI languages a brand can offer (`locales/*.yml`).

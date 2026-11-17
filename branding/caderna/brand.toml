@@ -50,7 +50,7 @@ contact_url = "https://example.com/contato"   # https:// or mailto:
 # Editable drafts. Set reviewed only after review for the actual client.
 [legal]
 directory = "legal"
-version = "2026-11-16.2"
+version = "2026-11-17.2"
 provider = "Caderna Educação, nome comercial da TRENTIN SOLUÇÕES EM SOFTWARE LTDA – ME, CNPJ 36.154.590/0001-54, com sede em Novo Hamburgo/RS"
 licensor = "TRENTIN SOLUÇÕES EM SOFTWARE LTDA – ME, CNPJ 36.154.590/0001-54"
 contact = "contato@caderna.ai.br"
@@ -60,6 +60,12 @@ commercial_reviewed = false
 [licensing]
 required = true
 public_key = "MhuEw6S6kUFP+duSB6pBXfOt778LM0lS/j6w65yFizs=" # Public Ed25519 key only. Never put a private key here.
+
+# Developer mode (Phase W9): the public half of the panel's developer-token key
+# (php artisan caderna:developer-key --generate). This one belongs to the local
+# development panel; replace it with the production panel's key before a release.
+[developer]
+public_key = "R8VNmXfEGK5rGA/rEYO3587iLEwsQWFYbYjG+oMRV6E="
 
 # The Caderna panel (CADERNA-DASHBOARD). Licences are activated there, the
 # brand is downloaded from it and AI goes through it.

@@ -53,6 +53,7 @@ impl Engine {
         self.challenges()
             .into_iter()
             .filter(|c| !c.is_met() && c.reachable && c.next != NextStep::None)
+            .filter(|c| !c.id.is_secret())
             .fold(None, |best: Option<&ChallengeProgress>, c| match best {
                 Some(b) if b.fraction() >= c.fraction() => Some(b),
                 _ => Some(c),

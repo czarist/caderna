@@ -33,7 +33,29 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
         return;
     };
     widgets::header(ui, &t!("challenges.title"), &t!("challenges.subtitle"));
+    let tab = super::profile::tab_id();
+    let mut profile_tab: bool = ui.data(|d| d.get_temp(tab)).unwrap_or(false);
+    ui.horizontal(|ui| {
+        if ui
+            .selectable_label(!profile_tab, t!("challenges.tab"))
+            .clicked()
+        {
+            profile_tab = false;
+        }
+        if ui
+            .selectable_label(profile_tab, t!("profile.tab"))
+            .clicked()
+        {
+            profile_tab = true;
+        }
+    });
+    ui.data_mut(|d| d.insert_temp(tab, profile_tab));
+    ui.add_space(6.0);
     egui::ScrollArea::vertical().show(ui, |ui| {
+        if profile_tab {
+            super::profile::show(ui, engine, &mut actions);
+            return;
+        }
         match engine.active_plan() {
             Some(plan) => plan_challenges(ui, engine, plan, &mut actions),
             None => widgets::hint(ui, &t!("challenges.no_plan")),
@@ -41,7 +63,7 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
         ui.add_space(18.0);
         overall_challenges(ui, engine);
         ui.add_space(22.0);
-        showcase(ui, engine);
+        showcase(ui, engine, &mut actions);
     });
     actions.run(app);
 }
@@ -140,6 +162,7 @@ fn family_row(
     let won = levels.iter().filter(|c| c.is_met()).count();
     let next = levels.iter().find(|c| !c.is_met()).copied();
     let shown = next.unwrap_or(last);
+    let secret = shown.id.is_secret() && !shown.is_met();
     egui::Frame::new()
         .fill(p.surface)
         .stroke(egui::Stroke::new(1.0, p.border))
@@ -155,12 +178,16 @@ fn family_row(
             // One line: sticker, name and goal on the left; progress and
             // the button on the right.
             ui.horizontal(|ui| {
-                ui.add(stickers::image(ui.ctx(), shown.id, 40.0, next.is_none()))
-                    .on_hover_text(i18n::challenge_caption(shown.id));
+                if secret {
+                    secret_badge(ui, 40.0);
+                } else {
+                    ui.add(stickers::image(ui.ctx(), shown.id, 40.0, next.is_none()))
+                        .on_hover_text(i18n::challenge_caption(shown.id));
+                }
                 ui.vertical(|ui| {
                     ui.set_max_width((ui.available_width() - 330.0).max(200.0));
                     ui.horizontal_wrapped(|ui| {
-                        ui.label(RichText::new(i18n::challenge_name(shown.id)).strong());
+                        ui.label(RichText::new(name_of(shown.id, !secret)).strong());
                         if levels.len() > 1 {
                             widgets::chip(
                                 ui,
@@ -177,7 +204,7 @@ fn family_row(
                         }
                     });
                     let goal = ui.label(
-                        RichText::new(i18n::challenge_goal(shown.id))
+                        RichText::new(goal_of(shown.id, !secret))
                             .small()
                             .color(p.muted),
                     );
@@ -195,6 +222,9 @@ fn family_row(
                     };
                     if !next.reachable {
                         widgets::hint(ui, &t!("challenges.out_of_reach"));
+                        return;
+                    }
+                    if secret {
                         return;
                     }
                     if let Some(plan) = plan {
@@ -315,7 +345,41 @@ fn won_on(unlock: &ChallengeUnlock) -> String {
 
 /// Every sticker, Steam-style: colour when won anywhere, grey with the
 /// requirement until then; grouped like the challenges.
-fn showcase(ui: &mut egui::Ui, engine: &Engine) {
+/// A secret achievement's name and goal, or the placeholder until won.
+fn name_of(id: ChallengeId, known: bool) -> String {
+    if known {
+        i18n::challenge_name(id)
+    } else {
+        t!("challenges.secret").into_owned()
+    }
+}
+
+fn goal_of(id: ChallengeId, known: bool) -> String {
+    if known {
+        i18n::challenge_goal(id)
+    } else {
+        t!("challenges.secret_goal").into_owned()
+    }
+}
+
+/// The grey disc with a question mark that stands for a secret sticker.
+fn secret_badge(ui: &mut egui::Ui, size: f32) -> egui::Response {
+    let p = theme::palette(ui.ctx());
+    let (rect, response) = ui.allocate_exact_size(egui::vec2(size, size), egui::Sense::hover());
+    ui.painter()
+        .circle_filled(rect.center(), size * 0.45, p.border);
+    ui.painter().text(
+        rect.center(),
+        egui::Align2::CENTER_CENTER,
+        "?",
+        egui::FontId::proportional(size * 0.5),
+        p.muted,
+    );
+    response
+}
+
+fn showcase(ui: &mut egui::Ui, engine: &Engine, actions: &mut Actions) {
+    let pinned = engine.profile().showcase;
     let p = theme::palette(ui.ctx());
     let unlocks = engine.sticker_unlocks();
     let won = CATALOG
@@ -385,7 +449,7 @@ fn showcase(ui: &mut egui::Ui, engine: &Engine) {
                     let mine: Vec<&ChallengeUnlock> =
                         unlocks.iter().filter(|u| u.challenge == id).collect();
                     let progress = active.iter().find(|c| c.id == id).copied();
-                    sticker_card(ui, id, &mine, progress);
+                    sticker_card(ui, id, &mine, progress, &pinned, actions);
                 }
             });
             ui.add_space(gap);
@@ -398,9 +462,12 @@ fn sticker_card(
     id: ChallengeId,
     won: &[&ChallengeUnlock],
     active: Option<&ChallengeProgress>,
+    pinned: &[String],
+    actions: &mut Actions,
 ) {
     let p = theme::palette(ui.ctx());
     let first = won.iter().min_by_key(|u| (u.unlocked_on, u.id)).copied();
+    let known = first.is_some() || !id.is_secret();
     let response = egui::Frame::new()
         .fill(if first.is_some() {
             p.surface
@@ -414,10 +481,14 @@ fn sticker_card(
             ui.allocate_ui_with_layout(size, egui::Layout::top_down(egui::Align::Center), |ui| {
                 ui.set_width(size.x);
                 ui.set_min_height(size.y);
-                ui.add(stickers::image(ui.ctx(), id, 76.0, first.is_some()));
+                if known {
+                    ui.add(stickers::image(ui.ctx(), id, 76.0, first.is_some()));
+                } else {
+                    secret_badge(ui, 76.0);
+                }
                 ui.add(
                     egui::Label::new(
-                        RichText::new(i18n::challenge_name(id))
+                        RichText::new(name_of(id, known))
                             .small()
                             .strong()
                             .color(if first.is_some() { p.text } else { p.muted }),
@@ -427,6 +498,27 @@ fn sticker_card(
                 match (first, active) {
                     (Some(first), _) => {
                         ui.label(RichText::new(won_on(first)).small().color(p.success));
+                        let key = id.key().to_owned();
+                        let is_pinned = pinned.contains(&key);
+                        let label = if is_pinned {
+                            t!("profile.unpin")
+                        } else {
+                            t!("profile.pin")
+                        };
+                        if (is_pinned || pinned.len() < kg_engine::SHOWCASE_SIZE)
+                            && ui.small_button(label).clicked()
+                        {
+                            let mut keys = pinned.to_vec();
+                            if is_pinned {
+                                keys.retain(|k| *k != key);
+                            } else {
+                                keys.push(key);
+                            }
+                            actions.send(Command::SetShowcase(keys));
+                        }
+                    }
+                    (None, _) if !known => {
+                        widgets::chip(ui, &t!("challenges.locked"), p.muted);
                     }
                     (None, Some(progress)) if progress.reachable => {
                         widgets::progress_line(
@@ -449,8 +541,8 @@ fn sticker_card(
     // The details on hover: what it asks, its story and where it was won.
     response.on_hover_ui(|ui| {
         ui.set_max_width(280.0);
-        ui.label(RichText::new(i18n::challenge_name(id)).strong());
-        ui.label(i18n::challenge_goal(id));
+        ui.label(RichText::new(name_of(id, known)).strong());
+        ui.label(goal_of(id, known));
         if let Some(first) = first {
             ui.label(RichText::new(i18n::challenge_caption(id)).italics());
             ui.label(RichText::new(won_on(first)).small());

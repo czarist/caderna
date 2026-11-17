@@ -52,7 +52,11 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
         }
     } else if let Some((exam, attempt)) = engine.open_mock() {
         if attempt.finished_at.is_none() {
-            sitting(ui, exam, attempt, &mut state, &mut actions);
+            let card = CardRead {
+                reading: engine.reading_mock_card(),
+                doubtful: engine.mock_doubtful(attempt.id),
+            };
+            sitting(ui, exam, attempt, &card, &mut state, &mut actions);
         } else if let Some(result) = engine.mock_result(attempt) {
             result_view(ui, exam, attempt, &result, &mut actions);
         }
@@ -220,6 +224,28 @@ fn format_editor(
             if !writing {
                 draft.essay = false;
             }
+            ui.end_row();
+
+            ui.label(t!("mock.cutoff_label"));
+            ui.horizontal(|ui| {
+                let mut on = draft.cutoff.is_some();
+                if ui.checkbox(&mut on, t!("mock.cutoff")).changed() {
+                    draft.cutoff = on.then_some(0.5);
+                }
+                if let Some(cutoff) = &mut draft.cutoff {
+                    let mut percent = (*cutoff * 100.0).round();
+                    if ui
+                        .add(
+                            egui::DragValue::new(&mut percent)
+                                .range(1.0..=99.0)
+                                .suffix("%"),
+                        )
+                        .changed()
+                    {
+                        *cutoff = percent / 100.0;
+                    }
+                }
+            });
             ui.end_row();
         });
     ui.add_space(8.0);
@@ -424,13 +450,21 @@ fn exam_card(
 
 // ------------------------------------------------------------- sitting
 
+/// What the engine knows of a card photo for the open sitting.
+struct CardRead<'a> {
+    reading: bool,
+    doubtful: &'a [usize],
+}
+
 fn sitting(
     ui: &mut egui::Ui,
     exam: &MockExam,
     attempt: &MockAttempt,
+    card: &CardRead,
     state: &mut MockUi,
     actions: &mut Actions,
 ) {
+    let (reading_card, doubtful) = (card.reading, card.doubtful);
     let p = theme::palette(ui.ctx());
     ui.ctx().request_repaint_after(Duration::from_secs(1));
     let left = attempt.remaining(&exam.format, now()).num_seconds();
@@ -493,6 +527,23 @@ fn sitting(
             if widgets::primary_button(ui, &t!("mock.finish")).clicked() {
                 state.confirm_finish = true;
             }
+            if state.paper {
+                let reading = reading_card;
+                let button = ui
+                    .add_enabled(!reading, egui::Button::new(t!("mock.read_card")))
+                    .on_hover_text(t!("mock.read_card_hint"));
+                if button.clicked()
+                    && let Some(path) = rfd::FileDialog::new()
+                        .set_title(t!("mock.read_card"))
+                        .add_filter(t!("mock.photo_filter"), &["jpg", "jpeg", "png"])
+                        .pick_file()
+                {
+                    actions.send(Command::ReadMockCard(path));
+                }
+                if reading {
+                    ui.spinner();
+                }
+            }
             if ui
                 .button(t!("mock.leave"))
                 .on_hover_text(t!("mock.leave_hint"))
@@ -526,7 +577,7 @@ fn sitting(
         .id_salt("mock_sitting")
         .show(ui, |ui| {
             if state.paper {
-                answer_card(ui, exam, attempt, &marks, actions);
+                answer_card(ui, exam, attempt, &marks, doubtful, actions);
             } else {
                 booklet(ui, exam, attempt, &marks, actions);
             }
@@ -590,10 +641,17 @@ fn answer_card(
     exam: &MockExam,
     attempt: &MockAttempt,
     marks: &[String],
+    doubtful: &[usize],
     actions: &mut Actions,
 ) {
     let p = theme::palette(ui.ctx());
     widgets::hint(ui, &t!("mock.card_hint"));
+    if !doubtful.is_empty() {
+        let numbers: Vec<String> = doubtful.iter().map(|n| (n + 1).to_string()).collect();
+        widgets::callout(ui, p.warning, |ui| {
+            ui.label(t!("mock.card_doubtful", questions = numbers.join(", ")));
+        });
+    }
     ui.add_space(6.0);
     let count = usize::from(exam.format.style.marks());
     ui.horizontal_wrapped(|ui| {
@@ -603,10 +661,11 @@ fn answer_card(
             ui.allocate_ui(egui::vec2(40.0 + 30.0 * count as f32, 26.0), |ui| {
                 ui.horizontal(|ui| {
                     ui.spacing_mut().item_spacing.x = 4.0;
-                    ui.add_sized(
-                        [28.0, 22.0],
-                        egui::Label::new(RichText::new((n + 1).to_string()).strong()),
-                    );
+                    let mut number = RichText::new((n + 1).to_string()).strong();
+                    if doubtful.contains(&n) {
+                        number = number.color(p.warning).underline();
+                    }
+                    ui.add_sized([28.0, 22.0], egui::Label::new(number));
                     for (i, mark) in marks.iter().take(count).enumerate() {
                         let selected = chosen == Some(i as u8);
                         let button = egui::Button::new(RichText::new(mark).small())
@@ -675,6 +734,15 @@ fn result_view(
                     widgets::chip(ui, &t!("mock.overtime"), p.warning);
                 }
             });
+            if let Some(cutoff) = exam.format.cutoff {
+                let percent = (cutoff * 100.0).round();
+                let (text, color) = if result.share() >= cutoff {
+                    (t!("mock.cutoff_above", percent = percent), p.success)
+                } else {
+                    (t!("mock.cutoff_below", percent = percent), p.muted)
+                };
+                ui.label(RichText::new(text).color(color));
+            }
             if exam.format.wrong_cancels {
                 widgets::hint(ui, &t!("mock.wrong_cancels_note"));
             }
@@ -815,6 +883,9 @@ fn format_summary(format: &ExamFormat) -> String {
     }
     if format.essay {
         parts.push(t!("mock.with_essay").into_owned());
+    }
+    if let Some(cutoff) = format.cutoff {
+        parts.push(t!("mock.cutoff_short", percent = (cutoff * 100.0).round()).into_owned());
     }
     parts.join(" · ")
 }

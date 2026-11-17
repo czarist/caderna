@@ -346,8 +346,19 @@ fn topic_row(
                     };
                     ui.horizontal(|ui| {
                         if topic.lesson_taken() {
+                            let mut hint = t!("plan.lesson_taken").into_owned();
+                            if let Some((length, day)) = engine.last_lesson_type(topic.id) {
+                                hint = format!(
+                                    "{hint}\n{}",
+                                    t!(
+                                        "lesson_type.last",
+                                        kind = i18n::lesson_length(length),
+                                        date = i18n::date(day)
+                                    )
+                                );
+                            }
                             ui.add(Icon::Check.image(14.0, p.success))
-                                .on_hover_text(t!("plan.lesson_taken"));
+                                .on_hover_text(hint);
                         }
                         ui.add(egui::Label::new(title).truncate())
                             .on_hover_text(&topic.title);

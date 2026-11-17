@@ -41,6 +41,26 @@ pub use whisper::WhisperStt;
 
 use std::path::PathBuf;
 
+/// A soft two-note chime of about half a second, for a new sticker.
+pub fn chime() -> AudioClip {
+    let rate = 44_100u32;
+    let length = (rate as f32 * 0.7) as usize;
+    let mut samples = vec![0.0f32; length];
+    // E5 then B5, each fading out.
+    for (frequency, start) in [(659.25f32, 0.0f32), (987.77, 0.12)] {
+        let first = (start * rate as f32) as usize;
+        for (i, sample) in samples.iter_mut().enumerate().skip(first) {
+            let t = (i - first) as f32 / rate as f32;
+            let envelope = (t * 200.0).min(1.0) * (-t * 7.0).exp();
+            *sample += 0.12 * envelope * (std::f32::consts::TAU * frequency * t).sin();
+        }
+    }
+    AudioClip {
+        samples,
+        sample_rate: rate,
+    }
+}
+
 /// Sample rate Whisper expects.
 pub const STT_SAMPLE_RATE: u32 = 16_000;
 

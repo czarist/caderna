@@ -33,6 +33,17 @@ pub struct CardLayout {
     pub first_gap: f32,
     pub bubble: f32,
     pub bubble_pitch: f32,
+    /// The exam's number, printed as a row of cells for the photo reader.
+    #[serde(default)]
+    pub id: u32,
+    /// The cells of `id` ([`crate::omr::code_cells`]), filled for 1 bits.
+    #[serde(default)]
+    pub cells: Vec<bool>,
+    /// Top left of the first cell, its side and the step between cells.
+    pub code_top: f32,
+    pub code_left: f32,
+    pub code_cell: f32,
+    pub code_pitch: f32,
 }
 
 impl CardLayout {
@@ -50,7 +61,20 @@ impl CardLayout {
             first_gap: 4.0,
             bubble: 4.0,
             bubble_pitch: 5.6,
+            id: 0,
+            cells: Vec::new(),
+            code_top: 9.5,
+            code_left: 26.0,
+            code_cell: 3.0,
+            code_pitch: 4.4,
         }
+    }
+
+    /// Prints `id` on the card, so a photo can be matched to its exam.
+    pub fn with_id(mut self, id: u32) -> Self {
+        self.id = id;
+        self.cells = crate::omr::code_cells(id);
+        self
     }
 
     /// Centre of the bubble for `mark` (0-based) of question `index`

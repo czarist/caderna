@@ -23,6 +23,9 @@ pub struct ReaderState {
     pub pages: Option<Arc<Pages>>,
     /// Laying the pages out failed.
     pub failed: bool,
+    /// The one-page summary of the handout (Phase 10): no highlights, and
+    /// the place in the full handout is kept as it was.
+    pub summary: bool,
     pub highlights: Vec<Highlight>,
     /// Topics and their sections with the page each starts on.
     pub contents: Vec<ContentsEntry>,
@@ -198,6 +201,15 @@ impl Engine {
     }
 
     pub(crate) fn open_reading(&mut self, id: ReadingId) -> Result<(), EngineError> {
+        self.open_reading_as(id, false)
+    }
+
+    /// Opens a handout in full or as its one-page summary.
+    pub(crate) fn open_reading_as(
+        &mut self,
+        id: ReadingId,
+        summary: bool,
+    ) -> Result<(), EngineError> {
         self.close_reader();
         let reading = self
             .readings
@@ -206,11 +218,16 @@ impl Engine {
             .cloned()
             .ok_or(EngineError::NoActivePlan)?;
         let json = self.store.reading_document(id)?.unwrap_or_default();
-        let highlights = self.store.highlights(id)?;
+        let highlights = if summary {
+            Vec::new()
+        } else {
+            self.store.highlights(id)?
+        };
         self.reader = Some(ReaderState {
             reading,
             pages: None,
             failed: false,
+            summary,
             highlights,
             contents: Vec::new(),
             document: None,
@@ -226,6 +243,11 @@ impl Engine {
                     .map_err(|e| kg_handout::HandoutError::Layout(e.to_string()))?;
                 // Whoever reads it now, as the school asks today.
                 document.holder = holder;
+                if summary {
+                    for topic in &mut document.topics {
+                        *topic = topic.condensed();
+                    }
+                }
                 if let Some(cache) = pictures {
                     crate::illustrations::illustrate(&mut document, &cache);
                 }
@@ -290,7 +312,8 @@ impl Engine {
         last: usize,
         color: HighlightColor,
     ) -> Result<(), EngineError> {
-        let Some(reader) = self.reader.as_mut() else {
+        // The summary's pages are not the handout's: highlights stay there.
+        let Some(reader) = self.reader.as_mut().filter(|r| !r.summary) else {
             return Ok(());
         };
         let Some(pages) = &reader.pages else {
@@ -481,7 +504,7 @@ impl Engine {
     }
 
     fn save_reading_progress(&mut self) {
-        let Some(reader) = self.reader.as_mut() else {
+        let Some(reader) = self.reader.as_mut().filter(|r| !r.summary) else {
             return;
         };
         if reader.unsaved_since.take().is_none() {

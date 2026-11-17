@@ -21,10 +21,55 @@ repository.
   activities with minutes, homework), checked in code. Publishing sends the calendar to
   the school's panel without private notes; students see their next classes on Today and,
   when the teacher chooses, topics open on the day of their first class.
+- Planejamento: edit a class's day, time, length, kind and topics; split a class in two or
+  merge it with the next; when marking a class given, untick what was left for later and
+  replanning puts it back into the next classes; **Imprimir planejamento** writes a PDF
+  (Typst) with the schedule as a table and a page per class plan, without private notes.
+- Students' work per class: the progress sync carries, per class of the classroom's
+  schedule, whether the student studied its topics by its day and how much homework they
+  did, computed from saved study; the school's area shows the totals per class.
+- Class reminders for students: the day before a class while the last homework is still
+  open, and an hour before an online class (with a button to join); both in Settings.
+- Today shows a quiet note when a teacher republishes a schedule that moved, cancelled or
+  added classes.
+- **Mock exams, stage 2: photo of the answer card.** The printed card carries the exam's
+  number as a row of cells; "Ler foto do cartão" (answer-card mode) reads a JPG or PNG in
+  pure Rust, without AI: the four corner markers, the perspective, each bubble's darkness.
+  The marks fill the sitting on screen and doubtful ones (two marks, a faint mark) are
+  highlighted; a card of another exam is refused. The student checks and hands in.
+- Progress: mock exams per subject (average, the last sittings as bars, going up or down)
+  and the topics that lost most points in the last three sittings.
+- Mock exams: the notice's cut-off score, read only when its number is written in the
+  notice (in percent or points), editable, and shown beside the result.
+- **Lesson types (Phase 10).** Straight to the point, Balanced and In depth replace Quick,
+  Normal and Full (saved values unchanged) and change what the teacher does, not only the
+  length. The ▾ beside a new lesson picks the type, with a suggestion from the student's data;
+  "Go deeper"/"Make it shorter" (or saying so) change the rest of a lesson; the last type per
+  topic is remembered and the quiz size follows it.
+- **Goals and profile (Phase 11).** Weekly goals per plan with suggested values and the week
+  on Today; a Profile tab with a level from study and results, pinned badges, a calendar of
+  study days and history per subject; a streak that forgives a rest day a week and days off;
+  four secret achievements; a soft sound with each badge, which Settings can turn off.
+- **Developer mode (Phase W9).** A hidden area (Settings → About, seven clicks on the
+  version, or `--developer`) takes a code made by an admin in the panel and switches a
+  production build to homologation or development: only the brand's compiled panel
+  addresses, each environment with its own data folder and activation, production data
+  never opened elsewhere; the token is checked offline and every hour with the panel.
+- Reader: **One-page summary** of a handout (rules, one example, traps and summary) for
+  lessons straight to the point; highlights stay in the full handout.
+- Reader: **Report** a handout that came from the shared base (wrong, inappropriate,
+  broken or other, with an optional note); the school's panel hides material three
+  schools reported until an admin decides.
+- The progress export (Markdown) ends with the profile: level, study time, streak and goals.
 - Examples `activate`, `planning_live` and `classes_live` for live checks with two
   copies of the app.
 
 ### Changed
+- Caderna terms and privacy policy `2026-11-17.2` (users agree again): reports on shared
+  handouts send the reason and the note.
+- Caderna terms and privacy policy `2026-11-17.1` (users agree again): the panel also
+  receives, per class, whether each student prepared and did the homework, and the school
+  sees the totals.
 - Caderna terms and privacy policy `2026-11-16.2` (users agree again): the panel receives
   the class calendars teachers publish; private notes never leave the computer.
 

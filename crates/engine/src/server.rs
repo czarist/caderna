@@ -180,7 +180,7 @@ impl HttpPanel {
             .build()
             .into();
         Self {
-            base: format!("{}/api/v1", kg_brand::SERVER_URL),
+            base: format!("{}/api/v1", crate::developer::panel_url()),
             agent,
         }
     }
@@ -286,6 +286,22 @@ impl HttpPanel {
         }
     }
 
+    /// The build's own panel (production in a release build), for developer
+    /// tokens: they are made and revoked there, whatever the environment.
+    pub(crate) fn for_developer() -> Self {
+        let agent = ureq::Agent::config_builder()
+            .http_status_as_error(false)
+            .timeout_connect(Some(StdDuration::from_secs(15)))
+            .timeout_global(Some(StdDuration::from_secs(30)))
+            .user_agent(kg_brand::user_agent("developer"))
+            .build()
+            .into();
+        Self {
+            base: format!("{}/api/v1", kg_brand::SERVER_URL),
+            agent,
+        }
+    }
+
     /// Like [`Self::new`], with the longer timeout of course uploads.
     pub(crate) fn for_content() -> Self {
         let agent = ureq::Agent::config_builder()
@@ -296,7 +312,7 @@ impl HttpPanel {
             .build()
             .into();
         Self {
-            base: format!("{}/api/v1", kg_brand::SERVER_URL),
+            base: format!("{}/api/v1", crate::developer::panel_url()),
             agent,
         }
     }
@@ -588,10 +604,26 @@ fn device_id(store: &mut kg_study::Store) -> String {
             Some(id)
         })
         .unwrap_or_else(|| kg_brand::SLUG.to_owned());
+    hash_device(&raw)
+}
+
+fn hash_device(raw: &str) -> String {
     Sha256::digest(format!("{DEVICE_SALT}:{}:{raw}", kg_brand::SLUG))
         .iter()
         .map(|b| format!("{b:02x}"))
         .collect()
+}
+
+/// This computer's hashed id as activations send it, from the operating
+/// system's machine id only (developer tokens are checked before any
+/// database opens); empty without one.
+pub(crate) fn machine_hash() -> String {
+    machine_uid::get()
+        .ok()
+        .map(|id| id.trim().to_owned())
+        .filter(|id| !id.is_empty())
+        .map(|id| hash_device(&id))
+        .unwrap_or_default()
 }
 
 /// Where the device token is kept: the operating system's credential store

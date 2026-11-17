@@ -197,6 +197,14 @@ pub struct Settings {
     pub study_reminders: bool,
     /// Minutes between study reminders.
     pub reminder_minutes: u32,
+    /// A soft sound with each new sticker.
+    pub unlock_sound: bool,
+    /// A student with a classroom schedule: a reminder the day before a
+    /// class while the previous class's homework is still open.
+    pub homework_reminders: bool,
+    /// A student with a classroom schedule: a reminder an hour before an
+    /// online class.
+    pub online_class_reminders: bool,
     /// Who teaches; `None` in settings saved before teachers existed (see
     /// [`Settings::teacher`]).
     #[serde(default, deserialize_with = "crate::teacher::lenient")]
@@ -248,6 +256,9 @@ impl Default for Settings {
             board_images: true,
             check_updates: true,
             study_reminders: false,
+            unlock_sound: true,
+            homework_reminders: true,
+            online_class_reminders: true,
             reminder_minutes: DEFAULT_REMINDER_MINUTES,
             teacher: None,
             speech_rate: 0.95,

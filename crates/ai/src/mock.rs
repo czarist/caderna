@@ -19,6 +19,10 @@ pub struct FormatDraft {
     pub options: u32,
     pub wrong_cancels: bool,
     pub essay: bool,
+    /// Minimum score as the notice writes it, in percent or in points; 0
+    /// when it says none.
+    pub cutoff_percent: f64,
+    pub cutoff_points: f64,
     pub sections: Vec<FormatSectionDraft>,
 }
 

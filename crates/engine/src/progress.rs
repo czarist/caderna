@@ -1,6 +1,7 @@
 //! Daily activity, streaks, milestones and first-run onboarding.
 
-use kg_study::{ActivityKind, progress_milestone, streak, streak_milestone};
+use kg_study::goals::forgiving_streak;
+use kg_study::{ActivityKind, progress_milestone, streak_milestone};
 
 use crate::{Engine, EngineError, Notice};
 
@@ -19,7 +20,8 @@ pub enum Milestone {
 }
 
 impl Engine {
-    /// Days in a row with study, ending today or yesterday.
+    /// Days in a row with study, forgiving one rest day a week and the days
+    /// marked off.
     pub fn streak(&self) -> u32 {
         self.streak
     }
@@ -56,7 +58,7 @@ impl Engine {
         let today = Self::today();
         let days = self.store.activity_days(STREAK_WINDOW).unwrap_or_default();
         self.studied_today = days.first() == Some(&today);
-        self.streak = streak(&days, today);
+        self.streak = forgiving_streak(&days, &self.days_off_set(), today);
     }
 
     /// Celebrates the plan crossing 25/50/75/100% done.

@@ -136,6 +136,14 @@
   #marker(card.margin, 297 - card.margin - card.marker)
   #marker(210 - card.margin - card.marker, 297 - card.margin - card.marker)
 
+  // The exam's number as filled cells, read from a photo of the card.
+  #for (i, on) in card.cells.enumerate() {
+    if on {
+      place(top + left, dx: (card.code_left + i * card.code_pitch) * mm, dy: card.code_top * mm,
+        rect(width: card.code_cell * mm, height: card.code_cell * mm, fill: black))
+    }
+  }
+
   #place(top + left, dx: 26mm, dy: 14mm, block(width: 158mm)[
     #text(size: 9pt, tracking: 0.12em, upper(labels.answer_card))
     #h(1fr)

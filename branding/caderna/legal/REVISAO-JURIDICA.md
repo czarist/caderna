@@ -16,6 +16,27 @@ e pede um novo aceite sempre que a versão muda.
 O Caderna é oferecido só no Brasil e só em português do Brasil. Não há versões em outros
 idiomas ou regiões.
 
+## Novidades da versão 2026-11-17.2 (reportes da base comum)
+
+- Política (seção 3): quem reporta uma apostila da base comum envia o motivo e uma
+  observação livre, ligados à Escola. A observação pode conter dados pessoais se a pessoa
+  escrever; o app pede que não. Os reportes ficam no Painel até um administrador decidir.
+
+## Modo desenvolvedor (fase W9; sem mudança nos textos)
+
+- Só a equipe usa: um token criado por administradores no Painel troca o app de
+  produção para homologação ou desenvolvimento. Nada muda para alunos e escolas.
+- O Painel registra cada uso do token (pessoa, data, ambiente, versão do app, IP e o
+  identificador do computador, se informado). Isso é dado da equipe, não de alunos;
+  convém uma política interna que diga isso.
+
+## Novidades da versão 2026-11-17.1 (tarefas por aula)
+
+- Política (seções 3 e 6): com calendário de aulas, o app envia ao Painel, por aula, se o
+  aluno estudou os tópicos até o dia da aula e quantas tarefas fez, calculado a partir do
+  progresso que já era enviado. A Escola vê esses números somados por aula (quantos
+  alunos se prepararam e fizeram a tarefa).
+
 ## Novidades da versão 2026-11-16.2 (Planejamento de aulas)
 
 - Política (seções 3 e 4): o Painel passa a receber o calendário de aulas que o professor

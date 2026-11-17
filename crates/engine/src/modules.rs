@@ -16,6 +16,8 @@ pub enum Module {
 }
 
 impl Module {
+    pub const ALL: [Self; 3] = [Self::Lessons, Self::Content, Self::Planning];
+
     /// The panel's id (`App\Enums\Module`).
     pub fn id(self) -> &'static str {
         match self {
@@ -32,7 +34,9 @@ impl Command {
     /// already started.
     pub fn module(&self) -> Option<Module> {
         Some(match self {
-            Self::StartLesson(_) | Self::ResumeLesson(_) => Module::Lessons,
+            Self::StartLesson(_) | Self::StartLessonAs { .. } | Self::ResumeLesson(_) => {
+                Module::Lessons
+            }
             Self::StartQuiz(_)
             | Self::RetryMistakes(_)
             | Self::StartReview(_)
@@ -52,7 +56,8 @@ impl Command {
             | Self::DeleteSchedule { .. }
             | Self::SuggestSessionPlans { .. }
             | Self::PublishSchedule { .. }
-            | Self::ExportScheduleCalendar { .. } => Module::Planning,
+            | Self::ExportScheduleCalendar { .. }
+            | Self::ExportSchedulePdf { .. } => Module::Planning,
             _ => return None,
         })
     }
