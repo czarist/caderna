@@ -68,6 +68,10 @@ repository.
   copies of the app.
 
 ### Changed
+- Lessons no longer stop when the student talks over the tutor: the microphone listens
+  only after the tutor finishes (hands-free) or when the student presses it. The
+  setting "I can interrupt the tutor" is gone. The transcript and chat panel now starts
+  open in lessons.
 - Caderna terms and privacy policy `2026-11-17.2` (users agree again): reports on shared
   handouts send the reason and the note.
 - Caderna terms and privacy policy `2026-11-17.1` (users agree again): the panel also
