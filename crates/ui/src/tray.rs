@@ -55,6 +55,21 @@ impl SystemTray {
         })
     }
 
+    /// The brand's icon and name, after the brand changed.
+    pub(crate) fn set_brand(&mut self) {
+        match Icon::from_rgba(crate::icon::rgba(32), 32, 32) {
+            Ok(icon) => {
+                if let Err(err) = self.icon.set_icon(Some(icon)) {
+                    tracing::warn!(%err, "could not change the tray icon");
+                }
+            }
+            Err(err) => tracing::warn!(%err, "could not make the tray icon"),
+        }
+        if let Err(err) = self.icon.set_tooltip(Some(crate::brand::window_title())) {
+            tracing::warn!(%err, "could not change the tray tooltip");
+        }
+    }
+
     pub(crate) fn set_locale(&mut self, locale: &str) {
         if self.locale == locale {
             return;

@@ -188,6 +188,10 @@ pub struct KnowGiverApp {
     pub(crate) engine: Result<Engine, String>,
     pub(crate) ui: UiState,
     toasts: Vec<Toast>,
+    /// The brand's icon on the taskbar, and the brand generation the taskbar
+    /// and tray icons show.
+    taskbar_icon: crate::window_icon::TaskbarIcon,
+    icons_for: Option<u64>,
     /// Screen shown last frame and when it appeared, for the fade-in.
     shown_screen: Screen,
     shown_since: f64,
@@ -313,6 +317,8 @@ impl KnowGiverApp {
                 discursive: Default::default(),
             },
             toasts: Vec::new(),
+            taskbar_icon: crate::window_icon::TaskbarIcon::default(),
+            icons_for: None,
             shown_screen: screen,
             shown_since: 0.0,
             nav_rects: Vec::new(),
@@ -849,6 +855,16 @@ impl eframe::App for KnowGiverApp {
                     ctx.send_viewport_cmd(egui::ViewportCommand::Title(
                         crate::brand::window_title(),
                     ));
+                }
+                // At start and after every brand change: the school's icon
+                // on the taskbar and in the tray, not the executable's.
+                let generation = crate::brand::generation();
+                if self.icons_for != Some(generation) {
+                    self.icons_for = Some(generation);
+                    self.taskbar_icon.apply(frame);
+                    if let Some(tray) = self.tray.as_mut() {
+                        tray.set_brand();
+                    }
                 }
                 self.capture.sync(
                     frame,

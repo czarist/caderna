@@ -321,6 +321,8 @@ lesson:
   open_settings: "打开设置"
   need_stt: "要和老师对话，请在设置中下载语音识别模型。"
   need_tts: "要听老师说话，请在设置中下载一个语音及其程序。"
+  need_downloads: "语音课程还需要下载语音识别和老师的声音。没有它们，也可以在聊天中打字学习。"
+  download_now: "立即下载"
   voice_language: "这种语言暂不支持语音课堂。请输入你的回答，老师会用文字回复。"
   phase:
     idle: "就绪"

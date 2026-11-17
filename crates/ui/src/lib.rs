@@ -58,6 +58,7 @@ mod tray;
 mod update_bar;
 mod whiteboard;
 mod widgets;
+mod window_icon;
 mod working;
 
 #[cfg(test)]

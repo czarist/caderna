@@ -20,7 +20,7 @@ name = "Caderna Educação"
 support_url = "https://example.com/suporte"
 url = "https://example.com"       # opened by the credits; "" for none
 url_label = "example.com"         # printed on handouts
-show_credit = true                # "Made by …" in the app and on handouts
+show_credit = false               # "Made by …" in the app and on handouts (off by the owner, 2026-11-17)
 mark_license = ""                 # licence of the mark if not the client's own
 
 [colors]                          # #RRGGBB

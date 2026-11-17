@@ -82,6 +82,10 @@ repository.
   copies of the app.
 
 ### Fixed
+- The school's icon from the panel now shows on the Windows taskbar and in the tray, at
+  start and whenever the brand changes; before, the taskbar kept the executable's own
+  icon and the tray never changed. The executable's file icon (desktop and Start menu
+  shortcuts) is the build's and cannot follow a school.
 - Handouts of a plan without a notice (a classroom's course) failed with "The model
   answered in an unexpected format": the plan's own subjects and topics now serve as
   the syllabus.
@@ -89,6 +93,10 @@ repository.
   none), which the panel refused with HTTP 422.
 
 ### Changed
+- The lesson screen offers what a voice lesson still lacks (speech recognition, the
+  teacher's voice and its program) with *Download now* and a progress bar, before a
+  lesson starts and during one, instead of only pointing to Settings.
+- Caderna: no "Made by" credit (`show_credit = false`).
 - Lessons no longer stop when the student talks over the tutor: the microphone listens
   only after the tutor finishes (hands-free) or when the student presses it. The
   setting "I can interrupt the tutor" is gone. The transcript and chat panel now starts
