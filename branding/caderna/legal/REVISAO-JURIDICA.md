@@ -16,6 +16,11 @@ e pede um novo aceite sempre que a versão muda.
 O Caderna é oferecido só no Brasil e só em português do Brasil. Não há versões em outros
 idiomas ou regiões.
 
+## Novidades da versão 2026-11-17.3 (professor em vários computadores)
+
+- Política (seção 3): o progresso do professor nos planos que publicou e o tempo de estudo
+  dele também vão ao Painel, para recuperar planos e progresso num computador novo.
+
 ## Novidades da versão 2026-11-17.2 (reportes da base comum)
 
 - Política (seção 3): quem reporta uma apostila da base comum envia o motivo e uma

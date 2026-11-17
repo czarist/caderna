@@ -83,6 +83,9 @@ pub struct CourseSummary {
     /// Sent to teachers only.
     #[serde(default)]
     pub classroom_ids: Vec<i64>,
+    /// Sent to teachers only: the course is theirs.
+    #[serde(default)]
+    pub mine: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -194,6 +197,35 @@ pub(crate) struct SyncDownload {
     progress: Vec<ProgressDoc>,
     /// The classrooms' class schedules (lesson planning).
     schedules: Vec<crate::planning::ScheduleDownload>,
+}
+
+/// What a teacher's sync brought: their own courses missing on this
+/// computer, and their progress.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct TeacherDownload {
+    fresh: Vec<CourseDownload>,
+    progress: Vec<ProgressDoc>,
+}
+
+/// The teacher's own courses that this computer lacks, in full, and the
+/// teacher's stored progress.
+fn download_teacher(
+    panel: &HttpPanel,
+    token: &str,
+    local: &HashSet<i64>,
+) -> Result<TeacherDownload, PanelError> {
+    let (status, text) = panel.call("GET", "courses", token, None)?;
+    let courses: Vec<CourseSummary> = data(status, &text)?;
+    let mut fresh = Vec::new();
+    for course in courses.iter().filter(|c| c.mine && !local.contains(&c.id)) {
+        let (status, text) = panel.call("GET", &format!("courses/{}", course.id), token, None)?;
+        fresh.push(data(status, &text)?);
+    }
+    let (status, text) = panel.call("GET", "progress", token, None)?;
+    Ok(TeacherDownload {
+        fresh,
+        progress: data(status, &text)?,
+    })
 }
 
 /// The engine's class state.
@@ -407,11 +439,99 @@ impl Engine {
     }
 
     /// After every good check with the panel: students bring their courses
-    /// and progress up to date.
+    /// and progress up to date; teachers get their own courses back on a new
+    /// computer and keep their study in step (W6).
     pub(crate) fn after_panel_check(&mut self) {
-        if self.role() == ClassRole::Student {
-            self.start_class_sync();
+        match self.role() {
+            ClassRole::Student => self.start_class_sync(),
+            ClassRole::Teacher => self.start_teacher_sync(),
+            ClassRole::Owner => {}
         }
+    }
+
+    fn start_teacher_sync(&mut self) {
+        if self.classes.syncing {
+            return;
+        }
+        let Some(token) = self.panel_token() else {
+            return;
+        };
+        let local: HashSet<i64> = self
+            .classes
+            .links
+            .values()
+            .filter(|link| !link.assigned)
+            .map(|link| link.course_id)
+            .collect();
+        self.classes.syncing = true;
+        self.spawn(move || {
+            Event::TeacherDownloaded(download_teacher(&HttpPanel::for_content(), &token, &local))
+        });
+    }
+
+    pub(crate) fn on_teacher_downloaded(
+        &mut self,
+        result: Result<TeacherDownload, PanelError>,
+    ) -> Result<(), EngineError> {
+        self.classes.syncing = false;
+        let download = match result {
+            Ok(download) => download,
+            Err(err) => {
+                tracing::info!(%err, "teacher sync failed; trying again at the next check");
+                return Ok(());
+            }
+        };
+        let uploads = self.apply_teacher_download(&download)?;
+        self.classes.last_sync = Some(Utc::now());
+        if !download.fresh.is_empty() {
+            self.notices
+                .push(Notice::CoursesUpdated(download.fresh.len()));
+        }
+        if !uploads.is_empty()
+            && let Some(token) = self.panel_token()
+        {
+            self.spawn(move || {
+                Event::ProgressUploaded(upload(&HttpPanel::for_content(), &token, &uploads))
+            });
+        }
+        Ok(())
+    }
+
+    /// Restores the teacher's own courses as plans published from here, then
+    /// merges the progress of those plans and the study time.
+    pub(crate) fn apply_teacher_download(
+        &mut self,
+        download: &TeacherDownload,
+    ) -> Result<Vec<(Option<i64>, serde_json::Value)>, EngineError> {
+        let mut restoring = HashSet::new();
+        for course in &download.fresh {
+            if self
+                .classes
+                .links
+                .values()
+                .any(|link| link.course_id == course.summary.id)
+            {
+                continue;
+            }
+            let plan = self
+                .store
+                .upsert_course_plan(None, &course_plan(course), Self::today())?;
+            self.store.set_plan_course(
+                plan,
+                CourseLink {
+                    course_id: course.summary.id,
+                    version: course.summary.version,
+                    assigned: false,
+                },
+            )?;
+            self.save_course_materials(plan, &course.materials)?;
+            restoring.insert(plan);
+            tracing::info!(course = course.summary.id, "own course restored");
+            self.refresh_course_links();
+        }
+        let uploads = self.merge_course_progress(&download.progress, true, &restoring)?;
+        self.reload_plans();
+        Ok(uploads)
     }
 
     fn start_class_sync(&mut self) {
@@ -513,8 +633,21 @@ impl Engine {
         }
         self.refresh_course_links();
 
-        let mut remote: HashMap<Option<i64>, serde_json::Value> = download
-            .progress
+        let uploads = self.merge_course_progress(&download.progress, false, &restoring)?;
+        self.reload_plans();
+        Ok(uploads)
+    }
+
+    /// Merges the panel's progress into this computer's for the linked plans
+    /// (received ones, or with `own` the teacher's published ones) and the
+    /// study time; returns what to send back.
+    fn merge_course_progress(
+        &mut self,
+        progress: &[ProgressDoc],
+        own: bool,
+        restoring: &HashSet<PlanId>,
+    ) -> Result<Vec<(Option<i64>, serde_json::Value)>, EngineError> {
+        let mut remote: HashMap<Option<i64>, serde_json::Value> = progress
             .iter()
             .map(|doc| (doc.course_id, doc.data.clone()))
             .collect();
@@ -523,7 +656,7 @@ impl Engine {
             .classes
             .links
             .iter()
-            .filter(|(_, link)| link.assigned)
+            .filter(|(_, link)| link.assigned != own)
             .map(|(plan, link)| (*plan, *link))
             .collect();
         for (plan, link) in links {
@@ -536,7 +669,7 @@ impl Engine {
             self.store.apply_plan_progress(plan, &delta)?;
             let mut merged = self.store.plan_progress(plan)?;
             // A student's work on the classroom's classes, for the school.
-            if let Some(saved) = self.store.class_schedules(plan)?.first() {
+            if !own && let Some(saved) = self.store.class_schedules(plan)?.first() {
                 merged.homework = merged.schedule_work(&saved.schedule, Self::today());
             }
             if merged != theirs
@@ -557,7 +690,6 @@ impl Engine {
         {
             uploads.push((None, value));
         }
-        self.reload_plans();
         Ok(uploads)
     }
 
@@ -757,6 +889,24 @@ impl Engine {
             schedules: Vec::new(),
         };
         self.apply_class_download(&download)
+    }
+
+    /// Test hook: applies a teacher's sync as if the panel had sent it.
+    #[cfg(test)]
+    pub(crate) fn apply_teacher_json(
+        &mut self,
+        fresh: serde_json::Value,
+        progress: serde_json::Value,
+    ) -> Result<Vec<(Option<i64>, serde_json::Value)>, EngineError> {
+        let bad = |e: serde_json::Error| PanelError::Unexpected {
+            status: 0,
+            detail: e.to_string(),
+        };
+        let download = TeacherDownload {
+            fresh: serde_json::from_value(fresh).map_err(bad)?,
+            progress: serde_json::from_value(progress).map_err(bad)?,
+        };
+        self.apply_teacher_download(&download)
     }
 
     /// Test hook: applies the schedules of a sync as if the panel had sent them.
