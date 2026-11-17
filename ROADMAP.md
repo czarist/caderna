@@ -559,6 +559,55 @@ code, switches to homologation, studies with a separate database against
 production finds their data exactly as before; revoking the token in the panel brings the
 app back to production at the next check.
 
+## Phase W10 — Interface in a web view, Rust kept (proposed, pilot first)
+
+**Goal:** keep every Rust crate (engine, study, ai, audio, handout, pdf, brand) and replace
+only `crates/ui` (egui, about 21,000 lines) with a web interface in the system's web view,
+packaged with Tauri 2. Decide only after a pilot measured on an entry-level computer.
+
+**Why:** text and reading (fonts, Japanese and Chinese, formulas, selection, screen
+readers), richer screens with less code (handout, whiteboard, progress charts), a client's
+brand as CSS variables (presentation mode becomes trivial), more people who can build web
+interfaces than egui, and a later path to Android and iOS (Tauri 2 mobile) for the parts
+that fit a phone (review, quizzes, class reminders, progress, homework).
+
+**Costs and risks:** every screen and the UI tests are rewritten (kittest → WebDriver or
+Playwright); the web view uses much more memory than egui (WebView2 on Windows, WebKitGTK
+on Linux, whose version varies by distribution); the teacher's lip-sync, the whiteboard,
+the reminder popup, the tray icon and the screen-capture block are redone; a second
+language and an IPC layer with its own security (CSP, allowed commands). CLAUDE.md says
+"egui, no webview": changing that rule is the owner's decision.
+
+**Why it fits:** the UI already talks to the engine only through `Command` in and
+`Notice`/`Event` out, which map almost one to one to Tauri commands and events.
+
+### Pilot
+
+- [ ] A Tauri 2 app beside the egui one (new crate, same workspace), with the engine
+      behind Tauri commands and events; the egui app stays the product meanwhile.
+- [ ] Two screens on the real engine: Today, and a lesson with the transcript and chat
+      (voice included, to measure latency through the web view).
+- [ ] Brand as CSS variables from `kg-brand` and the panel brand; presentation mode.
+- [ ] Measure on an entry-level computer (4 GB RAM, integrated graphics) against egui:
+      memory, start time, voice-turn latency, CPU while a lesson speaks.
+- [ ] Measure the work per screen, to estimate the rest of the migration.
+- [ ] Check WebView2 present or installable on Windows 10/11, the WebKitGTK versions on
+      the supported Linux distributions, and WKWebView on macOS.
+
+### If the pilot is approved
+
+- [ ] Migrate screen by screen, keeping the five languages (`locales/*.yml` shared with
+      the web interface) and the brand rules; the egui app ships until the switch.
+- [ ] End-to-end tests through the web view (activation, first run, handout, lesson,
+      chat, developer area), as `crates/ui/src/e2e.rs` does today.
+- [ ] Installers, updater and asset names unchanged (`packages.yml`, `update.rs`).
+- [ ] CLAUDE.md: the UI stack rule.
+- [ ] Mobile (separate decision): which screens go to the phone, store accounts, offline.
+
+**Acceptance criteria for the pilot:** on the entry-level computer the web view uses at
+most about twice egui's memory, opens in under 3 s, and a voice turn is no slower than
+egui's by more than 100 ms; Today and the lesson with chat work against the local panel.
+
 ## Voice programs per system
 
 - [x] Voice programs download on Windows, Linux (x86_64, aarch64) and macOS, pinned
