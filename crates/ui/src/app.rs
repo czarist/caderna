@@ -683,6 +683,8 @@ pub(crate) struct Badges {
     planning: bool,
     /// Teacher, student or neither (no classes).
     role: kg_engine::ClassRole,
+    /// The view chosen in the first run, or the school's.
+    view: kg_engine::UseRole,
 }
 
 impl Badges {
@@ -703,13 +705,17 @@ impl Badges {
             content: engine.module_enabled(kg_engine::Module::Content),
             planning: engine.module_enabled(kg_engine::Module::Planning),
             role: engine.role(),
+            view: engine.view_role(),
         }
     }
 
     /// Screens that depend on being a teacher or a student.
     pub(crate) fn shows_for_role(&self, screen: Screen) -> bool {
         match screen {
-            Screen::Classes | Screen::Planning => self.role == kg_engine::ClassRole::Teacher,
+            Screen::Classes | Screen::Planning => {
+                self.role == kg_engine::ClassRole::Teacher
+                    && self.view == kg_engine::UseRole::Teacher
+            }
             Screen::Board => self.role.creates_plans(),
             _ => true,
         }

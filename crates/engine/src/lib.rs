@@ -130,7 +130,7 @@ pub use restrictions::Restriction;
 pub use server::{OFFLINE_GRACE_DAYS, PanelError, PanelStatus, Refusal};
 pub use settings::{
     DEFAULT_REMINDER_MINUTES, DEFAULT_TURN_PAUSE, ManuscriptOcr, Region, SETUP_VERSION, Settings,
-    TERMS_VERSION, TURN_PAUSE_RANGE, TermsAcceptance,
+    TERMS_VERSION, TURN_PAUSE_RANGE, TermsAcceptance, UseRole,
 };
 pub use setup::ModelList;
 pub use study_time::StudyPresence;

@@ -473,7 +473,7 @@ setup:
   subtitle: "五个简单步骤。你的计划和进度都保持不变。"
   steps:
     language: "语言和地区"
-    name: "名字"
+    name: "你"
     teacher: "老师"
     ai: "AI"
     terms: "条款"
@@ -483,6 +483,7 @@ setup:
   missing:
     language: "请选择语言和国家或地区"
     name: "请输入你的名字"
+    role: "请选择你是学生还是老师"
     teacher: "请选择老师"
     ai: "请选择服务商和模型，并填写密钥"
     terms: "请选择国家或地区，并勾选同意条款"
@@ -557,6 +558,14 @@ setup:
     read_privacy: "阅读隐私政策"
     agree: "我已阅读并同意使用条款和隐私政策"
 
+  role:
+    title: "你将以什么身份使用 %{app}"
+    student: "我是学生"
+    teacher: "我是老师"
+    student_hint: "用于学习：课程、讲义、测验和模拟考试。"
+    teacher_hint: "用于教学：学校把你登记为老师后，还可以使用备课和班级。"
+    hint: "请选择一项。应用会显示学习或教学所需的界面。"
+    from_school: "由你的学校在许可证中设定。"
 update:
   available: "有新版本 %{version}"
   failed: "无法自动安装版本 %{version}。"

@@ -843,6 +843,24 @@ impl crate::Engine {
         }
     }
 
+    /// The role the school gave this person in the panel, if any.
+    pub fn panel_role(&self) -> Option<crate::UseRole> {
+        match self.role() {
+            crate::ClassRole::Teacher => Some(crate::UseRole::Teacher),
+            crate::ClassRole::Student => Some(crate::UseRole::Student),
+            crate::ClassRole::Owner => None,
+        }
+    }
+
+    /// The view the app shows: the school's enrolment when there is one,
+    /// otherwise what the person chose in the first run (teacher when they
+    /// never chose).
+    pub fn view_role(&self) -> crate::UseRole {
+        self.panel_role()
+            .or(self.settings.role)
+            .unwrap_or(crate::UseRole::Teacher)
+    }
+
     /// The device token, when the panel lets this computer in.
     pub(crate) fn panel_token(&self) -> Option<String> {
         if !kg_brand::has_server() || !self.panel_allows_use() {

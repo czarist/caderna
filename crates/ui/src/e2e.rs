@@ -109,7 +109,7 @@ fn engine<'a>(harness: &'a App<'_>) -> &'a kg_engine::Engine {
         .unwrap_or_else(|err| panic!("engine did not start: {err}"))
 }
 
-/// A plan with one topic, as if the notice had been read.
+/// A plan with one topic and no notice, as a classroom's course arrives.
 fn seed_plan(paths: &AppPaths) {
     std::fs::create_dir_all(&paths.data_dir).unwrap();
     let mut store = Store::open(&paths.database()).unwrap();
@@ -129,13 +129,22 @@ fn seed_plan(paths: &AppPaths) {
     .unwrap();
     let today = chrono::Local::now().date_naive();
     store
-        .insert_plan(&plan, "edital.pdf", "EDITAL", today)
+        // No notice, like a plan from a classroom's course.
+        .insert_plan(&plan, "", "", today)
         .unwrap();
 }
 
 #[test]
 #[ignore = "needs the brand's panel and KG_E2E_CODE; see the module docs"]
 fn a_new_student_gets_from_activation_to_a_lesson() {
+    // The app's log, on the test's output (RUST_LOG, default info).
+    let _ = tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info,wgpu=warn,naga=warn")),
+        )
+        .with_writer(std::io::stderr)
+        .try_init();
     let data = tempfile::tempdir().unwrap();
     let paths = AppPaths::new(data.path());
     seed_plan(&paths);
@@ -188,8 +197,10 @@ fn first_run_and_lesson(harness: &mut App<'_>) {
     click(harness, &crate::i18n::language_name("pt-BR"));
     click(harness, &t!("setup.next"));
 
-    // 2. Name.
+    // 2. Name, and student or teacher (the test licence has no enrolment,
+    //    so the choice is free).
     type_in_field(harness, "Ana");
+    click(harness, &t!("setup.role.student"));
     click(harness, &t!("setup.next"));
 
     // 3. Teacher.
@@ -207,6 +218,18 @@ fn first_run_and_lesson(harness: &mut App<'_>) {
     click(harness, &t!("setup.finish"));
     assert!(!engine(harness).needs_setup(), "the first run was saved");
     assert_eq!(engine(harness).settings().student_name, "Ana");
+    assert_eq!(
+        engine(harness).settings().role,
+        Some(kg_engine::UseRole::Student)
+    );
+    assert_eq!(engine(harness).view_role(), kg_engine::UseRole::Student);
+    assert!(
+        harness
+            .query_all_by_label(&t!("nav.planning"))
+            .next()
+            .is_none(),
+        "no lesson planning in the student view"
+    );
     assert_ne!(harness.state().ui.screen, Screen::Setup);
 
     // The tour comes next; skip it.
@@ -214,6 +237,32 @@ fn first_run_and_lesson(harness: &mut App<'_>) {
     assert!(!engine(harness).needs_tour());
     harness.state_mut().clear_toasts();
     frames(harness);
+
+    // The topic's handout, from the study plan.
+    assert_eq!(harness.state().ui.screen, Screen::Today);
+    click(harness, &t!("nav.plan"));
+    assert_eq!(harness.state().ui.screen, Screen::Plan);
+    click(harness, &t!("plan.handout"));
+    assert!(
+        engine(harness).handout_job().is_some(),
+        "the handout started; toasts {:?}",
+        harness.state().toast_texts()
+    );
+    wait_for(harness, "the handout", Duration::from_secs(900), |h| {
+        engine(h).handout_job().is_none()
+    });
+    eprintln!(
+        "after the handout: toasts {:?}",
+        harness.state().toast_texts()
+    );
+    assert_eq!(
+        engine(harness).handouts_cached(),
+        1,
+        "the handout was written; toasts {:?}",
+        harness.state().toast_texts()
+    );
+    harness.state_mut().clear_toasts();
+    click(harness, &t!("nav.today"));
 
     // Today offers the plan's first lesson.
     assert_eq!(harness.state().ui.screen, Screen::Today);

@@ -473,7 +473,7 @@ setup:
   subtitle: "Five quick steps. Your plans and progress stay as they are."
   steps:
     language: "Language and region"
-    name: "Name"
+    name: "You"
     teacher: "Teacher"
     ai: "AI"
     terms: "Terms"
@@ -483,6 +483,7 @@ setup:
   missing:
     language: "Choose a language and your country or region"
     name: "Type your name"
+    role: "Say whether you are a student or a teacher"
     teacher: "Choose a teacher"
     ai: "Choose the provider and model, and enter the key"
     terms: "Choose your country or region and tick that you agree to the terms"
@@ -557,6 +558,14 @@ setup:
     read_privacy: "Read the Privacy Policy"
     agree: "I have read and agree to the Terms of Use and the Privacy Policy"
 
+  role:
+    title: "You will use %{app} as"
+    student: "I am a student"
+    teacher: "I am a teacher"
+    student_hint: "To study: lessons, handouts, quizzes and mock exams."
+    teacher_hint: "To teach: also lesson planning and classrooms, once your school registers you as a teacher."
+    hint: "Pick one. The app shows the screens for studying or for teaching."
+    from_school: "Set by your school on the licence."
 update:
   available: "Version %{version} is available"
   failed: "Could not install version %{version} by itself."
