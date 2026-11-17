@@ -361,6 +361,30 @@ const MIGRATIONS: &[&str] = &[
     );
     CREATE INDEX class_schedule_history_schedule ON class_schedule_history(schedule_id);
 ",
+    // Goals and profile (Phase 11): days off that keep the streak, the
+    // student's weekly goals per plan and the medals pinned to the profile.
+    r"
+    CREATE TABLE days_off (
+        day TEXT PRIMARY KEY
+    );
+    CREATE TABLE study_goals (
+        plan_id INTEGER PRIMARY KEY REFERENCES plans(id) ON DELETE CASCADE,
+        goals TEXT NOT NULL,
+        set_on TEXT NOT NULL
+    );
+    CREATE TABLE profile_showcase (
+        position INTEGER PRIMARY KEY,
+        challenge TEXT NOT NULL
+    );
+",
+    // Lesson types (Phase 10): the last type chosen per topic.
+    r"
+    CREATE TABLE lesson_types (
+        topic_id INTEGER PRIMARY KEY REFERENCES topics(id) ON DELETE CASCADE,
+        length TEXT NOT NULL,
+        chosen_on TEXT NOT NULL
+    );
+",
 ];
 
 mod challenges;
@@ -406,6 +430,14 @@ impl Store {
             column: "milliseconds",
             value: value.unwrap_or(0).to_string(),
         })
+    }
+
+    /// Writes a consistent copy of the whole database to `path` (which must
+    /// not exist), even while this one is open.
+    pub fn copy_into(&self, path: &Path) -> Result<()> {
+        self.conn
+            .execute("VACUUM INTO ?1", [path.to_string_lossy().as_ref()])?;
+        Ok(())
     }
 
     pub fn open(path: &Path) -> Result<Self> {
@@ -693,6 +725,44 @@ impl Store {
             ],
         )?;
         Ok(())
+    }
+
+    /// The last lesson type chosen for `topic` (`quick`, `normal`, `full`)
+    /// and when.
+    pub fn lesson_type(&self, topic: TopicId) -> Result<Option<(String, NaiveDate)>> {
+        let row: Option<(String, String)> = self
+            .conn
+            .query_row(
+                "SELECT length, chosen_on FROM lesson_types WHERE topic_id = ?1",
+                [topic.0],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .optional()?;
+        row.map(|(length, day)| Ok((length, parse_date("chosen_on", &day)?)))
+            .transpose()
+    }
+
+    pub fn set_lesson_type(&mut self, topic: TopicId, length: &str, day: NaiveDate) -> Result<()> {
+        self.conn.execute(
+            "INSERT INTO lesson_types (topic_id, length, chosen_on) VALUES (?1, ?2, ?3)
+             ON CONFLICT(topic_id) DO UPDATE SET length = excluded.length, chosen_on = excluded.chosen_on",
+            params![topic.0, length, day.to_string()],
+        )?;
+        Ok(())
+    }
+
+    /// Right answers and questions answered in the quizzes on `topic`.
+    pub fn topic_quiz_totals(&self, topic: TopicId) -> Result<(u32, u32)> {
+        let (right, total): (i64, i64) = self.conn.query_row(
+            "SELECT COALESCE(SUM(correct), 0), COALESCE(SUM(total), 0) FROM quiz_attempts
+             WHERE topic_id = ?1",
+            [topic.0],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )?;
+        Ok((
+            u32::try_from(right).unwrap_or(0),
+            u32::try_from(total).unwrap_or(0),
+        ))
     }
 
     /// What the latest lesson on a topic covered, if any was taken.
@@ -1330,6 +1400,150 @@ impl Store {
             params![day.to_string(), kind.as_str()],
         )?;
         Ok(())
+    }
+
+    /// Days marked off (travel, illness): they never break the streak.
+    pub fn days_off(&self) -> Result<std::collections::BTreeSet<NaiveDate>> {
+        let mut stmt = self.conn.prepare("SELECT day FROM days_off")?;
+        let rows = stmt.query_map([], |r| r.get::<_, String>(0))?;
+        rows.map(|row| parse_date("day", &row?)).collect()
+    }
+
+    pub fn set_day_off(&mut self, day: NaiveDate, off: bool) -> Result<()> {
+        if off {
+            self.conn.execute(
+                "INSERT OR IGNORE INTO days_off (day) VALUES (?1)",
+                [day.to_string()],
+            )?;
+        } else {
+            self.conn
+                .execute("DELETE FROM days_off WHERE day = ?1", [day.to_string()])?;
+        }
+        Ok(())
+    }
+
+    /// The student's goals for `plan`.
+    pub fn study_goals(&self, plan: PlanId) -> Result<Option<crate::goals::StudyGoals>> {
+        let text: Option<String> = self
+            .conn
+            .query_row(
+                "SELECT goals FROM study_goals WHERE plan_id = ?1",
+                [plan.0],
+                |r| r.get(0),
+            )
+            .optional()?;
+        text.map(|t| {
+            serde_json::from_str(&t).map_err(|_| StoreError::Corrupt {
+                column: "goals",
+                value: t,
+            })
+        })
+        .transpose()
+    }
+
+    /// The day the goals of `plan` were last set.
+    pub fn study_goals_set_on(&self, plan: PlanId) -> Result<Option<NaiveDate>> {
+        let text: Option<String> = self
+            .conn
+            .query_row(
+                "SELECT set_on FROM study_goals WHERE plan_id = ?1",
+                [plan.0],
+                |r| r.get(0),
+            )
+            .optional()?;
+        text.map(|t| parse_date("set_on", &t)).transpose()
+    }
+
+    pub fn save_study_goals(
+        &mut self,
+        plan: PlanId,
+        goals: &crate::goals::StudyGoals,
+        today: NaiveDate,
+    ) -> Result<()> {
+        let text = serde_json::to_string(goals).map_err(|e| StoreError::Corrupt {
+            column: "goals",
+            value: e.to_string(),
+        })?;
+        self.conn.execute(
+            "INSERT INTO study_goals (plan_id, goals, set_on) VALUES (?1, ?2, ?3)
+             ON CONFLICT(plan_id) DO UPDATE SET goals = excluded.goals, set_on = excluded.set_on",
+            params![plan.0, text, today.to_string()],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_study_goals(&mut self, plan: PlanId) -> Result<()> {
+        self.conn
+            .execute("DELETE FROM study_goals WHERE plan_id = ?1", [plan.0])?;
+        Ok(())
+    }
+
+    /// Challenge keys pinned to the profile, in order.
+    pub fn showcase(&self) -> Result<Vec<String>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT challenge FROM profile_showcase ORDER BY position")?;
+        let rows = stmt.query_map([], |r| r.get::<_, String>(0))?;
+        Ok(rows.collect::<std::result::Result<_, _>>()?)
+    }
+
+    pub fn set_showcase(&mut self, keys: &[String]) -> Result<()> {
+        let tx = self.conn.transaction()?;
+        tx.execute("DELETE FROM profile_showcase", [])?;
+        for (position, key) in keys.iter().enumerate() {
+            tx.execute(
+                "INSERT INTO profile_showcase (position, challenge) VALUES (?1, ?2)",
+                params![position as i64, key],
+            )?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Distinct topics of `plan` with a lesson, quiz or review between
+    /// `from` and `to` (exclusive), by topic row.
+    pub fn topics_studied_between(
+        &self,
+        plan: PlanId,
+        from: NaiveDate,
+        to: NaiveDate,
+    ) -> Result<u32> {
+        let count: i64 = self.conn.query_row(
+            "SELECT COUNT(DISTINCT x.topic_id) FROM (
+                 SELECT topic_id, taken_on AS day FROM lessons
+                 UNION ALL SELECT topic_id, taken_on FROM quiz_attempts
+                 UNION ALL SELECT topic_id, reviewed_on FROM review_log
+             ) x
+             JOIN topics t ON t.id = x.topic_id
+             JOIN subjects s ON s.id = t.subject_id
+             WHERE s.plan_id = ?1 AND substr(x.day, 1, 10) >= ?2 AND substr(x.day, 1, 10) < ?3",
+            params![plan.0, from.to_string(), to.to_string()],
+            |r| r.get(0),
+        )?;
+        Ok(u32::try_from(count).unwrap_or(0))
+    }
+
+    /// Per subject of `plan`: lessons, right answers and answered questions.
+    pub fn subject_history(&self, plan: PlanId) -> Result<Vec<(SubjectId, u32, u32, u32)>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT s.id,
+                    (SELECT COUNT(*) FROM lessons l JOIN topics t ON t.id = l.topic_id
+                      WHERE t.subject_id = s.id),
+                    (SELECT COALESCE(SUM(q.correct), 0) FROM quiz_attempts q
+                      JOIN topics t ON t.id = q.topic_id WHERE t.subject_id = s.id),
+                    (SELECT COALESCE(SUM(q.total), 0) FROM quiz_attempts q
+                      JOIN topics t ON t.id = q.topic_id WHERE t.subject_id = s.id)
+             FROM subjects s WHERE s.plan_id = ?1",
+        )?;
+        let rows = stmt.query_map([plan.0], |r| {
+            Ok((
+                SubjectId(r.get(0)?),
+                u32::try_from(r.get::<_, i64>(1)?).unwrap_or(0),
+                u32::try_from(r.get::<_, i64>(2)?).unwrap_or(0),
+                u32::try_from(r.get::<_, i64>(3)?).unwrap_or(0),
+            ))
+        })?;
+        Ok(rows.collect::<std::result::Result<_, _>>()?)
     }
 
     /// Distinct days with activity, newest first, at most `limit`.

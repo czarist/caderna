@@ -5,6 +5,45 @@ use kg_engine::{QuizStats, StudyPlan, TopicStatus};
 
 use crate::i18n;
 
+/// The profile and goals (Phase 11), appended to the progress report.
+pub fn profile_section(
+    profile: &kg_engine::Profile,
+    goals: Option<&kg_engine::StudyGoals>,
+    streak: u32,
+) -> String {
+    let mut out = format!("\n## {}\n", t!("profile.tab"));
+    out.push_str(&format!(
+        "- {} ({})\n",
+        t!("profile.level", level = profile.level.level),
+        t!(
+            "profile.experience",
+            current = profile.level.experience,
+            next = profile.level.next
+        )
+    ));
+    out.push_str(&format!(
+        "- {}\n",
+        t!(
+            "profile.totals",
+            hours = profile.minutes / 60,
+            days = profile.study_days
+        )
+    ));
+    out.push_str(&format!("- {}\n", t!("profile.streak", days = streak)));
+    if let Some(goals) = goals {
+        out.push_str(&format!(
+            "- {}\n",
+            t!(
+                "export.goals",
+                hours = goals.hours_per_week,
+                topics = goals.topics_per_week,
+                quiz = goals.quiz_percent
+            )
+        ));
+    }
+    out
+}
+
 pub fn markdown(plan: &StudyPlan, stats: QuizStats, lessons: u32, today: NaiveDate) -> String {
     let mut out = String::new();
     let mut line = |text: String| {

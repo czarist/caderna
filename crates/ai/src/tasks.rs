@@ -257,20 +257,62 @@ impl TutorReply {
     }
 }
 
-/// How long and deep a lesson goes.
+/// The lesson type (Phase 10): straight to the point (`quick`), balanced
+/// (`normal`) or in depth (`full`). The saved names stay as they were.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum LessonLength {
-    /// The essentials, one short check per step.
+    /// Straight to the point: what the exam asks, the rules and the usual
+    /// traps, one example and short checks.
     Quick,
+    /// Balanced: every point of the handout, an example and a check each.
     #[default]
     Normal,
-    /// Every handout section, with examples and more checks.
+    /// In depth: the reasons and exceptions, several examples, past exam
+    /// questions, related topics and a longer written check at the end.
     Full,
 }
 
 impl LessonLength {
     pub const ALL: [Self; 3] = [Self::Quick, Self::Normal, Self::Full];
+
+    /// The saved name (`quick`, `normal`, `full`).
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::Quick => "quick",
+            Self::Normal => "normal",
+            Self::Full => "full",
+        }
+    }
+
+    pub fn from_key(key: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|l| l.key() == key)
+    }
+
+    /// Quiz questions after a lesson of this type, from the student's
+    /// usual quiz size: fewer for straight to the point, more in depth.
+    pub fn quiz_size(self, usual: usize) -> usize {
+        match self {
+            Self::Quick => (usual * 3 / 5).max(3).min(usual.max(3)),
+            Self::Normal => usual,
+            Self::Full => (usual * 3 / 2).clamp(usual, 20.max(usual)),
+        }
+    }
+
+    /// One step shorter or deeper.
+    pub fn shorter(self) -> Self {
+        match self {
+            Self::Full => Self::Normal,
+            _ => Self::Quick,
+        }
+    }
+
+    pub fn deeper(self) -> Self {
+        match self {
+            Self::Quick => Self::Normal,
+            _ => Self::Full,
+        }
+    }
 
     /// Most steps in a plan built from a handout; sections are grouped to fit.
     pub fn max_steps(self) -> usize {
@@ -293,18 +335,54 @@ impl LessonLength {
     fn teaching(self, lang: PromptLanguage) -> &'static str {
         match self {
             Self::Quick => lang.pick(
-                "- Aula rápida: em cada etapa, explique só o essencial em poucas frases e faça uma pergunta curta. Passe para a próxima quando o aluno responder.",
-                "- Quick lesson: in each step, explain only the essentials in a few sentences and ask one short question. Move on when the student answers.",
+                "- Aula direto ao ponto: em cada etapa, diga o que a prova cobra sobre o ponto, a regra e a pegadinha mais comum, em poucas frases, com um exemplo curto, e faça uma pergunta rápida. Sem digressões. Passe para a próxima quando o aluno responder.",
+                "- Straight-to-the-point lesson: in each step, say what the exam asks about the point, the rule and the most common trap, in a few sentences, with one short example, and ask one quick question. No digressions. Move on when the student answers.",
             ),
             Self::Normal => lang.pick(
                 "- Em cada etapa, explique todos os pontos listados para ela, um de cada vez, com um exemplo, e faça uma pergunta de checagem. Só passe para a próxima depois de cobrir os pontos e de o aluno responder bem.",
                 "- In each step, explain every point listed for it, one at a time, with an example, and ask a checking question. Move on only after covering the points and the student answering well.",
             ),
             Self::Full => lang.pick(
-                "- Aula completa: em cada etapa, explique todos os pontos listados para ela, um de cada vez, com exemplos e as pegadinhas de prova, e faça pelo menos duas perguntas de checagem. Só passe para a próxima depois de cobrir os pontos e de o aluno responder bem.",
-                "- Full lesson: in each step, explain every point listed for it, one at a time, with examples and the exam traps, and ask at least two checking questions. Move on only after covering the points and the student answering well.",
+                "- Aula aprofundada: em cada etapa, explique todos os pontos listados para ela, um de cada vez, com o porquê de cada regra e as exceções, dê pelo menos dois exemplos, mostre como a banca já cobrou o ponto (use o material de referência quando houver), ligue o ponto a tópicos relacionados e faça pelo menos duas perguntas de checagem. Na revisão final, peça uma resposta escrita mais longa. Só passe para a próxima depois de cobrir os pontos e de o aluno responder bem.",
+                "- In-depth lesson: in each step, explain every point listed for it, one at a time, with the reason behind each rule and its exceptions, give at least two examples, show how the board has asked the point (use the reference material when there is some), link it to related topics and ask at least two checking questions. In the final review, ask for a longer written answer. Move on only after covering the points and the student answering well.",
             ),
         }
+    }
+}
+
+/// The student asking, in their own words, for a deeper or shorter lesson
+/// (Portuguese and English; other languages use the buttons).
+pub fn length_request(text: &str, current: LessonLength) -> Option<LessonLength> {
+    let text = text.to_lowercase();
+    let deeper = [
+        "aprofund",
+        "mais detalhe",
+        "mais devagar",
+        "explica melhor",
+        "explique melhor",
+        "go deeper",
+        "more detail",
+        "in more depth",
+        "slow down",
+    ];
+    let shorter = [
+        "mais rápid",
+        "mais rapid",
+        "direto ao ponto",
+        "resum",
+        "encurt",
+        "mais curt",
+        "shorter",
+        "faster",
+        "to the point",
+        "speed up",
+    ];
+    if deeper.iter().any(|w| text.contains(w)) && current != LessonLength::Full {
+        Some(current.deeper())
+    } else if shorter.iter().any(|w| text.contains(w)) && current != LessonLength::Quick {
+        Some(current.shorter())
+    } else {
+        None
     }
 }
 
@@ -1123,6 +1201,24 @@ mod tests {
                 .content
                 .contains("revisão final.")
         );
+    }
+
+    #[test]
+    fn spoken_requests_change_the_lesson_type() {
+        assert_eq!(
+            length_request("Pode aprofundar esse ponto?", LessonLength::Normal),
+            Some(LessonLength::Full)
+        );
+        assert_eq!(
+            length_request("vamos mais rápido", LessonLength::Normal),
+            Some(LessonLength::Quick)
+        );
+        assert_eq!(length_request("Go deeper please", LessonLength::Full), None);
+        assert_eq!(length_request("a resposta é 4", LessonLength::Normal), None);
+        assert_eq!(LessonLength::Quick.quiz_size(10), 6);
+        assert_eq!(LessonLength::Full.quiz_size(10), 15);
+        assert_eq!(LessonLength::Quick.quiz_size(3), 3);
+        assert_eq!(LessonLength::from_key("full"), Some(LessonLength::Full));
     }
 
     #[test]

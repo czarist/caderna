@@ -76,6 +76,32 @@ pub(crate) struct MockState {
     reading_format: bool,
     printing: bool,
     job: Option<MockJob>,
+    /// A photo of the answer card is being read.
+    reading_card: bool,
+    /// Questions (0-based) the last card photo left in doubt, by attempt.
+    doubtful: Option<(MockAttemptId, Vec<usize>)>,
+}
+
+/// The mock exams of a plan over time, for Progress.
+#[derive(Debug, Clone, PartialEq)]
+pub struct MockTrend {
+    /// Finished sittings counted.
+    pub sittings: usize,
+    /// In the order subjects first appeared.
+    pub subjects: Vec<SubjectTrend>,
+    /// Topics of the subjects that lost most points in the last three
+    /// sittings, with how many questions on each were missed or left blank.
+    pub focus: Vec<(String, u32)>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct SubjectTrend {
+    pub subject: String,
+    /// Share of the section's points in each sitting, oldest first.
+    pub shares: Vec<f64>,
+    pub average: f64,
+    /// Points lost in the last three sittings.
+    pub lost: f64,
 }
 
 /// The essay part of a mock exam being written.
@@ -102,6 +128,10 @@ pub(crate) enum MockEvent {
         essay: Option<Box<EssayJob>>,
     },
     Printed(Result<PathBuf, EngineError>),
+    CardRead {
+        attempt: MockAttemptId,
+        result: Result<Vec<kg_handout::omr::BubbleRead>, EngineError>,
+    },
 }
 
 /// One request to the model: some topics of one section.
@@ -184,6 +214,108 @@ impl Engine {
             .find(|a| Some(a.id) == self.mock.open)?;
         let exam = self.mock.exams.iter().find(|e| e.id == attempt.exam_id)?;
         Some((exam, attempt))
+    }
+
+    /// How the finished mock exams of the active plan went, per subject,
+    /// and the topics to study first; `None` before the first one.
+    pub fn mock_trend(&self) -> Option<MockTrend> {
+        let mut finished: Vec<(&MockAttempt, &MockExam)> = self
+            .mock
+            .attempts
+            .iter()
+            .filter(|a| a.finished_at.is_some())
+            .filter_map(|a| Some((a, self.mock.exams.iter().find(|e| e.id == a.exam_id)?)))
+            .collect();
+        if finished.is_empty() {
+            return None;
+        }
+        finished.sort_by_key(|(a, _)| a.started_at);
+        let mut subjects: Vec<SubjectTrend> = Vec::new();
+        for (attempt, exam) in &finished {
+            let result = kg_study::mock::grade(exam, &attempt.answers);
+            for section in &result.sections {
+                let Some(name) = exam
+                    .format
+                    .sections
+                    .get(section.section)
+                    .map(|s| &s.subject)
+                else {
+                    continue;
+                };
+                if section.max <= 0.0 {
+                    continue;
+                }
+                let index = match subjects.iter().position(|s| &s.subject == name) {
+                    Some(i) => i,
+                    None => {
+                        subjects.push(SubjectTrend {
+                            subject: name.clone(),
+                            shares: Vec::new(),
+                            average: 0.0,
+                            lost: 0.0,
+                        });
+                        subjects.len() - 1
+                    }
+                };
+                let trend = &mut subjects[index];
+                trend
+                    .shares
+                    .push((section.points / section.max).clamp(0.0, 1.0));
+            }
+        }
+        // Points lost over the last three sittings point at the topics.
+        let recent = &finished[finished.len().saturating_sub(3)..];
+        let mut missed: HashMap<TopicId, u32> = HashMap::new();
+        for (attempt, exam) in recent {
+            let result = kg_study::mock::grade(exam, &attempt.answers);
+            for section in &result.sections {
+                let Some(name) = exam
+                    .format
+                    .sections
+                    .get(section.section)
+                    .map(|s| &s.subject)
+                else {
+                    continue;
+                };
+                if let Some(trend) = subjects.iter_mut().find(|s| &s.subject == name) {
+                    trend.lost += section.max - section.points.max(0.0);
+                }
+            }
+            for (question, answer) in exam.questions.iter().zip(&attempt.answers) {
+                if let Some(topic) = question.topic
+                    && *answer != Some(question.correct)
+                {
+                    *missed.entry(topic).or_default() += 1;
+                }
+            }
+        }
+        for trend in &mut subjects {
+            trend.average = trend.shares.iter().sum::<f64>() / trend.shares.len() as f64;
+        }
+        let mut weakest: Vec<&SubjectTrend> = subjects.iter().filter(|s| s.lost > 0.0).collect();
+        weakest.sort_by(|a, b| b.lost.total_cmp(&a.lost));
+        let weak_subjects: Vec<&str> = weakest.iter().take(2).map(|s| s.subject.as_str()).collect();
+        let mut focus: Vec<(String, u32)> = Vec::new();
+        if let Some(plan) = self.active_plan() {
+            for subject in plan
+                .subjects
+                .iter()
+                .filter(|s| weak_subjects.contains(&s.name.as_str()))
+            {
+                for topic in &subject.topics {
+                    if let Some(count) = missed.get(&topic.id) {
+                        focus.push((topic.title.clone(), *count));
+                    }
+                }
+            }
+        }
+        focus.sort_by_key(|f| std::cmp::Reverse(f.1));
+        focus.truncate(5);
+        Some(MockTrend {
+            sittings: finished.len(),
+            subjects,
+            focus,
+        })
     }
 
     /// An attempt whose clock is still running, if any.
@@ -477,6 +609,89 @@ impl Engine {
         Ok(())
     }
 
+    /// Reads a photo of the printed answer card into the open attempt. The
+    /// marks read replace the ones on screen; the student checks them,
+    /// especially the doubtful ones, before handing in.
+    pub(crate) fn read_mock_card(&mut self, path: PathBuf) -> Result<(), EngineError> {
+        let Some((exam, attempt)) = self.open_mock() else {
+            return Ok(());
+        };
+        if attempt.finished_at.is_some() || self.mock.reading_card {
+            return Ok(());
+        }
+        let id = u32::try_from(exam.id.0).unwrap_or(0);
+        let layout = CardLayout::new(mock_code(exam.id)).with_id(id);
+        let total = u32::try_from(exam.questions.len()).unwrap_or(0);
+        let marks = u32::from(exam.format.style.marks());
+        let attempt = attempt.id;
+        self.mock.reading_card = true;
+        self.spawn(move || {
+            let result = std::fs::read(&path)
+                .map_err(|source| EngineError::Export {
+                    path: path.clone(),
+                    source,
+                })
+                .and_then(|bytes| {
+                    let scan = kg_handout::omr::CardScan::open(&bytes, &layout)?;
+                    match scan.code() {
+                        Some(code) if code != id => {
+                            Err(EngineError::CardOtherExam(format!("KG-{code}")))
+                        }
+                        _ => Ok(scan.answers(total, marks)),
+                    }
+                });
+            Event::Mock(MockEvent::CardRead { attempt, result })
+        });
+        Ok(())
+    }
+
+    /// A card photo is being read.
+    pub fn reading_mock_card(&self) -> bool {
+        self.mock.reading_card
+    }
+
+    /// Questions (0-based) of `attempt` the last card photo left in doubt.
+    pub fn mock_doubtful(&self, attempt: MockAttemptId) -> &[usize] {
+        match &self.mock.doubtful {
+            Some((id, questions)) if *id == attempt => questions,
+            _ => &[],
+        }
+    }
+
+    fn on_card_read(
+        &mut self,
+        id: MockAttemptId,
+        result: Result<Vec<kg_handout::omr::BubbleRead>, EngineError>,
+    ) -> Result<(), EngineError> {
+        self.mock.reading_card = false;
+        let reads = result?;
+        let Some(attempt) = self
+            .mock
+            .attempts
+            .iter_mut()
+            .find(|a| a.id == id && a.finished_at.is_none())
+        else {
+            return Ok(());
+        };
+        for (slot, read) in attempt.answers.iter_mut().zip(&reads) {
+            *slot = read.choice;
+        }
+        self.store.save_mock_answers(id, &attempt.answers)?;
+        let doubtful: Vec<usize> = reads
+            .iter()
+            .enumerate()
+            .filter(|(_, r)| r.doubtful)
+            .map(|(i, _)| i)
+            .collect();
+        let filled = reads.iter().filter(|r| r.choice.is_some()).count();
+        self.notices.push(crate::Notice::MockCardRead {
+            filled,
+            doubtful: doubtful.len(),
+        });
+        self.mock.doubtful = Some((id, doubtful));
+        Ok(())
+    }
+
     /// Hands the running attempt in: the clock stops, the grade is final
     /// and wrong answers go to the mistakes notebook.
     pub(crate) fn finish_mock(&mut self, true_false: [String; 2]) -> Result<(), EngineError> {
@@ -576,6 +791,7 @@ impl Engine {
 
     pub(crate) fn on_mock_event(&mut self, event: MockEvent) -> Result<(), EngineError> {
         match event {
+            MockEvent::CardRead { attempt, result } => self.on_card_read(attempt, result),
             MockEvent::Format {
                 plan,
                 rules,
@@ -715,6 +931,7 @@ pub(crate) fn estimate_format(subjects: &[String], options: u8, essay: bool) -> 
             .collect(),
         essay,
         source: FormatSource::Estimate,
+        cutoff: None,
     }
 }
 
@@ -750,6 +967,29 @@ fn numbers_in(text: &str) -> BTreeSet<u32> {
         .filter(|n| !n.is_empty() && n.len() <= 4)
         .filter_map(|n| n.parse().ok())
         .collect()
+}
+
+/// The minimum score as a share of the points, when the notice writes its
+/// number (in percent or in points) and it makes sense.
+fn cutoff_from_draft(
+    draft: &FormatDraft,
+    numbers: &BTreeSet<u32>,
+    counts: &HashMap<usize, (u32, f64)>,
+) -> Option<f64> {
+    let written = |value: f64| {
+        value.is_finite()
+            && value > 0.0
+            && value.fract() == 0.0
+            && numbers.contains(&(value as u32))
+    };
+    if written(draft.cutoff_percent) && draft.cutoff_percent < 100.0 {
+        return Some(draft.cutoff_percent / 100.0);
+    }
+    let max: f64 = counts.values().map(|(n, w)| f64::from(*n) * w).sum();
+    if written(draft.cutoff_points) && max > 0.0 && draft.cutoff_points < max {
+        return Some(draft.cutoff_points / max);
+    }
+    None
 }
 
 /// Turns the model's reading into a format, or `None` when it found
@@ -828,6 +1068,7 @@ pub(crate) fn format_from_draft(
             .collect(),
         essay: draft.essay && fallback.essay,
         source: FormatSource::Notice,
+        cutoff: cutoff_from_draft(draft, &numbers, &counts),
     })
 }
 
@@ -1070,7 +1311,7 @@ fn exam_document(exam: &MockExam, print: &MockPrint, essay: Option<EssaySheet>) 
         marks,
         total: exam.questions.len() as u32,
         essay,
-        card: CardLayout::new(mock_code(exam.id)),
+        card: CardLayout::new(mock_code(exam.id)).with_id(u32::try_from(exam.id.0).unwrap_or(0)),
     }
 }
 
@@ -1100,6 +1341,8 @@ mod tests {
             options: 5,
             wrong_cancels: false,
             essay: true,
+            cutoff_percent: 0.0,
+            cutoff_points: 0.0,
             sections: sections
                 .iter()
                 .map(|(s, n)| FormatSectionDraft {
@@ -1137,6 +1380,25 @@ mod tests {
         assert_eq!(f.minutes, 270);
         assert_eq!(f.style, AnswerStyle::Choice { options: 5 });
         assert_eq!(f.source, FormatSource::Notice);
+    }
+
+    #[test]
+    fn the_cut_off_is_kept_only_when_the_notice_writes_it() {
+        let rules = "15 questões de Língua Portuguesa e 25 de Direito Constitucional. Será eliminado quem obtiver menos de 50% dos pontos ou menos de 12 pontos.";
+        let fallback = estimate_format(&subjects(), 4, false);
+        let sections = [("Língua Portuguesa", 15), ("Direito Constitucional", 25)];
+        let read = |percent: f64, points: f64| {
+            let mut draft = draft(&sections);
+            draft.cutoff_percent = percent;
+            draft.cutoff_points = points;
+            format_from_draft(&draft, &subjects(), rules, &fallback)
+                .unwrap()
+                .cutoff
+        };
+        assert_eq!(read(50.0, 0.0), Some(0.5));
+        assert_eq!(read(0.0, 12.0), Some(0.3), "12 of 40 points");
+        assert_eq!(read(60.0, 0.0), None, "60 is not in the notice");
+        assert_eq!(read(0.0, 0.0), None);
     }
 
     #[test]

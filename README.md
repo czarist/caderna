@@ -96,7 +96,12 @@ Every lesson follows a plan built from the topic's handout (or written by the
 teacher): each step brings the handout's key points, the teacher checks you got them
 before moving on, and everything the quiz will ask is covered along the way. You
 always see where you are ("Step 2 of 5"), and the lesson closes with a summary and an
-offer to take the quiz. Pick **Quick**, **Normal** or **Full** lessons in Settings.
+offer to take the quiz. Each lesson has a type: **Straight to the point** (what the exam
+asks, rules and traps), **Balanced** or **In depth** (reasons, exceptions, past exam
+questions, a written answer at the end). The ▾ beside the lesson button picks it, with a
+suggestion from your data (in depth for a new or weak topic, straight to the point for a
+mastered one or when the exam is close); **Go deeper** and **Make it shorter**, or just
+saying so, change the rest of a lesson without restarting, and the quiz after follows it.
 Taken lessons get a tick in your plan and keep their plan, board and closing words to
 look back at. Leave a lesson halfway and **Continue lesson** picks it up later. English
 words and sentences can be read in an English voice of their own.
@@ -138,7 +143,9 @@ Drag over a passage to highlight it, click it to write a note, and find every
 highlight in the side list. Jump through the contents, type a page, grab the page to
 move it, or click the mouse wheel to scroll on its own. Caderna remembers where you
 stopped and how much of each handout you have read, and saves a PDF with your
-highlights when you want one.
+highlights when you want one. **One-page summary** shows only the rules, one example,
+the traps and the summary, for lessons straight to the point; **Report** tells the
+school's panel when a handout from the shared base is wrong.
 
 <p align="center">
   <img src="docs/images/reader.png" alt="A handout open in the reader, with a highlighted passage, its note in the side list and the reading progress bar" width="100%">
@@ -172,8 +179,9 @@ test.
 
 Take it **on screen**, with the clock in the corner, or **print it**: a PDF with the
 question booklet in two columns, a numbered essay sheet and an answer card with corner
-markers. Doing it on paper, you copy your marks into the app's answer card and hand in. The
-clock keeps going if you leave or close the app, and only one sitting runs at a time. The
+markers. Doing it on paper, you photograph the filled card and the app reads the marks
+(no AI; the exam's number is printed on the card), or you copy them by hand; you check
+them and hand in. The clock keeps going if you leave or close the app, and only one sitting runs at a time. The
 grade is plain arithmetic on the saved key, per subject and with the syllabus's points: right,
 wrong, blank, time used and whether you went over time. Missed questions go to your mistakes
 notebook, the essay goes to Written answers to be photographed and graded, and the answer key
@@ -203,8 +211,15 @@ every achievement, filtered by won or locked, with the details on hover; the lev
 rim's colour and one to three dots. Achievements are won only by rules in the code, from your
 saved study, never by the AI; each plan keeps its own progress. Study from before this
 feature counts too; when the history does not tell the day, the card says so. A short
-notice appears after a lesson or quiz ends, never in the middle, and only once. No points,
-no ranking, no streak to lose.
+notice appears after a lesson or quiz ends, never in the middle, and only once, with a soft
+sound you can turn off. A few achievements stay secret until won.
+
+The **Profile** tab shows your level, from study time and results (never clicks), up to six
+pinned badges, a calendar of study days and each subject's history. Set your own weekly
+goals (hours, topics and a quiz score by a date); the app suggests values from the exam date
+and your pace, Today shows the week, and a missed week gets a gentle note, nothing more.
+The streak forgives one rest day a week and the days you mark off for travel or illness.
+No ranking and no comparison with other students.
 
 <table>
   <tr>

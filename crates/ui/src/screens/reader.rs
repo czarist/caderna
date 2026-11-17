@@ -290,6 +290,23 @@ fn reader_view(
         if ui.button(t!("reader.back")).clicked() {
             actions.send(Command::CloseReader);
         }
+        report_menu(ui, engine, actions);
+        let summary = engine.reader().is_some_and(|r| r.summary);
+        let (label, command) = if summary {
+            (t!("reader.full"), Command::OpenReading(reading.id))
+        } else {
+            (
+                t!("reader.summary"),
+                Command::OpenReadingSummary(reading.id),
+            )
+        };
+        if ui
+            .button(label)
+            .on_hover_text(t!("reader.summary_hint"))
+            .clicked()
+        {
+            actions.send(command);
+        }
         ui.separator();
         page_navigation(ui, reading, state);
         ui.separator();
@@ -596,6 +613,62 @@ fn handle_pointer(
 }
 
 /// The text box under a point, or the closest one on its line.
+/// "Reportar": tells the school's panel a handout from the shared base is
+/// wrong, offensive or broken, for one of the reading's topics.
+fn report_menu(ui: &mut egui::Ui, engine: &Engine, actions: &mut Actions) {
+    let topics: Vec<String> = engine
+        .reader()
+        .map(|r| {
+            r.contents
+                .iter()
+                .filter(|c| c.level == 0 && engine.handout_reportable(&c.title))
+                .map(|c| c.title.clone())
+                .collect()
+        })
+        .unwrap_or_default();
+    if topics.is_empty() {
+        return;
+    }
+    let id = egui::Id::new("reader_report");
+    let (mut topic, mut reason, mut note): (String, String, String) = ui
+        .data(|d| d.get_temp(id))
+        .unwrap_or_else(|| (topics[0].clone(), "wrong".to_owned(), String::new()));
+    ui.menu_button(t!("reader.report"), |ui| {
+        ui.label(egui::RichText::new(t!("reader.report_hint")).small());
+        if topics.len() > 1 {
+            egui::ComboBox::from_id_salt("reader_report_topic")
+                .selected_text(topic.clone())
+                .show_ui(ui, |ui| {
+                    for title in &topics {
+                        ui.selectable_value(&mut topic, title.clone(), title.as_str());
+                    }
+                });
+        }
+        for (value, label) in [
+            ("wrong", t!("reader.report_wrong")),
+            ("offensive", t!("reader.report_offensive")),
+            ("broken", t!("reader.report_broken")),
+            ("other", t!("reader.report_other")),
+        ] {
+            ui.radio_value(&mut reason, value.to_owned(), label);
+        }
+        ui.add(
+            egui::TextEdit::multiline(&mut note)
+                .desired_rows(2)
+                .hint_text(t!("reader.report_note")),
+        );
+        if ui.button(t!("reader.report_send")).clicked() {
+            actions.send(Command::ReportSharedHandout {
+                topic: topic.clone(),
+                reason: reason.clone(),
+                note: std::mem::take(&mut note),
+            });
+            ui.close();
+        }
+    });
+    ui.data_mut(|d| d.insert_temp(id, (topic, reason, note)));
+}
+
 fn nearest_box(boxes: &[kg_engine::TextBox], x: f32, y: f32) -> Option<usize> {
     let on_line = boxes
         .iter()

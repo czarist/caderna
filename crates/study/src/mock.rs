@@ -76,6 +76,10 @@ pub struct ExamFormat {
     /// The exam has an essay or other written answer.
     pub essay: bool,
     pub source: FormatSource,
+    /// The notice's minimum score of the objective test, as a share of the
+    /// points (`0.0..=1.0`), when it has one.
+    #[serde(default)]
+    pub cutoff: Option<f64>,
 }
 
 /// Why a format cannot be used.
@@ -383,6 +387,7 @@ mod tests {
             ],
             essay: false,
             source: FormatSource::Student,
+            cutoff: None,
         }
     }
 

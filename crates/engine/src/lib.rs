@@ -11,8 +11,11 @@ mod challenges;
 mod child_job;
 mod classes;
 mod demo;
+pub mod developer;
+mod developer_area;
 mod discursive;
 mod documents;
+mod goals;
 mod handouts;
 mod illustrations;
 mod lesson;
@@ -50,10 +53,13 @@ pub use accounts::AccountAction;
 pub use board::{BoardItem, BoardJob};
 pub use classes::{ClassRole, ClassStudent, Classroom, CourseSummary, StudentCourse};
 pub use demo::DemoStatus;
+pub use developer::{DeveloperClaims, DeveloperError, Environment};
+pub use developer_area::DeveloperStatus;
 pub use discursive::{
     AttemptProblems, EvolutionGroup, EvolutionRow, ImageProblem, NOTE_INTERRUPTED, NOTE_UNREADABLE,
     OpenAttempt, ProposalRequest, VisionCheck,
 };
+pub use goals::{GoalStatus, HEAT_WEEKS, Profile, SHOWCASE_SIZE, SubjectHistory};
 pub use handouts::{HandoutJob, HandoutRequest, HandoutScope};
 pub use illustrations::{BoardImage, Illustration, illustration_key};
 pub use kg_ai::{AccountKind, AccountState, LoginPages};
@@ -69,17 +75,21 @@ pub use kg_audio::{
     TtsBackend, Voice, VoiceGender, WhisperModel,
 };
 pub use kg_audio::{EXPRESSIVENESS_RANGE, RHYTHM_VARIATION_RANGE};
+pub use kg_handout::omr::OmrError;
 pub use kg_handout::{
     CjkScript, Document as HandoutDocument, ExamLabels, Exercise as HandoutExercise, HandoutError,
-    Labels as HandoutLabels, Section as HandoutSection, TextBox, TopicHandout, cjk_font,
+    Labels as HandoutLabels, LessonPlanActivity, LessonPlanDocument, LessonPlanLabels,
+    LessonPlanSession, Section as HandoutSection, TextBox, TopicHandout, cjk_font,
 };
 pub use kg_pdf::{Edital, EditalText, PdfError, Role};
 pub use kg_study::CourseLink;
 pub use kg_study::SavedSchedule;
 pub use kg_study::discursive::{REWRITE_RATIO, change_ratio, marks as transcript_marks};
+pub use kg_study::goals::{Level, StudyGoals, WeekProgress};
 pub use kg_study::schedule::{
     Activity, ActivityKind, ClassSchedule, ClassTime, DEFAULT_REVIEW_EVERY, HolidayCalendar,
-    ReleaseRule, ScheduleSpec, Session, SessionKind, SessionMode, SessionPlan, SessionStatus,
+    ReleaseRule, ScheduleChange, ScheduleSpec, Session, SessionKind, SessionMode, SessionPlan,
+    SessionStatus,
 };
 pub use kg_study::{
     AnswerStyle, ExamFormat, ExamSection, FormatError, FormatSource, MockAttempt, MockAttemptId,
@@ -104,14 +114,14 @@ pub use kg_study::{
 };
 pub use kg_study::{Highlight, HighlightColor, HighlightId, Reading, ReadingId};
 pub use kg_study::{LessonRecap, Mistake, MistakeId};
-pub use lesson::{LessonPhase, LessonSession, LessonTurn, Speaker};
-pub use mock::{MockJob, MockPrint, mock_code};
+pub use lesson::{LengthReason, LessonPhase, LessonSession, LessonTurn, Speaker};
+pub use mock::{MockJob, MockPrint, MockTrend, SubjectTrend, mock_code};
 pub use models::ModelStatus;
 pub use modules::Module;
 pub use ocr::{OcrError, OcrModelStatus};
 pub use panel_brand::{PanelBrand, load_panel_brand};
 pub use paths::AppPaths;
-pub use planning::{AgendaItem, CalendarLabels};
+pub use planning::{AgendaItem, CalendarLabels, ClassReminder, ClassReminderKind, ScheduleNote};
 pub use practice::{QuizSession, QuizStep, REVIEW_ROUNDS, ReviewSession, ReviewStep};
 pub use prepare::{PrepareJob, PrepareRequest, PrepareSummary, slug};
 pub use progress::Milestone;
@@ -149,6 +159,14 @@ pub enum Command {
 
     /// Starts a lesson from the beginning.
     StartLesson(TopicId),
+    /// Starts a lesson of the chosen type (Phase 10).
+    StartLessonAs {
+        topic: TopicId,
+        length: LessonLength,
+    },
+    /// Goes deeper or shorter in the open lesson; the steps already taught
+    /// stay as they are.
+    ChangeLessonLength(LessonLength),
     /// Continues the unfinished lesson on a topic (or starts one).
     ResumeLesson(TopicId),
     EndLesson,
@@ -277,6 +295,15 @@ pub enum Command {
         scale: u32,
     },
     /// Highlights text boxes `first..=last` of a page.
+    /// Reports the shared handout of a topic (by title) to the panel:
+    /// `reason` is `wrong`, `offensive`, `broken` or `other`.
+    ReportSharedHandout {
+        topic: String,
+        reason: String,
+        note: String,
+    },
+    /// Opens a handout as its one-page summary (rules, traps, summary).
+    OpenReadingSummary(ReadingId),
     AddHighlight {
         page: usize,
         first: usize,
@@ -359,6 +386,32 @@ pub enum Command {
     /// Hands the running attempt in. The words for true and false go with
     /// wrong answers into the mistakes notebook.
     FinishMock([String; 2]),
+    /// Reads a photo of the printed answer card into the open attempt.
+    ReadMockCard(PathBuf),
+    /// The active plan's weekly goals; `None` removes them.
+    SaveGoals(Option<StudyGoals>),
+    /// Marks a day off (travel, illness) that keeps the streak, or clears it.
+    SetDayOff {
+        day: chrono::NaiveDate,
+        off: bool,
+    },
+    /// Challenge keys pinned to the profile, in order.
+    SetShowcase(Vec<String>),
+    /// Developer mode (Phase W9): exchanges a short code from the panel for
+    /// a signed token.
+    DeveloperCode(String),
+    /// Chooses the environment for the next start; `copy`: copy production
+    /// data into it first (one way), `fresh`: start it empty.
+    DeveloperSwitch {
+        environment: developer::Environment,
+        port: Option<u16>,
+        copy: bool,
+        fresh: bool,
+    },
+    /// Removes an environment's data (never production's, never the one in use).
+    DeveloperReset(developer::Environment),
+    /// Forgets the token; the next start is in production.
+    DeveloperLeave,
     DeleteMockAttempt(MockAttemptId),
     /// Plans a classroom's classes from a plan (no AI; classroom 0 for none).
     GenerateSchedule {
@@ -400,6 +453,12 @@ pub enum Command {
         classroom: i64,
         path: PathBuf,
         labels: Box<CalendarLabels>,
+    },
+    /// Writes the printable schedule (a table and a page per class), already
+    /// formatted by the UI in its language.
+    ExportSchedulePdf {
+        path: PathBuf,
+        document: Box<LessonPlanDocument>,
     },
 
     /// Writes an already formatted progress report.
@@ -486,6 +545,13 @@ pub enum EngineError {
     MockSubject(String),
     #[error("the model wrote too few valid questions")]
     MockShort,
+    #[error(transparent)]
+    Card(#[from] kg_handout::omr::OmrError),
+    /// The photo shows the answer card of another exam (its code).
+    #[error("the answer card belongs to exam {0}")]
+    CardOtherExam(String),
+    #[error(transparent)]
+    Developer(#[from] developer::DeveloperError),
     #[error("the first-run setup is missing a choice")]
     SetupIncomplete,
 }
@@ -544,6 +610,21 @@ pub enum Notice {
         found: bool,
     },
     MockCreated,
+    /// A photo of the answer card filled `filled` questions; `doubtful` need
+    /// a look.
+    MockCardRead {
+        filled: usize,
+        doubtful: usize,
+    },
+    /// Developer mode: a code became a token, the environment for the next
+    /// start was saved, or the token stopped being valid (back to production
+    /// at the next start).
+    /// A report on a shared handout reached the panel, or did not.
+    SharedReported,
+    SharedReportFailed,
+    DeveloperTokenSaved,
+    DeveloperSwitched,
+    DeveloperEnded,
     /// A plan was published to `classrooms` classrooms.
     PlanPublished {
         classrooms: usize,
@@ -601,6 +682,8 @@ pub(crate) enum Event {
     },
     Discursive(discursive::DiscursiveEvent),
     Mock(mock::MockEvent),
+    Developer(developer_area::DeveloperEvent),
+    SharedReported(bool),
     Planning(planning::PlanningEvent),
     EditalRevalidated {
         plan: PlanId,
@@ -686,6 +769,9 @@ pub struct Engine {
     revalidating: Option<PlanId>,
     streak: u32,
     studied_today: bool,
+    /// Kept while the unlock chime plays.
+    chime: Option<kg_audio::Speaker>,
+    developer: developer_area::DeveloperState,
     study_clock: study_time::StudyClock,
     updates: update::Updates,
 
@@ -731,6 +817,15 @@ impl Engine {
             }
         };
         let vault = server::Vault::system(&paths);
+        let active = developer::active();
+        tracing::info!(
+            environment = active.environment.id(),
+            data = %paths.data_dir.display(),
+            "environment"
+        );
+        if let Some(reason) = active.ended {
+            tracing::warn!(%reason, "developer mode ended; running in production");
+        }
         let mut engine = Self::with_store(store, paths, env_ai, notices);
         engine.start_demo(demo::clock_file());
         engine.load_license();
@@ -850,6 +945,8 @@ impl Engine {
             revalidating: None,
             streak: 0,
             studied_today: false,
+            chime: None,
+            developer: developer_area::DeveloperState::default(),
             study_clock: study_time::StudyClock::new(Self::today(), Instant::now()),
             updates: update::Updates::default(),
             notices,
@@ -1014,8 +1111,10 @@ impl Engine {
             return Err(EngineError::TeachersOnly);
         }
         // A classroom that opens topics as the classes happen.
-        if let Command::StartLesson(topic) | Command::StartQuiz(topic) | Command::StartReview(topic) =
-            &command
+        if let Command::StartLesson(topic)
+        | Command::StartLessonAs { topic, .. }
+        | Command::StartQuiz(topic)
+        | Command::StartReview(topic) = &command
             && let Some(day) = self.topic_opens_on(*topic)
         {
             return Err(EngineError::TopicNotOpen(day));
@@ -1035,6 +1134,12 @@ impl Engine {
             Command::SetTopicStatus(id, status) => self.set_topic_status(id, status),
 
             Command::OpenReading(id) => self.open_reading(id),
+            Command::OpenReadingSummary(id) => self.open_reading_as(id, true),
+            Command::ReportSharedHandout {
+                topic,
+                reason,
+                note,
+            } => self.report_shared_handout(&topic, &reason, note),
             Command::CloseReader => {
                 self.close_reader();
                 Ok(())
@@ -1067,6 +1172,15 @@ impl Engine {
             Command::StartLesson(id) => {
                 self.recap = None;
                 self.start_lesson(id)
+            }
+            Command::StartLessonAs { topic, length } => {
+                self.recap = None;
+                self.choose_lesson_length(topic, length)?;
+                self.start_lesson(topic)
+            }
+            Command::ChangeLessonLength(length) => {
+                self.change_lesson_length(length);
+                Ok(())
             }
             Command::EndLesson => self.end_lesson(),
             Command::ResumeLesson(id) => {
@@ -1295,6 +1409,21 @@ impl Engine {
                 path,
                 labels,
             } => self.export_schedule_calendar(plan, classroom, path, &labels),
+            Command::ExportSchedulePdf { path, document } => {
+                self.spawn(move || {
+                    let result = kg_handout::render_lesson_plan_pdf(&document)
+                        .map_err(EngineError::from)
+                        .and_then(|pdf| {
+                            std::fs::write(&path, pdf).map_err(|source| EngineError::Export {
+                                path: path.clone(),
+                                source,
+                            })
+                        })
+                        .map(|()| path);
+                    Event::Planning(planning::PlanningEvent::PdfExported(result))
+                });
+                Ok(())
+            }
             Command::CancelMock => {
                 self.cancel_mock();
                 Ok(())
@@ -1312,6 +1441,22 @@ impl Engine {
             }
             Command::MarkMockAnswer { question, answer } => self.mark_mock_answer(question, answer),
             Command::FinishMock(true_false) => self.finish_mock(true_false),
+            Command::ReadMockCard(path) => self.read_mock_card(path),
+            Command::SaveGoals(goals) => self.save_goals(goals),
+            Command::SetDayOff { day, off } => self.set_day_off(day, off),
+            Command::SetShowcase(keys) => self.set_showcase(keys),
+            Command::DeveloperCode(code) => {
+                self.developer_code(code);
+                Ok(())
+            }
+            Command::DeveloperSwitch {
+                environment,
+                port,
+                copy,
+                fresh,
+            } => self.developer_switch(environment, port, copy, fresh),
+            Command::DeveloperReset(environment) => self.developer_reset(environment),
+            Command::DeveloperLeave => self.developer_leave(),
             Command::DeleteMockAttempt(id) => self.delete_mock_attempt(id),
             Command::ExportProgress { path, content } => {
                 std::fs::write(&path, content).map_err(|source| EngineError::Export {
@@ -1421,6 +1566,18 @@ impl Engine {
                     result,
                 } => self.on_plan_published(plan, classrooms, result),
                 Event::ClassroomsLoaded(result) => self.on_classrooms_loaded(result),
+                Event::SharedReported(sent) => {
+                    self.notices.push(if sent {
+                        Notice::SharedReported
+                    } else {
+                        Notice::SharedReportFailed
+                    });
+                    Ok(())
+                }
+                Event::Developer(event) => {
+                    self.on_developer_event(event);
+                    Ok(())
+                }
             };
             if let Err(err) = result {
                 tracing::warn!(%err, "background task failed");
@@ -1430,6 +1587,7 @@ impl Engine {
         self.tick_lesson();
         self.tick_reader();
         self.tick_panel();
+        self.tick_developer();
     }
 
     fn save_settings(&mut self, mut settings: Settings) -> Result<(), EngineError> {

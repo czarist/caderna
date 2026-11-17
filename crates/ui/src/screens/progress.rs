@@ -92,6 +92,11 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
             });
         }
 
+        if let Some(trend) = engine.mock_trend() {
+            ui.add_space(16.0);
+            mock_trend(ui, &trend);
+        }
+
         ui.add_space(16.0);
         let p = theme::palette(ui.ctx());
         let export = egui::Button::image_and_text(
@@ -105,12 +110,78 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
                 .add_filter(t!("progress.markdown"), &["md"])
                 .save_file()
             {
-                let content = export::markdown(plan, stats, engine.lesson_count(), today);
+                let mut content = export::markdown(plan, stats, engine.lesson_count(), today);
+                content.push_str(&export::profile_section(
+                    &engine.profile(),
+                    engine.study_goals().as_ref(),
+                    engine.streak(),
+                ));
                 actions.send(Command::ExportProgress { path, content });
             }
         }
     });
     actions.run(app);
+}
+
+/// Mock exams per subject: the average, the last sittings as a small row
+/// of bars (oldest first) and the topics to study first.
+fn mock_trend(ui: &mut egui::Ui, trend: &kg_engine::MockTrend) {
+    let p = theme::palette(ui.ctx());
+    ui.label(RichText::new(t!("progress.mocks", count = trend.sittings)).strong());
+    for subject in &trend.subjects {
+        ui.horizontal(|ui| {
+            ui.allocate_ui_with_layout(
+                egui::vec2(260.0, 20.0),
+                egui::Layout::left_to_right(egui::Align::Center),
+                |ui| {
+                    ui.set_width(260.0);
+                    ui.add(egui::Label::new(&subject.subject).truncate());
+                },
+            );
+            let recent = &subject.shares[subject.shares.len().saturating_sub(8)..];
+            let (rect, _) = ui.allocate_exact_size(
+                egui::vec2(10.0 * recent.len() as f32, 20.0),
+                egui::Sense::hover(),
+            );
+            for (i, share) in recent.iter().enumerate() {
+                let height = 2.0 + 18.0 * *share as f32;
+                let x = rect.left() + 10.0 * i as f32;
+                let bar = egui::Rect::from_min_max(
+                    egui::pos2(x + 1.0, rect.bottom() - height),
+                    egui::pos2(x + 8.0, rect.bottom()),
+                );
+                ui.painter().rect_filled(bar, 1.0, p.accent);
+            }
+            ui.label(
+                RichText::new(t!(
+                    "progress.mock_average",
+                    percent = format!("{:.0}", subject.average * 100.0)
+                ))
+                .small(),
+            );
+            if let [.., before, last] = subject.shares[..] {
+                let (word, color) = if last > before + 0.05 {
+                    (t!("progress.mock_up"), p.success)
+                } else if last + 0.05 < before {
+                    (t!("progress.mock_down"), p.muted)
+                } else {
+                    (t!("progress.mock_steady"), p.muted)
+                };
+                ui.label(RichText::new(word).small().color(color));
+            }
+        });
+    }
+    if !trend.focus.is_empty() {
+        ui.add_space(6.0);
+        let topics: Vec<String> = trend
+            .focus
+            .iter()
+            .map(|(title, missed)| {
+                t!("progress.mock_focus_item", topic = title, count = missed).into_owned()
+            })
+            .collect();
+        widgets::hint(ui, &t!("progress.mock_focus", topics = topics.join(" · ")));
+    }
 }
 
 fn tile(ui: &mut egui::Ui, value: &str, label: &str) {

@@ -5,7 +5,7 @@ use std::time::{Duration, Instant};
 
 use egui::{Color32, RichText, Sense, Stroke, vec2};
 
-use crate::reminders::Progress;
+use crate::reminders::{ClassNotice, Progress};
 use crate::{i18n, theme, widgets};
 
 const WIDTH: f32 = 470.0;
@@ -34,6 +34,7 @@ pub fn run_reminder(args: &[String]) -> eframe::Result {
     // The same client brand as the app, from its data folder.
     crate::brand::apply(kg_engine::load_panel_brand(&kg_engine::AppPaths::detect()).as_ref());
     i18n::set(locale);
+    let class = ClassNotice::from_args(rest);
     let progress = Progress::from_args(rest);
     let height = 240.0;
     let options = eframe::NativeOptions {
@@ -59,6 +60,7 @@ pub fn run_reminder(args: &[String]) -> eframe::Result {
             egui_extras::install_image_loaders(&cc.egui_ctx);
             theme::apply(&cc.egui_ctx);
             Ok(Box::new(ReminderPopup {
+                class,
                 progress,
                 opened: Instant::now(),
                 height: None,
@@ -69,6 +71,7 @@ pub fn run_reminder(args: &[String]) -> eframe::Result {
 }
 
 struct ReminderPopup {
+    class: Option<ClassNotice>,
     progress: Progress,
     opened: Instant,
     /// The height the content asked for, once measured.
@@ -166,6 +169,34 @@ impl ReminderPopup {
         let ctx = ui.ctx().clone();
         ui.spacing_mut().item_spacing.y = 6.0;
         widgets::kicker(ui, &t!("app.name"), p.accent);
+        if let Some(class) = &self.class {
+            ui.label(
+                RichText::new(&class.title)
+                    .family(theme::heading_family())
+                    .size(19.0)
+                    .color(p.text),
+            );
+            ui.label(RichText::new(&class.line).color(p.muted));
+            ui.add_space(4.0);
+            ui.horizontal(|ui| {
+                if let Some(link) = &class.link {
+                    if widgets::primary_button(ui, &t!("reminder.class.join")).clicked() {
+                        ctx.open_url(egui::OpenUrl::new_tab(link));
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                    }
+                } else if widgets::primary_button(ui, &t!("reminder.study_now")).clicked() {
+                    crate::instance::show_running();
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                }
+                let later = egui::Button::new(RichText::new(t!("reminder.later")).color(p.text))
+                    .fill(Color32::TRANSPARENT)
+                    .stroke(Stroke::new(1.2, p.ink));
+                if ui.add(later).clicked() {
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                }
+            });
+            return;
+        }
         ui.label(
             RichText::new(t!("reminder.title"))
                 .family(theme::heading_family())

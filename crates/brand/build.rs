@@ -76,6 +76,7 @@ fn main() -> Result<(), String> {
     text("COMPANY_URL_LABEL", &f.company.url_label);
     text("SUPPORT_URL", &f.company.support_url);
     text("LICENSE_PUBLIC_KEY", &f.licensing.public_key);
+    text("DEVELOPER_PUBLIC_KEY", f.developer.public_key.trim());
     text(
         "TERMS_VERSION",
         if f.legal.version.is_empty() {
@@ -120,6 +121,13 @@ fn main() -> Result<(), String> {
     }
     let server_url = f.server.url_for(channel, server_override.as_deref())?;
     text("SERVER_URL", &server_url);
+    // Every compiled panel address, for the developer area (Phase W9): the
+    // choice between them moves to runtime behind a developer token, but no
+    // other address is ever reachable.
+    let compiled = |channel| f.server.url_for(channel, None).unwrap_or_default();
+    text("SERVER_URL_PROD", &compiled(Channel::Prod));
+    text("SERVER_URL_HOM", &compiled(Channel::Hom));
+    text("SERVER_URL_DEV", &compiled(Channel::Dev));
     text("SERVER_TEXT_MODEL", f.server.text_model.trim());
     text("SERVER_VISION_MODEL", f.server.vision_model.trim());
     text("DEMO_CONTACT_URL", &f.demo.contact_url);

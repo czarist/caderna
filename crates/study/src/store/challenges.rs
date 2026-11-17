@@ -559,7 +559,8 @@ mod tests {
             store
                 .conn
                 .execute_batch(
-                    "DROP TABLE class_schedule_history; DROP TABLE class_schedules;
+                    "DROP TABLE lesson_types; DROP TABLE profile_showcase; DROP TABLE study_goals;
+                     DROP TABLE days_off; DROP TABLE class_schedule_history; DROP TABLE class_schedules;
                      DROP TABLE mistake_recoveries; DROP TABLE review_log;
                      DROP TABLE challenge_unlocks; DROP TABLE mock_attempts;
                      DROP TABLE mock_exams; DROP TABLE exam_formats;

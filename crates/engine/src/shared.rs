@@ -186,6 +186,22 @@ impl SharedBase {
     }
 }
 
+impl SharedBase {
+    /// Tells the panel a piece of shared material is wrong, offensive or
+    /// broken. Only the reason and the note go.
+    pub(crate) fn report(&self, key: &str, reason: &str, note: &str) -> bool {
+        let body = serde_json::json!({ "reason": reason, "note": truncate(note.trim(), 1000) });
+        matches!(
+            self.agent
+                .post(&format!("{}/{key}/reports", self.base))
+                .header("Accept", "application/json")
+                .header("Authorization", &format!("Bearer {}", self.token))
+                .send_json(&body),
+            Ok(response) if response.status().is_success()
+        )
+    }
+}
+
 fn truncate(text: &str, chars: usize) -> &str {
     match text.char_indices().nth(chars) {
         Some((at, _)) => &text[..at],
@@ -194,6 +210,38 @@ fn truncate(text: &str, chars: usize) -> &str {
 }
 
 impl crate::Engine {
+    /// Whether the handout of the active plan's topic titled `topic` came
+    /// from (or went to) the shared base, so it can be reported.
+    pub fn handout_reportable(&self, topic: &str) -> bool {
+        self.shared_handout_key(topic).is_some()
+    }
+
+    fn shared_handout_key(&self, topic: &str) -> Option<String> {
+        let plan = self.active_plan()?;
+        let id = plan.topics().find(|(_, t)| t.title == topic)?.1.id;
+        let json = self.store.handout(id).ok().flatten()?;
+        crate::handouts::handout_shared_key(&json)
+    }
+
+    /// Reports the shared handout of `topic` to the panel, in the background.
+    pub(crate) fn report_shared_handout(
+        &mut self,
+        topic: &str,
+        reason: &str,
+        note: String,
+    ) -> Result<(), crate::EngineError> {
+        let (Some(key), Some(base)) = (self.shared_handout_key(topic), self.shared_base()) else {
+            return Ok(());
+        };
+        let reason = match reason {
+            "wrong" | "offensive" | "broken" => reason,
+            _ => "other",
+        }
+        .to_owned();
+        self.spawn(move || crate::Event::SharedReported(base.report(&key, &reason, &note)));
+        Ok(())
+    }
+
     /// The shared base for the active plan: only with a brand panel that
     /// confirmed this computer.
     pub(crate) fn shared_base(&self) -> Option<SharedBase> {

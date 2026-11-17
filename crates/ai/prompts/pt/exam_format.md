@@ -12,7 +12,8 @@ Regras:
 - "options" é o número de alternativas de cada questão de múltipla escolha (por exemplo 4 ou 5); use 2 para Certo ou Errado.
 - "wrong_cancels" é true se uma resposta errada anula uma certa (ou desconta pontos).
 - "essay" é true se a prova tem redação ou questões discursivas.
+- "cutoff_percent" é a nota mínima da prova objetiva em porcentagem dos pontos, como o programa escreve (por exemplo 50 para "50% dos pontos"), ou 0. "cutoff_points" é a nota mínima em pontos, como o programa escreve, ou 0. Não calcule: copie o número do programa.
 - Em "sections", uma linha por matéria do plano que cai na prova, com o número de questões e o valor de cada questão. Se o programa agrupa várias matérias num bloco só, divida as questões do bloco entre elas, somando o total do bloco.
 
 Responda apenas com JSON válido, sem texto antes ou depois, neste formato:
-{"found": true, "minutes": 240, "style": "choice", "options": 5, "wrong_cancels": false, "essay": true, "sections": [{"subject": "...", "questions": 10, "weight": 1.0}]}
+{"found": true, "minutes": 240, "style": "choice", "options": 5, "wrong_cancels": false, "essay": true, "cutoff_percent": 0, "cutoff_points": 0, "sections": [{"subject": "...", "questions": 10, "weight": 1.0}]}

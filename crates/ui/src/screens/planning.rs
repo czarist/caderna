@@ -3,12 +3,14 @@
 //! without AI; here the teacher sets the class days, sees the classes and
 //! edits each one. No business rules: every change goes to the engine.
 
+use std::collections::HashMap;
+
 use chrono::{Datelike, NaiveDate, NaiveTime, Weekday};
 use egui::RichText;
 use kg_engine::{
     Activity, ActivityKind, CalendarLabels, ClassSchedule, ClassTime, Command, Engine,
-    HolidayCalendar, PlanId, ReleaseRule, ScheduleSpec, Session, SessionKind, SessionMode,
-    SessionStatus,
+    HolidayCalendar, LessonPlanActivity, LessonPlanDocument, LessonPlanLabels, LessonPlanSession,
+    PlanId, ReleaseRule, ScheduleSpec, Session, SessionKind, SessionMode, SessionStatus,
 };
 
 use super::Actions;
@@ -140,6 +142,13 @@ struct Editing {
     link: String,
     activities: Vec<Activity>,
     homework: Vec<Activity>,
+    date: String,
+    time: String,
+    minutes: u32,
+    kind: SessionKind,
+    topics: Vec<String>,
+    covered: Vec<String>,
+    error: Option<String>,
 }
 
 impl Editing {
@@ -156,6 +165,13 @@ impl Editing {
             },
             activities: session.plan.activities.clone(),
             homework: session.plan.homework.clone(),
+            date: i18n::date(session.date),
+            time: session.start.format("%H:%M").to_string(),
+            minutes: session.minutes,
+            kind: session.kind,
+            topics: session.topics.clone(),
+            covered: session.covered_topics().to_vec(),
+            error: None,
         }
     }
 }
@@ -567,6 +583,35 @@ fn toolbar(
                     }),
                 });
             }
+            if ui
+                .button(t!("planning.export_pdf"))
+                .on_hover_text(t!("planning.export_pdf_hint"))
+                .clicked()
+                && let Some(path) = rfd::FileDialog::new()
+                    .set_title(t!("planning.export_pdf"))
+                    .set_file_name(format!("{}.pdf", t!("planning.file_name")))
+                    .add_filter("PDF", &["pdf"])
+                    .save_file()
+            {
+                let plan_title = engine
+                    .plans()
+                    .iter()
+                    .find(|p| p.id == plan)
+                    .map(|p| p.title.clone())
+                    .unwrap_or_default();
+                let classroom_name = engine
+                    .classrooms()
+                    .unwrap_or_default()
+                    .iter()
+                    .find(|c| c.id == classroom)
+                    .map(|c| c.name.clone())
+                    .unwrap_or_default();
+                let titles = engine.schedule_topic_titles(plan);
+                actions.send(Command::ExportSchedulePdf {
+                    path,
+                    document: Box::new(pdf_document(schedule, &titles, plan_title, classroom_name)),
+                });
+            }
             let mut gradual = schedule.release == ReleaseRule::AsClassesHappen;
             if ui
                 .checkbox(&mut gradual, t!("planning.release_gradual"))
@@ -661,6 +706,10 @@ fn sessions(
                     && ui.small_button(t!("planning.mark_given")).clicked()
                 {
                     edit(&|s| s.status = SessionStatus::Given);
+                    // Opens the plan so the teacher can say what was covered.
+                    let mut opened = Editing::of(session);
+                    opened.covered = session.topics.clone();
+                    state.editing = Some(opened);
                 }
                 if session.status == SessionStatus::Planned
                     && ui.small_button(t!("planning.cancel_class")).clicked()
@@ -680,6 +729,40 @@ fn sessions(
                 if ui.small_button(lock).clicked() {
                     edit(&|s| s.locked = !s.locked);
                 }
+                if session.status == SessionStatus::Planned && session.minutes >= 2 {
+                    let split = ui
+                        .small_button(t!("planning.split"))
+                        .on_hover_text(t!("planning.split_hint"));
+                    if split.clicked() {
+                        let mut changed = schedule.clone();
+                        if changed.split(index) {
+                            actions.send(Command::SaveSchedule {
+                                plan,
+                                classroom,
+                                schedule: Box::new(changed),
+                            });
+                        }
+                    }
+                }
+                let next_planned = schedule
+                    .sessions
+                    .get(index + 1)
+                    .is_some_and(|next| next.status == SessionStatus::Planned);
+                if session.status == SessionStatus::Planned && next_planned {
+                    let merge = ui
+                        .small_button(t!("planning.merge"))
+                        .on_hover_text(t!("planning.merge_hint"));
+                    if merge.clicked() {
+                        let mut changed = schedule.clone();
+                        if changed.merge_with_next(index) {
+                            actions.send(Command::SaveSchedule {
+                                plan,
+                                classroom,
+                                schedule: Box::new(changed),
+                            });
+                        }
+                    }
+                }
                 let details = if open {
                     t!("planning.close_details")
                 } else {
@@ -690,7 +773,9 @@ fn sessions(
                 }
             });
             if open && let Some(editing) = state.editing.as_mut() {
-                details(ui, editing, schedule, index, plan, classroom, actions);
+                details(
+                    ui, editing, schedule, index, &titles, plan, classroom, actions,
+                );
             }
         });
         ui.add_space(6.0);
@@ -698,20 +783,98 @@ fn sessions(
 }
 
 /// The class's plan, edited in place.
+#[allow(clippy::too_many_arguments)]
 fn details(
     ui: &mut egui::Ui,
     editing: &mut Editing,
     schedule: &ClassSchedule,
     index: usize,
+    titles: &HashMap<String, String>,
     plan: PlanId,
     classroom: i64,
     actions: &mut Actions,
 ) {
+    let session = &schedule.sessions[index];
+    let title = |key: &str| titles.get(key).cloned().unwrap_or_else(|| key.to_owned());
     ui.add_space(6.0);
     egui::Grid::new(("planning_details", index))
         .num_columns(2)
         .spacing([12.0, 6.0])
         .show(ui, |ui| {
+            ui.label(t!("planning.when"));
+            ui.horizontal(|ui| {
+                ui.add(egui::TextEdit::singleline(&mut editing.date).desired_width(100.0));
+                ui.add(egui::TextEdit::singleline(&mut editing.time).desired_width(60.0));
+                ui.add(
+                    egui::DragValue::new(&mut editing.minutes)
+                        .range(10..=600)
+                        .suffix(t!("planning.minutes_suffix")),
+                );
+                egui::ComboBox::from_id_salt(("planning_kind", index))
+                    .selected_text(kind_name(editing.kind))
+                    .show_ui(ui, |ui| {
+                        for kind in [
+                            SessionKind::Class,
+                            SessionKind::Review,
+                            SessionKind::MockExam,
+                        ] {
+                            ui.selectable_value(&mut editing.kind, kind, kind_name(kind));
+                        }
+                    });
+            });
+            ui.end_row();
+            ui.label(t!("planning.topics"));
+            ui.vertical(|ui| {
+                let mut remove = None;
+                for (i, key) in editing.topics.iter().enumerate() {
+                    ui.horizontal(|ui| {
+                        ui.label(title(key));
+                        if ui.small_button(t!("planning.remove")).clicked() {
+                            remove = Some(i);
+                        }
+                    });
+                }
+                if let Some(i) = remove {
+                    editing.topics.remove(i);
+                }
+                let mut others: Vec<(&String, &String)> = titles
+                    .iter()
+                    .filter(|(key, _)| !editing.topics.contains(key))
+                    .collect();
+                others.sort_by(|a, b| a.1.cmp(b.1));
+                let mut added = None;
+                egui::ComboBox::from_id_salt(("planning_add_topic", index))
+                    .selected_text(t!("planning.add_topic"))
+                    .width(260.0)
+                    .show_ui(ui, |ui| {
+                        for (key, name) in others {
+                            if ui.selectable_label(false, name.as_str()).clicked() {
+                                added = Some(key.clone());
+                            }
+                        }
+                    });
+                if let Some(key) = added {
+                    editing.topics.push(key);
+                }
+            });
+            ui.end_row();
+            if session.status == SessionStatus::Given && !editing.topics.is_empty() {
+                ui.label(t!("planning.covered"));
+                ui.vertical(|ui| {
+                    widgets::hint(ui, &t!("planning.covered_hint"));
+                    for key in &editing.topics {
+                        let mut on = editing.covered.contains(key);
+                        if ui.checkbox(&mut on, title(key)).changed() {
+                            if on {
+                                editing.covered.push(key.clone());
+                            } else {
+                                editing.covered.retain(|k| k != key);
+                            }
+                        }
+                    }
+                });
+                ui.end_row();
+            }
             ui.label(t!("planning.objectives"));
             ui.add(
                 egui::TextEdit::multiline(&mut editing.objectives)
@@ -752,7 +915,6 @@ fn details(
             );
             ui.end_row();
         });
-    let session = &schedule.sessions[index];
     ui.add_space(6.0);
     ui.label(RichText::new(t!("planning.activities")).strong());
     activity_list(ui, "planning_activity", &mut editing.activities, false);
@@ -775,11 +937,46 @@ fn details(
     if !link_ok {
         widgets::hint(ui, &t!("planning.link_https"));
     }
+    if let Some(error) = &editing.error {
+        widgets::hint(ui, error);
+    }
     if ui
         .add_enabled(link_ok, egui::Button::new(t!("planning.save")))
         .clicked()
     {
+        let when = NaiveDate::parse_from_str(editing.date.trim(), &t!("format.date"))
+            .map_err(|_| t!("planning.bad_date", value = editing.date.trim()).into_owned())
+            .and_then(|date| {
+                NaiveTime::parse_from_str(editing.time.trim(), "%H:%M")
+                    .map(|time| (date, time))
+                    .map_err(|_| t!("planning.bad_time", value = editing.time.trim()).into_owned())
+            });
+        let (date, start) = match when {
+            Ok(when) => when,
+            Err(error) => {
+                editing.error = Some(error);
+                return;
+            }
+        };
+        editing.error = None;
         let mut changed = schedule.clone();
+        {
+            let target = &mut changed.sessions[index];
+            target.minutes = editing.minutes.max(10);
+            target.kind = editing.kind;
+            target.topics = editing.topics.clone();
+            target.covered = (target.status == SessionStatus::Given).then(|| {
+                editing
+                    .topics
+                    .iter()
+                    .filter(|key| editing.covered.contains(key))
+                    .cloned()
+                    .collect()
+            });
+            if target.covered.as_ref() == Some(&target.topics) {
+                target.covered = None;
+            }
+        }
         let target = &mut changed.sessions[index].plan;
         target.objectives = lines(&editing.objectives);
         target.materials = lines(&editing.materials);
@@ -804,11 +1001,81 @@ fn details(
         } else {
             SessionMode::Online(link.to_owned())
         };
+        changed.move_session(index, date, start);
         actions.send(Command::SaveSchedule {
             plan,
             classroom,
             schedule: Box::new(changed),
         });
+    }
+}
+
+/// The printable schedule in the UI language. The teacher's private notes
+/// stay out: a printout travels.
+fn pdf_document(
+    schedule: &ClassSchedule,
+    titles: &HashMap<String, String>,
+    title: String,
+    subtitle: String,
+) -> LessonPlanDocument {
+    let topic = |key: &String| titles.get(key).cloned().unwrap_or_else(|| key.clone());
+    let activities = |list: &[Activity]| {
+        list.iter()
+            .map(|a| LessonPlanActivity {
+                kind: activity_kind_name(a.kind),
+                minutes: t!("planning.minutes", count = a.minutes).into_owned(),
+                text: a.text.clone(),
+            })
+            .collect()
+    };
+    let sessions = schedule
+        .sessions
+        .iter()
+        .map(|s| LessonPlanSession {
+            weekday: weekday_name(s.date.weekday()),
+            date: i18n::date(s.date),
+            time: s.start.format("%H:%M").to_string(),
+            minutes: t!("planning.minutes", count = s.minutes).into_owned(),
+            kind: kind_name(s.kind),
+            status: match s.status {
+                SessionStatus::Planned => t!("planning.planned"),
+                SessionStatus::Given => t!("planning.given"),
+                SessionStatus::Cancelled => t!("planning.cancelled"),
+            }
+            .into_owned(),
+            topics: s.covered_topics().iter().map(topic).collect(),
+            objectives: s.plan.objectives.clone(),
+            activities: activities(&s.plan.activities),
+            materials: s.plan.materials.clone(),
+            homework: activities(&s.plan.homework),
+            link: match &s.plan.mode {
+                SessionMode::Online(link) => link.clone(),
+                _ => String::new(),
+            },
+            note: s.plan.note.clone(),
+        })
+        .collect();
+    LessonPlanDocument {
+        title,
+        subtitle,
+        lang: i18n::current().to_owned(),
+        labels: LessonPlanLabels {
+            schedule: t!("planning.pdf.schedule").into_owned(),
+            lesson_plan: t!("planning.pdf.lesson_plan").into_owned(),
+            date: t!("planning.pdf.date").into_owned(),
+            time: t!("planning.pdf.time").into_owned(),
+            kind: t!("planning.pdf.kind").into_owned(),
+            topics: t!("planning.topics").into_owned(),
+            status: t!("planning.pdf.status").into_owned(),
+            objectives: t!("planning.objectives").into_owned(),
+            activities: t!("planning.activities").into_owned(),
+            materials: t!("planning.materials").into_owned(),
+            homework: t!("planning.homework").into_owned(),
+            link: t!("planning.online_link").into_owned(),
+            note: t!("planning.note").into_owned(),
+            empty: t!("planning.pdf.empty").into_owned(),
+        },
+        sessions,
     }
 }
 

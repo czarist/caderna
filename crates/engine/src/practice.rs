@@ -240,7 +240,11 @@ impl Engine {
     pub(crate) fn start_quiz(&mut self, topic_id: TopicId) -> Result<(), EngineError> {
         let (ctx, topic_title) = self.topic_context(topic_id)?;
         let id = self.next_id();
-        let size = self.settings.quiz_size as usize;
+        // The quiz follows the topic's lesson type: shorter after a lesson
+        // straight to the point, longer after one in depth.
+        let size = self
+            .topic_lesson_length(topic_id)
+            .quiz_size(self.settings.quiz_size as usize);
         // Questions missed before come first, up to half the quiz.
         let mut retry: Vec<QuizQuestion> = self
             .store

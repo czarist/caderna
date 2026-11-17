@@ -2,7 +2,7 @@
 
 use chrono::Timelike;
 use egui::{Color32, RichText};
-use kg_engine::{Command, Engine, StudyPlan, TopicStatus};
+use kg_engine::{Command, Engine, ScheduleChange, StudyPlan, TopicStatus};
 
 use super::{Actions, current_week, lesson_button};
 use crate::app::{KnowGiverApp, Screen};
@@ -66,6 +66,7 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
         });
         ui.add_space(14.0);
         agenda(ui, engine);
+        goals_card(ui, engine, &mut actions);
         next_step(ui, engine, plan, &mut actions);
         ui.add_space(10.0);
         super::challenges::today_card(ui, engine, &mut actions);
@@ -75,15 +76,132 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
     actions.run(app);
 }
 
+/// This week against the student's goals, or a quiet offer to set them.
+fn goals_card(ui: &mut egui::Ui, engine: &Engine, actions: &mut Actions) {
+    let p = crate::theme::palette(ui.ctx());
+    let Some(status) = engine.goal_status() else {
+        if engine.suggested_goals().is_some()
+            && ui
+                .small_button(t!("today.goals_set"))
+                .on_hover_text(t!("profile.goals_hint"))
+                .clicked()
+        {
+            super::profile::open(ui.ctx());
+            actions.go_to(Screen::Challenges);
+        }
+        ui.add_space(6.0);
+        return;
+    };
+    let goals = &status.goals;
+    widgets::card(ui, |ui| {
+        ui.horizontal(|ui| {
+            ui.label(RichText::new(t!("today.goals")).strong());
+            if ui.small_button(t!("today.goals_adjust")).clicked() {
+                super::profile::open(ui.ctx());
+                actions.go_to(Screen::Challenges);
+            }
+        });
+        let hours = status.this_week.hours;
+        widgets::progress_line(
+            ui,
+            180.0,
+            (hours / goals.hours_per_week.max(0.1)).min(1.0),
+            &t!(
+                "today.goals_hours",
+                done = format!("{hours:.1}"),
+                goal = goals.hours_per_week
+            ),
+            p.accent,
+        );
+        let topics = status.this_week.topics;
+        widgets::progress_line(
+            ui,
+            180.0,
+            (topics as f32 / goals.topics_per_week.max(1) as f32).min(1.0),
+            &t!(
+                "today.goals_topics",
+                done = topics,
+                goal = goals.topics_per_week
+            ),
+            p.accent,
+        );
+        let quiz = match (status.recent_quiz, goals.quiz_by) {
+            (Some(now), Some(by)) => t!(
+                "today.goals_quiz_by",
+                now = now,
+                goal = goals.quiz_percent,
+                date = i18n::date(by)
+            ),
+            (Some(now), None) => t!("today.goals_quiz", now = now, goal = goals.quiz_percent),
+            (None, _) => t!("today.goals_quiz_none", goal = goals.quiz_percent),
+        };
+        widgets::hint(ui, &quiz);
+        if status.missed_last_week {
+            widgets::hint(ui, &t!("today.goals_missed"));
+        }
+    });
+    ui.add_space(10.0);
+}
+
+/// A quiet note on what moved in a republished schedule; closed by the
+/// student until the next change.
+fn schedule_changes(ui: &mut egui::Ui, engine: &Engine) {
+    let notes = engine.schedule_changes();
+    let id = egui::Id::new("today_schedule_changes_seen");
+    let seen = ui.data(|d| d.get_temp::<usize>(id)).unwrap_or(0);
+    if notes.len() <= seen {
+        return;
+    }
+    let mut close = false;
+    for note in &notes[seen..] {
+        ui.horizontal_wrapped(|ui| {
+            widgets::hint(ui, &t!("today.schedule_changed", plan = note.plan_title));
+        });
+        for change in note.changes.iter().take(5) {
+            let line = match *change {
+                ScheduleChange::Moved { from, to, start } => t!(
+                    "today.schedule_moved",
+                    from = i18n::date(from),
+                    to = i18n::date(to),
+                    time = start.format("%H:%M").to_string()
+                ),
+                ScheduleChange::Cancelled { date } => {
+                    t!("today.schedule_cancelled", date = i18n::date(date))
+                }
+                ScheduleChange::Added { date, start } => t!(
+                    "today.schedule_added",
+                    date = i18n::date(date),
+                    time = start.format("%H:%M").to_string()
+                ),
+            };
+            widgets::hint(ui, &format!("• {line}"));
+        }
+        if note.changes.len() > 5 {
+            widgets::hint(
+                ui,
+                &t!("today.schedule_more", count = note.changes.len() - 5),
+            );
+        }
+    }
+    if ui.small_button(t!("today.schedule_seen")).clicked() {
+        close = true;
+    }
+    if close {
+        ui.data_mut(|d| d.insert_temp(id, notes.len()));
+    }
+    ui.add_space(4.0);
+}
+
 /// The next class of each of the student's classroom schedules.
 fn agenda(ui: &mut egui::Ui, engine: &Engine) {
     let items = engine.agenda(Engine::today());
-    if items.is_empty() {
+    if items.is_empty() && engine.schedule_changes().is_empty() {
         return;
     }
     let p = crate::theme::palette(ui.ctx());
     widgets::card(ui, |ui| {
         ui.label(RichText::new(t!("today.agenda")).strong());
+        schedule_changes(ui, engine);
         for item in items.iter().take(3) {
             let session = &item.session;
             ui.add_space(4.0);

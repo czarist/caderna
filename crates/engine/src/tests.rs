@@ -1692,6 +1692,7 @@ fn mock_format() -> ExamFormat {
         ],
         essay: false,
         source: FormatSource::Student,
+        cutoff: None,
     }
 }
 
@@ -1795,6 +1796,15 @@ fn a_timed_mock_exam_is_graded_and_its_mistakes_go_to_the_notebook() {
     assert_eq!(engine.mistakes()[0].question.prompt, "Q2");
     assert_eq!(engine.mistakes()[0].chosen, 1);
 
+    // Progress shows the sitting per subject and where the points went.
+    let trend = engine.mock_trend().unwrap();
+    assert_eq!(trend.sittings, 1);
+    assert_eq!(trend.subjects[0].subject, "Português");
+    assert_eq!(trend.subjects[0].shares, [0.5]);
+    assert_eq!(trend.subjects[1].shares, [1.0]);
+    assert_eq!(trend.focus.len(), 1, "the missed topic of Português");
+    assert_eq!(trend.focus[0].1, 1);
+
     // Answers can no longer change.
     engine
         .handle(Command::MarkMockAnswer {
@@ -1803,6 +1813,58 @@ fn a_timed_mock_exam_is_graded_and_its_mistakes_go_to_the_notebook() {
         })
         .unwrap();
     assert_eq!(engine.mock_attempts()[0].answers[1], Some(1));
+}
+
+#[test]
+fn a_card_photo_fills_the_open_sitting_and_marks_the_doubtful() {
+    let (mut engine, _dir) = engine_with_plan();
+    deliver_mock(&mut engine);
+    let exam = engine.mock_exams()[0].id;
+    engine.handle(Command::StartMock(exam)).unwrap();
+    let attempt = engine.running_mock().unwrap().id;
+    let read = |choice, doubtful| kg_handout::omr::BubbleRead {
+        choice,
+        doubtful,
+        darkness: Vec::new(),
+    };
+    engine
+        .events_tx
+        .send(Event::Mock(crate::mock::MockEvent::CardRead {
+            attempt,
+            result: Ok(vec![
+                read(Some(2), false),
+                read(None, true),
+                read(Some(1), false),
+            ]),
+        }))
+        .unwrap();
+    engine.poll();
+    assert_eq!(
+        engine.running_mock().unwrap().answers,
+        [Some(2), None, Some(1)]
+    );
+    assert_eq!(engine.mock_doubtful(attempt), [1]);
+    assert!(engine.take_notices().iter().any(|n| matches!(
+        n,
+        Notice::MockCardRead {
+            filled: 2,
+            doubtful: 1
+        }
+    )));
+
+    // A card of another exam fills nothing.
+    engine
+        .events_tx
+        .send(Event::Mock(crate::mock::MockEvent::CardRead {
+            attempt,
+            result: Err(EngineError::CardOtherExam("KG-99".into())),
+        }))
+        .unwrap();
+    engine.poll();
+    assert_eq!(
+        engine.running_mock().unwrap().answers,
+        [Some(2), None, Some(1)]
+    );
 }
 
 #[test]
@@ -2154,9 +2216,171 @@ fn a_student_receives_the_classroom_agenda_and_topics_open_with_their_classes() 
     ));
 
     // The same version again changes nothing; a schedule no longer sent goes.
-    engine.apply_schedule_json(schedule).unwrap();
+    engine.apply_schedule_json(schedule.clone()).unwrap();
     assert_eq!(engine.class_schedules(plan.id).len(), 1);
+    assert!(engine.schedule_changes().is_empty());
+
+    // A republished version that moves a class leaves a note for Today.
+    let mut moved = schedule;
+    moved[0]["version"] = serde_json::json!(3);
+    moved[0]["schedule"]["sessions"][1]["date"] = serde_json::json!(day(4));
+    engine.apply_schedule_json(moved).unwrap();
+    let notes = engine.schedule_changes();
+    assert_eq!(notes.len(), 1);
+    assert_eq!(notes[0].plan_title, plan.title);
+    assert_eq!(
+        notes[0].changes,
+        [ScheduleChange::Moved {
+            from: today + chrono::Duration::days(3),
+            to: today + chrono::Duration::days(4),
+            start: chrono::NaiveTime::from_hms_opt(19, 0, 0).unwrap()
+        }]
+    );
     engine.apply_schedule_json(serde_json::json!([])).unwrap();
     assert!(engine.class_schedules(plan.id).is_empty());
     assert_eq!(engine.topic_opens_on(geometry), None);
+}
+
+#[test]
+fn class_reminders_come_for_open_homework_and_online_classes() {
+    let (mut engine, _dir) = engine();
+    engine.set_role_for_test("student");
+    if !kg_brand::has_server() {
+        return;
+    }
+    let topics = serde_json::json!([
+        {"key": "t1", "title": "Funções", "difficulty": "medium", "week": 1}
+    ]);
+    let summary = serde_json::json!([{"id": 42, "title": "ENEM 2027", "version": 1}]);
+    engine
+        .apply_class_json(
+            summary,
+            serde_json::json!([course_json(1, topics)]),
+            serde_json::json!([]),
+        )
+        .unwrap();
+    let today = Engine::today();
+    let day = |offset: i64| {
+        (today + chrono::Duration::days(offset))
+            .format("%Y-%m-%d")
+            .to_string()
+    };
+    engine
+        .apply_schedule_json(serde_json::json!([{
+            "course_id": 42, "classroom_id": 7, "version": 1,
+            "schedule": {
+                "spec": {"start": day(-7), "end": day(30),
+                         "classes": [{"weekday": "Mon", "start": "19:00:00", "minutes": 100}]},
+                "sessions": [
+                    {"key": "s1", "date": day(-2), "start": "19:00:00", "minutes": 100,
+                     "kind": "class", "topics": ["t1"], "status": "given",
+                     "plan": {"homework": [{"kind": "quiz", "minutes": 15, "text": "Quiz", "topic": "t1"}]}},
+                    {"key": "s2", "date": day(1), "start": "19:00:00", "minutes": 100,
+                     "kind": "class", "topics": ["t1"],
+                     "plan": {"mode": {"mode": "online", "link": "https://meet.example.com/x"}}}
+                ]
+            }
+        }]))
+        .unwrap();
+
+    let evening = today.and_hms_opt(20, 0, 0).unwrap();
+    let reminders = engine.class_reminders(evening);
+    assert_eq!(reminders.len(), 1);
+    assert_eq!(reminders[0].kind, ClassReminderKind::HomeworkOpen);
+
+    let before_class = (today + chrono::Duration::days(1))
+        .and_hms_opt(18, 15, 0)
+        .unwrap();
+    let reminders = engine.class_reminders(before_class);
+    assert_eq!(reminders.len(), 1);
+    assert_eq!(reminders[0].kind, ClassReminderKind::OnlineSoon);
+    assert_eq!(
+        reminders[0].link.as_deref(),
+        Some("https://meet.example.com/x")
+    );
+
+    let mut settings = engine.settings().clone();
+    settings.homework_reminders = false;
+    settings.online_class_reminders = false;
+    engine.handle(Command::SaveSettings(settings)).unwrap();
+    assert!(engine.class_reminders(evening).is_empty());
+}
+
+#[test]
+fn goals_days_off_and_the_profile_come_from_saved_study() {
+    let (mut engine, _dir) = engine_with_plan();
+    let suggested = engine.suggested_goals().unwrap();
+    assert!(suggested.topics_per_week >= 1);
+    assert!(
+        engine.goal_status().is_none(),
+        "no goals until the student sets them"
+    );
+    engine
+        .handle(Command::SaveGoals(Some(suggested.clone())))
+        .unwrap();
+    let status = engine.goal_status().unwrap();
+    assert_eq!(status.goals, suggested);
+    assert!(
+        !status.missed_last_week,
+        "goals set this week say nothing of the last"
+    );
+
+    let yesterday = Engine::today().pred_opt().unwrap();
+    engine
+        .handle(Command::SetDayOff {
+            day: yesterday,
+            off: true,
+        })
+        .unwrap();
+    assert_eq!(engine.days_off(), [yesterday]);
+    engine
+        .handle(Command::SetDayOff {
+            day: yesterday,
+            off: false,
+        })
+        .unwrap();
+    assert!(engine.days_off().is_empty());
+
+    engine
+        .handle(Command::SetShowcase(vec![
+            "first_step".into(),
+            "first_step".into(),
+            "first_quiz".into(),
+        ]))
+        .unwrap();
+    let profile = engine.profile();
+    assert_eq!(profile.showcase, ["first_step", "first_quiz"]);
+    assert_eq!(profile.level.level, 1);
+    assert_eq!(profile.heat.len(), 7 * HEAT_WEEKS as usize);
+    assert_eq!(profile.subjects.len(), 2);
+
+    engine.handle(Command::SaveGoals(None)).unwrap();
+    assert!(engine.study_goals().is_none());
+}
+
+#[test]
+fn a_lesson_type_is_suggested_remembered_and_changed_mid_lesson() {
+    let (mut engine, _dir) = engine_with_plan();
+    let topic = engine.active_plan().unwrap().subjects[0].topics[0].id;
+    assert_eq!(
+        engine.suggested_lesson_length(topic),
+        (LessonLength::Full, LengthReason::New)
+    );
+    engine
+        .handle(Command::StartLessonAs {
+            topic,
+            length: LessonLength::Quick,
+        })
+        .unwrap();
+    assert_eq!(engine.lesson().unwrap().length(), LessonLength::Quick);
+    assert_eq!(engine.topic_lesson_length(topic), LessonLength::Quick);
+    assert_eq!(
+        engine.last_lesson_type(topic).map(|(l, _)| l),
+        Some(LessonLength::Quick)
+    );
+    engine
+        .handle(Command::ChangeLessonLength(LessonLength::Normal))
+        .unwrap();
+    assert_eq!(engine.lesson().unwrap().length(), LessonLength::Normal);
+    assert_eq!(engine.topic_lesson_length(topic), LessonLength::Normal);
 }

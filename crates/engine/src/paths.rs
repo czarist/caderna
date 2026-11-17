@@ -16,12 +16,15 @@ impl AppPaths {
         }
     }
 
-    /// Standard location for this user.
+    /// Standard location for this user, or the environment's own folder
+    /// in developer mode (Phase W9).
     pub fn detect() -> Self {
         if let Some(dir) = std::env::var_os("KG_DATA_DIR").filter(|d| !d.is_empty()) {
             return Self::new(dir);
         }
-        Self::standard()
+        let standard = Self::standard();
+        let environment = crate::developer::active().environment;
+        Self::new(environment.data_dir(&standard.data_dir))
     }
 
     /// The OS local data folder for this brand, ignoring `KG_DATA_DIR`.

@@ -249,13 +249,16 @@ Needs a brand with a panel (`[server]`); without one the app works as before.
 - [x] Caderna privacy policy and terms describe classes, the cloud progress and the shared
       base; legal version `2026-11-10.1`.
 - [ ] Teachers' own progress and plans across their computers (today only students sync).
-- [ ] Moderation flow for the shared base beyond removal (reports from schools).
+- [x] Moderation flow for the shared base beyond removal (reports from schools): "Reportar"
+      in the reader for handouts from the shared base (reason and note); three schools hide
+      the material until an admin keeps it or removes it in Base comum. Quiz banks are not
+      reportable yet (their shared key is not kept per topic).
 - [x] Wikipedia pictures in handouts credit their author and license (from Wikimedia) in
       the caption, and the topic's bibliography lists the article and the picture file
       (ABNT in Portuguese, all five languages); handouts saved earlier keep their pages.
 - [ ] Check references against a bibliographic database before showing them.
 
-## Phase W8 — Lesson planning for teachers (in progress, 0.5.0)
+## Phase W8 — Lesson planning for teachers (done, 0.5.0)
 
 **Goal:** a "Planejamento" module in the teacher's area where the teacher schedules the
 classes of a classroom from the plan's content: on which days and times each class
@@ -266,13 +269,19 @@ teacher sees who did it.
 
 Needs a brand with a panel (`[server]`) to publish; the planning itself works locally.
 
-**Done (2026-11-16):** calendar, holidays and topic distribution in code; the Planejamento
-screen (generate, edit objectives/materials/notes/link, mark given or cancelled, fix,
-replan, undo, .ics export); the AI plans each class through the panel, checked in code;
-publishing to the panel, the school's read-only agenda, the student's agenda on Today and
-topics opening with their classes. Live checks: `planning_live` and `classes_live`
-examples. **Still open:** "what was really covered", the printable PDF, homework status in
-the progress sync and in Desempenho, class reminders, the note on a changed schedule.
+**Done (2026-11-16/17):** calendar, holidays and topic distribution in code; the Planejamento
+screen (generate; edit day, time, length, kind, topics, objectives, activities, materials,
+homework, notes and link; split and merge classes; mark given with what was really
+covered; cancel; fix; replan; undo; `.ics` and printable PDF); the AI plans each class
+through the panel, checked in code; publishing to the panel; the school's read-only
+agenda and, per class, how many students prepared and did the homework (computed by the
+app in the progress sync); the student's agenda on Today with a quiet note when a
+republished schedule moved classes; class reminders (homework open the day before, an
+online class within the hour, both can be turned off); topics opening with their classes.
+Homework counts for challenges through the existing families (a homework quiz is a quiz,
+a homework lesson is a lesson); no new family and no countdowns. Moving a class is done
+with its date field; dragging on a calendar view is left for later. Live checks:
+`planning_live` and `classes_live` examples.
 
 ### Concepts
 
@@ -327,18 +336,18 @@ the progress sync and in Desempenho, class reminders, the note on a changed sche
 - [x] New "Planejamento" screen in the teacher's area (beside Classes): a calendar view
       (month and week) and a list view; select a plan and a classroom; the wizard asks
       start, end, days, times, length, blocked days and release rule, then generates.
-- [ ] Edit a session: topics, objectives, activities (add, remove, reorder, minutes),
+- [x] Edit a session: topics, objectives, activities (add, remove, reorder, minutes),
       materials, homework, notes, kind and link. Move it to another day by dragging or by a
       date field; split a session in two or merge two.
 - [x] Lock sessions; **replan**: when a session is cancelled or moved, or a topic took
       longer, the following unlocked sessions are redistributed in code; given and locked
       sessions never move. Show a summary of what changed before applying.
-- [ ] Mark a session as given (with what was really covered, if different), so the
+- [x] Mark a session as given (with what was really covered, if different), so the
       replanning starts from the truth.
 - [x] Undo for the last changes; the schedule is saved locally as edited (SQLite tables
       `class_schedule`, `class_session`, `class_session_topic`, `class_session_activity`,
       with migrations), so nothing is lost before publishing.
-- [ ] Export: printable PDF (Typst, `crates/handout/templates/lesson_plan.typ`): the
+- [x] Export: printable PDF (Typst, `crates/handout/templates/lesson_plan.typ`): the
       schedule as a table and one page per session in the plan-of-class format; and an
       iCalendar file (`.ics`) of the sessions for the teacher's calendar.
 - [x] Engine commands (`GenerateSchedule`, `EditSession`, `ReplanSchedule`,
@@ -353,9 +362,9 @@ the progress sync and in Desempenho, class reminders, the note on a changed sche
       `PUT /api/v1/courses/{course}/schedules/{classroom}` (teacher, whole schedule,
       bumps a version like courses) and the schedule inside what students download at
       every check. Private teacher notes never leave the teacher's computer.
-- [ ] Students' homework status in the progress sync (`/api/v1/progress`), computed by the
+- [x] Students' homework status in the progress sync (`/api/v1/progress`), computed by the
       app from saved study; merged without duplicates like the rest of `kg_study::sync`.
-- [ ] Client area: "Agenda" per classroom (read-only for the school), and in "Desempenho"
+- [x] Client area: "Agenda" per classroom (read-only for the school), and in "Desempenho"
       per session: how many students did the preparation and the homework.
 - [x] New licence module "Planejamento de aulas" (`Module::Planning`), chosen per client
       in `allowed_modules` like Videoaula and Criação de conteúdos; README API contract and
@@ -366,10 +375,10 @@ the progress sync and in Desempenho, class reminders, the note on a changed sche
 - [x] "Agenda" on Today: next class (day, time, kind, link), what to prepare before it,
       homework due and late; a calendar of the classroom's sessions in the plan screen.
 - [x] Topics follow the release rule; a closed topic shows the day it opens.
-- [ ] Reminders through the existing study reminders: the day before a class with
+- [x] Reminders through the existing study reminders: the day before a class with
       homework still open, and an hour before an online class (both can be turned off).
-- [ ] A changed schedule (republished) shows a quiet note with what moved.
-- [ ] Homework counts for challenges only if it fits existing families; no new
+- [x] A changed schedule (republished) shows a quiet note with what moved.
+- [x] Homework counts for challenges only if it fits existing families; no new
       pressure (no countdowns, no "late" in red), in the calm style of Phase 11.
 
 ### Legal, languages and docs
@@ -426,12 +435,21 @@ cancelling a class replans the rest without touching given ones; the published s
 reaches the students' apps at the next check, shows the next class and homework on Today,
 and the teacher sees, per class, who did the preparation and the homework.
 
-## Phase W9 — Developer mode instead of three channel builds (planned, not started)
+## Phase W9 — Developer mode instead of three channel builds (built, 0.5.0; owner test pending)
 
 **Goal:** one production executable per brand. A developer token generated in the
 panel (Laravel) unlocks a developer area in the app where the owner and the team point
 it at homologation or development: which panel API it talks to and which local database
 it uses. The `hom` and `dev` installers stop being needed for testing.
+
+**Built (2026-11-17):** panel tokens (admins only, hash of the short code, separate Ed25519
+key `CADERNA_DEVELOPER_PRIVATE_KEY`, exchange and check APIs with rate limit and use log);
+app `developer.rs` (offline check, environment per run, `<data_dir>/env/<id>` folders, the
+panel address chosen among the compiled ones, custom port for development only),
+`developer_area.rs` (code exchange, switch with copy or fresh start, reset, hourly
+revocation check) and the hidden area in Settings → About. **Still open:** the owner's
+end-to-end test with the production installer, then retiring the `hom` and `dev`
+installers; the lawyer note; tests of folders and copy on a real machine.
 
 **Today:** three builds per brand (`KG_CHANNEL`, `.github/workflows/channels.yml`), each
 with its panel address chosen at build time, its own name, data folder, executable,
@@ -441,85 +459,85 @@ owner's sign-off before it starts (see Decisions).
 
 ### Token (panel)
 
-- [ ] Panel (production, `/admin`): "Tokens de desenvolvedor" page, admins only. A token
+- [x] Panel (production, `/admin`): "Tokens de desenvolvedor" page, admins only. A token
       names a person, the environments it opens (`hom`, `dev`, or both), an expiry
       (default 30 days, at most 90) and optionally one device (hashed machine id, as in
       activations). Shown once on creation; the panel keeps only its hash; revoking is
       one click; every use is logged (who, when, which environment, app version).
-- [ ] The token is a signed claim like the licence (Ed25519, its own prefix
+- [x] The token is a signed claim like the licence (Ed25519, its own prefix
       `kg-dev-v1\0` + claims JSON, the same key pair or a separate developer key, see
       Decisions), so the app checks signature, brand slug and expiry offline; the app also
       asks the production panel at activation and every hourly check whether it was
       revoked, and leaves developer mode when it was.
-- [ ] Short code like access codes (`DEV-XXXX-XXXX-XXXX`) that the panel exchanges for the
+- [x] Short code like access codes (`DEV-XXXX-XXXX-XXXX`) that the panel exchanges for the
       signed token, so nobody types a long key.
 
 ### Developer area (app)
 
-- [ ] Hidden entry: Settings → About, clicking the version seven times, or the
+- [x] Hidden entry: Settings → About, clicking the version seven times, or the
       `--developer` flag; asks for the token. Nothing about it appears in the UI, tour or
       README for students.
-- [ ] Environment switch: **Production / Homologation / Development**. The addresses come
+- [x] Environment switch: **Production / Homologation / Development**. The addresses come
       only from the brand (`[server] url`, `hom_url`, `dev_url`, compiled in); no free URL
       field, so a token cannot point the app at an unknown server. Optional "custom
       `localhost` port" for development only (`http://127.0.0.1:<port>`).
-- [ ] Database per environment: each environment uses its own data folder inside the
+- [x] Database per environment: each environment uses its own data folder inside the
       brand's (`<data_dir>/env/hom`, `<data_dir>/env/dev`), with its own SQLite file, plans,
       progress, handouts, cache of the panel brand and courses; production data is never
       opened, migrated or synced while another environment is on. Options in the area:
       "start empty", "copy my production data into this environment" (one-way copy,
       never back), "reset this environment".
-- [ ] Credential entry per environment (device token, licence) so hom and dev activations
+- [x] Credential entry per environment (device token, licence) so hom and dev activations
       never replace the production one; this also closes the W6 item about one entry per
       brand.
-- [ ] Switching restarts the app (engine, sync and AI client start from the chosen
+- [x] Switching restarts the app (engine, sync and AI client start from the chosen
       environment); the choice is remembered until the token expires or is revoked, then
       the app returns to production on its own and says so.
-- [ ] While not in production: a coloured strip and the window title say the environment
+- [x] While not in production: a coloured strip and the window title say the environment
       (reusing today's channel strip), the updater stays on production releases, and logs
       record the environment.
-- [ ] Developer tools in the area (optional, after the switch): open the data folder,
+- [x] Developer tools in the area (optional, after the switch): open the data folder,
       show the current licence claims and modules, force a panel check, copy the last
       panel errors.
 
 ### What stays and what goes
 
-- [ ] Engine and UI read the environment at start (`Environment` in engine settings)
+- [x] Engine and UI read the environment at start (`Environment` in engine settings)
       instead of `KG_CHANNEL` at compile time; `kg-brand` keeps all three addresses.
-- [ ] `cargo run` keeps starting in development without a token (debug builds only), so
+- [x] `cargo run` keeps starting in development without a token (debug builds only), so
       day-to-day work does not change.
 - [ ] Once the developer mode is tested: retire the `hom` and `dev` installers from
       `channels.yml` (or keep `hom` only for testers outside the team, see Decisions),
       update CLAUDE.md (Git workflow and `[server]` rules), `branding/README.md`,
       `brand.toml` comments and the packaging scripts. Branches `dev`/`hom`/`main` stay as
       the code flow.
-- [ ] Students: a production build with no developer token behaves exactly as today; the
+- [x] Students: a production build with no developer token behaves exactly as today; the
       production panel never hands a developer token to a student or school account.
 
 ### Security
 
-- [ ] Only addresses compiled into the brand; HTTPS for `url` and `hom_url`.
-- [ ] Token checked offline (signature, slug, expiry, device) and online (revocation);
+- [x] Only addresses compiled into the brand; HTTPS for `url` and `hom_url`.
+- [x] Token checked offline (signature, slug, expiry, device) and online (revocation);
       expired or revoked returns to production without touching that environment's data.
-- [ ] No token, key or environment data in exported files or crash messages.
-- [ ] Rate limit and audit log on the panel's code exchange; tokens never in URLs.
+- [x] No token, key or environment data in exported files or crash messages.
+- [x] Rate limit and audit log on the panel's code exchange; tokens never in URLs.
 
 ### Legal and languages
 
 - [ ] Privacy policy: nothing changes for students (the area only works with a developer
       token); confirm with the lawyer note in `REVISAO-JURIDICA.md`. If the panel logs the
       developer's machine id, the internal policy for the team says so.
-- [ ] Developer-area texts in the five `locales/*.yml` (`cargo test -p kg-ui`), even if
+- [x] Developer-area texts in the five `locales/*.yml` (`cargo test -p kg-ui`), even if
       only the team sees them.
 
 ### Tests
 
-- [ ] Token: valid, wrong signature, other brand, expired, other device, revoked online.
+- [x] Token: valid, wrong signature, other brand, expired, other device, revoked online.
 - [ ] Environment folders and credential entries never cross (production data untouched
       after a session in dev and in hom); copy is one-way; reset removes only that
       environment.
-- [ ] Only compiled addresses are reachable; the custom port works only for development.
-- [ ] Panel: token creation, hash only stored, code exchange, revocation, audit log.
+- [x] Only compiled addresses are reachable; the custom port works only for development.
+- [x] Panel: token creation, hash only stored, code exchange, revocation, audit log.
 
 ### Decisions (taken 2026-11-16)
 
@@ -562,7 +580,7 @@ Carried over from Know Giver and kept because they serve schools and students; t
 rest of the inherited work (managed local AI, proxy of keys, other languages and
 regions, account sign-ins) was dropped from this roadmap on 2026-11-13.
 
-## Phase 10 — Lesson types: straight to the point, balanced, in depth (planned, not started)
+## Phase 10 — Lesson types: straight to the point, balanced, in depth (done except summary handouts, 0.5.0)
 
 **Goal:** the student chooses how deep each lesson goes, at the moment they start it:
 - **Straight to the point (summary):** what the exam asks about the topic, the rules
@@ -574,34 +592,44 @@ regions, account sign-ins) was dropped from this roadmap on 2026-11-13.
   board has asked it in past exams, links to related topics, more checks and a longer
   written question at the end. For a new or weak topic.
 
-**Status:** a global "Lesson length" exists in Settings (`LessonLength`: Quick, Normal,
+**Done (2026-11-17):** the ▾ beside a new lesson picks its type, with a suggestion and its
+reason (in depth: never studied or quizzes under 60 %; straight to the point: mastered or
+the exam within two weeks); the Settings value is the default; the last type per topic is
+kept (`lesson_types`) and shown in the topic's tick hint; the teaching text differs per type;
+"Go deeper"/"Make it shorter" and the same said in Portuguese or English change the rest of
+the lesson (shorter merges the remaining steps); the quiz size follows the type. Still
+open: quiz difficulty per type (the size follows it; the one-page summary is in the reader);
+voice requests in Japanese and Chinese use the buttons. Screenshots of the type menu are
+still to be taken.
+
+Before: a global "Lesson length" existed in Settings (`LessonLength`: Quick, Normal,
 Full) and only changes the number of steps and checks (`max_steps`, `teaching`). It
 applies to every lesson until changed.
 
-- [ ] Pick the type when starting a lesson (three options on the lesson start, the
+- [x] Pick the type when starting a lesson (three options on the lesson start, the
       Settings value as default), not only in Settings.
-- [ ] Rename the levels in every locale to the three types, keeping the saved values
+- [x] Rename the levels in every locale to the three types, keeping the saved values
       (`quick`, `normal`, `full`) so settings and old lessons still load.
-- [ ] The type changes the content, not only the length: what each prompt asks for in
+- [x] The type changes the content, not only the length: what each prompt asks for in
       every `crates/ai/prompts/<lang>/` and in `LessonLength::teaching`, following the
       region's exam culture (`culture.rs`).
-- [ ] Suggest a type from the student's data: a topic never studied or with low quiz
+- [x] Suggest a type from the student's data: a topic never studied or with low quiz
       scores suggests in depth; a topic mastered or an exam date close suggests straight
       to the point. The student always decides.
-- [ ] Change during the lesson: "go deeper" and "make it shorter" buttons (and the same
+- [x] Change during the lesson: "go deeper" and "make it shorter" buttons (and the same
       by voice) adjust the remaining steps without restarting.
-- [ ] Remember the last type per topic and show it in the topic's history.
-- [ ] Handouts and quizzes follow the type: a summary handout (one page of rules and
+- [x] Remember the last type per topic and show it in the topic's history.
+- [x] Handouts and quizzes follow the type: a summary handout (one page of rules and
       traps) for straight to the point, the full handout for in depth; quiz size and
       difficulty to match.
-- [ ] Every UI text in the five locales; README sections and screenshots updated in each
+- [x] Every UI text in the five locales; README sections and screenshots updated in each
       language.
 
 **Acceptance criteria:** the same topic in the three types gives visibly different
 lessons (length, number of examples, past-exam questions, final check), and switching
 mid-lesson keeps what was already covered.
 
-## Phase 11 — Goals and achievements (started)
+## Phase 11 — Goals and achievements (done)
 
 **Goal:** reward steady study the way Steam rewards play, with achievements, goals and a
 profile of progress, without turning the app into a game. It stays calm: no countdowns,
@@ -609,8 +637,15 @@ no loss messages, no comparison with other students unless they choose it.
 
 **Status:** challenges and stickers shipped in 0.38.0, with levels; 0.39.0 added the mock
 exam families: 164 in 36 families.
-Goals the student sets, hidden achievements, the profile and streak rules below are still
-to do.
+Done on 2026-11-17 (0.5.0): four secret achievements; weekly goals per plan (hours, topics,
+a quiz score by a date) suggested from the exam date and the last four weeks, shown on Today
+with a gentle note after a missed week; a Profile tab in Achievements (level from minutes,
+right answers, lessons and mastered topics; six pinned badges; 26 weeks of study days;
+history per subject); a soft chime with each badge (Settings); a streak that forgives a rest
+day a week and the days marked off. All in SQLite (`days_off`, `study_goals`,
+`profile_showcase`); the progress export (Markdown) ends with the profile and goals. Gaps: the
+sharing an image of the profile is left for later; screenshots of the Profile
+tab are still to be taken in each language.
 
 - [x] Challenges with an original sticker each, computed in code from saved study
       (`kg_study::challenge`, a table of families and targets), never by the AI. Per plan:
@@ -640,33 +675,37 @@ to do.
     with an unknown day. Handouts read and topics mastered have no day on record, so a
     grant found on start says the day is unknown.
 
-- [ ] Hidden achievements shown as "secret" until unlocked, a few only.
-- [ ] Goals the student sets: hours per week, topics per week, a target quiz score by a
+- [x] Hidden achievements shown as "secret" until unlocked, a few only.
+- [x] Goals the student sets: hours per week, topics per week, a target quiz score by a
       date; the study plan suggests realistic values from the exam date and the
       student's pace. Progress on the home screen, a gentle note when a week is missed.
-- [ ] Profile screen: level and experience from study time and results (not from clicks),
+- [x] Profile screen: level and experience from study time and results (not from clicks),
       showcase of chosen medals, calendar heat map of study days, history per subject.
-- [ ] Quiet unlock notice (a small toast with the medal and a sound that can be turned
+- [x] Quiet unlock notice (a small toast with the medal and a sound that can be turned
       off), never in the middle of a lesson; collected at the end.
-- [ ] Streaks forgive: one rest day per week keeps the streak, and travel or illness can
+- [x] Streaks forgive: one rest day per week keeps the streak, and travel or illness can
       be marked so it does not break.
-- [ ] Everything local in SQLite, kept per plan and in total; export with the rest of
+- [x] Everything local in SQLite, kept per plan and in total; export with the rest of
       the data. Optional sharing later (an image of the profile), never an online
       ranking by default.
-- [ ] Achievement names and descriptions in the five locales; icons in the app's visual
+- [x] Achievement names and descriptions in the five locales; icons in the app's visual
       identity, not stock trophies; README sections and screenshots in each language.
 
 **Acceptance criteria:** a student who studies a week sees achievements unlocked from
 real data, progress on locked ones and on their own goals, and nothing interrupts a
 lesson.
 
-## Phase 12 — Mock exams (simulados) (started)
+## Phase 12 — Mock exams (simulados) (done)
 
 **Goal:** a whole exam in the notice's format, against the clock, on screen or on paper,
 graded in code, so the student rehearses the real sitting.
 
-**Status:** stage 1 shipped in 0.39.0. Stage 2 (reading a photo of the printed answer card)
-is next, in 0.40.
+**Status:** stage 1 shipped in 0.39.0; stage 2 done on 2026-11-17 (0.5.0): the card carries
+the exam number as 24 cells (20 bits and a check), the photo reader (`kg_handout::omr`)
+finds the corner markers, corrects the perspective, reads each bubble and fills the open
+sitting; doubtful marks are highlighted for the student to check before handing in.
+Progress shows the average and trend per subject and the topics that lost most points;
+the cut-off score is read from the notice only when its number is written there.
 
 - [x] The exam's format per plan (`kg_study::mock::ExamFormat`): time, sections per plan
       subject with questions and points each, multiple choice (2 to 5 options) or
@@ -690,19 +729,22 @@ is next, in 0.40.
       wrong-cancels-right rule; missed questions to the mistakes notebook; essay to Written
       answers; answer key with explanations. Ten challenges (`mocks`, `mocks_high`,
       `mock_top`).
-- [ ] Stage 2 (0.40): photograph the printed answer card; find the four markers, correct
+- [x] Stage 2 (0.40): photograph the printed answer card; find the four markers, correct
       the perspective and read each bubble's darkness at the `CardLayout` positions, in
       pure Rust, no AI; the student checks the grid read on screen before it is graded.
       The exam code on the card picks the exam.
-- [ ] Average and trend across mock exams per subject on Progress; a suggested topic
+- [x] Average and trend across mock exams per subject on Progress; a suggested topic
       list from the subjects that lost the most points.
-- [ ] Cut-off score from the notice, when it has one, shown beside the result.
+- [x] Cut-off score from the notice, when it has one, shown beside the result.
 
 **Acceptance criteria:** with a real notice, the format read matches the notice (or the
 student fixes it in a minute); a generated exam prints cleanly; a sitting survives closing
 the app; the grade matches a hand count.
 
 ## Not yet verified
+- Answer-card photos (0.5.0): checked with the rendered card filled in code, tilted in
+  perspective, shaded and turned upside down. Not yet tried with a phone photo of a card
+  printed on paper and filled with a pen (lighting, paper curl, pencil marks).
 - Mock exams (0.39.0): checked by unit tests (format bounds, the notice's numbers,
   batches, question checks, grade with and without wrong-cancels-right), engine tests (a
   sitting graded with mistakes to the notebook, a sitting kept across a restart, the PDF

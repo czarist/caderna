@@ -1894,6 +1894,7 @@ fn seed_mock(paths: &AppPaths, locale: &'static str) -> kg_engine::MockAttemptId
         ],
         essay: true,
         source: FormatSource::Notice,
+        cutoff: None,
     };
     store.save_exam_format(plan, &format).unwrap();
     let choices = |pt_options: [&str; 5], other: [&str; 4]| -> Vec<String> {

@@ -98,6 +98,17 @@ cargo run -p kg-engine --example license_issue -- sign private.pk8 claims.json l
 Without a panel, seats are a contractual limit: the check is offline, so the app cannot
 count computers.
 
+## Developer mode (`[developer]`)
+
+`[developer] public_key` is the base64 Ed25519 public key of the panel's developer-token key
+(`php artisan caderna:developer-key --generate` in the panel; the private half goes to
+`CADERNA_DEVELOPER_PRIVATE_KEY` there). With it, the team opens a hidden area (Settings →
+About, seven clicks on the version, or `--developer`), types a code made by an admin in
+**Tokens de desenvolvedor** and switches the production build to homologation or
+development: the compiled `hom_url`/`dev_url` only, each with its own data folder
+(`<data_dir>/env/hom`, `<data_dir>/env/dev`) and credential entry. Without the key the area
+does not exist and nothing changes for students.
+
 ## Panel (`[server]`)
 
 `[server]` points the brand at its panel ([CADERNA-DASHBOARD](https://github.com/czarist/caderna-dashboard)).

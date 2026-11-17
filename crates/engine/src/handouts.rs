@@ -114,6 +114,7 @@ pub(crate) fn teacher_handout(content_json: &str) -> Option<String> {
         source: HandoutSource::default(),
         content: content.sanitized(),
         from_teacher: true,
+        shared_key: None,
     })
     .ok()
 }
@@ -125,6 +126,16 @@ struct CachedHandout {
     /// Published by the student's teacher: used whatever the inputs.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     from_teacher: bool,
+    /// The shared base key it came from or was given to, for reports.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    shared_key: Option<String>,
+}
+
+/// The shared base key of a cached handout, if it has one.
+pub(crate) fn handout_shared_key(cached_json: &str) -> Option<String> {
+    serde_json::from_str::<CachedHandout>(cached_json)
+        .ok()?
+        .shared_key
 }
 
 impl Engine {
@@ -469,6 +480,7 @@ pub(crate) fn write_topic(
         source: source.clone(),
         content: topic.clone(),
         from_teacher: false,
+        shared_key: key,
     })
     .ok();
     Ok((topic, json))
@@ -599,8 +611,10 @@ mod tests {
             source: source.clone(),
             content: content.clone(),
             from_teacher: false,
+            shared_key: Some("abc".into()),
         })
         .unwrap();
+        assert_eq!(handout_shared_key(&json).as_deref(), Some("abc"));
         assert_eq!(source.cached(&json), Some(content.clone()));
         assert!(
             source

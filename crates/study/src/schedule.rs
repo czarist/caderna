@@ -136,6 +136,14 @@ pub struct Session {
     /// reachable, then edited by the teacher. Empty until then.
     #[serde(default, deserialize_with = "null_as_default")]
     pub plan: SessionPlan,
+    /// For a given class: the topics really covered, when different from
+    /// `topics`; replanning puts the rest back into the next classes.
+    #[serde(
+        default,
+        deserialize_with = "null_as_default",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub covered: Option<Vec<String>>,
 }
 
 /// Where a class happens.
@@ -227,6 +235,15 @@ impl Session {
     fn kept_by_replan(&self) -> bool {
         self.locked || self.status == SessionStatus::Given
     }
+
+    /// The topics this class took care of: what was really covered for a
+    /// given class, the planned topics otherwise.
+    pub fn covered_topics(&self) -> &[String] {
+        match (&self.covered, self.status) {
+            (Some(covered), SessionStatus::Given) => covered,
+            _ => &self.topics,
+        }
+    }
 }
 
 /// When the students see a topic.
@@ -301,6 +318,90 @@ impl ClassSchedule {
             .min_by_key(|s| (s.date, s.start))
     }
 
+    /// Splits the class at `index` in two halves on the same day, one after
+    /// the other: minutes and topics are shared, the plan stays with the
+    /// first half. Returns false when it cannot be split.
+    pub fn split(&mut self, index: usize) -> bool {
+        let Some(session) = self.sessions.get(index) else {
+            return false;
+        };
+        if session.minutes < 2 || session.status != SessionStatus::Planned {
+            return false;
+        }
+        let mut keys = KeyMaker::new(&self.sessions);
+        let first_minutes = session.minutes / 2;
+        let mut second = session.clone();
+        second.key = keys.next();
+        second.minutes = session.minutes - first_minutes;
+        second.start = session.start + Duration::minutes(i64::from(first_minutes));
+        second.plan = SessionPlan {
+            mode: session.plan.mode.clone(),
+            ..SessionPlan::default()
+        };
+        second.locked = false;
+        let half = session.topics.len().div_ceil(2);
+        if session.topics.len() > 1 {
+            second.topics = session.topics[half..].to_vec();
+        }
+        let first = &mut self.sessions[index];
+        first.minutes = first_minutes;
+        if first.topics.len() > 1 {
+            first.topics.truncate(half);
+        }
+        self.sessions.insert(index + 1, second);
+        true
+    }
+
+    /// Merges the class after `index` into it: minutes, topics and plans
+    /// add up, and the later one leaves the calendar. Only planned classes.
+    pub fn merge_with_next(&mut self, index: usize) -> bool {
+        let planned = |s: Option<&Session>| s.is_some_and(|s| s.status == SessionStatus::Planned);
+        if !planned(self.sessions.get(index)) || !planned(self.sessions.get(index + 1)) {
+            return false;
+        }
+        let next = self.sessions.remove(index + 1);
+        let session = &mut self.sessions[index];
+        session.minutes += next.minutes;
+        for topic in next.topics {
+            if !session.topics.contains(&topic) {
+                session.topics.push(topic);
+            }
+        }
+        let plan = &mut session.plan;
+        plan.objectives.extend(next.plan.objectives);
+        plan.activities.extend(next.plan.activities);
+        plan.materials.extend(next.plan.materials);
+        plan.homework.extend(next.plan.homework);
+        for (mine, theirs) in [
+            (&mut plan.note, next.plan.note),
+            (&mut plan.private_note, next.plan.private_note),
+        ] {
+            if !theirs.is_empty() {
+                if !mine.is_empty() {
+                    mine.push('\n');
+                }
+                mine.push_str(&theirs);
+            }
+        }
+        true
+    }
+
+    /// Moves the class at `index` to another day and time, keeping the
+    /// calendar in order. Returns its new index.
+    pub fn move_session(&mut self, index: usize, date: NaiveDate, start: NaiveTime) -> usize {
+        let Some(session) = self.sessions.get_mut(index) else {
+            return index;
+        };
+        session.date = date;
+        session.start = start;
+        let key = session.key.clone();
+        self.sessions.sort_by_key(|s| (s.date, s.start));
+        self.sessions
+            .iter()
+            .position(|s| s.key == key)
+            .unwrap_or(index)
+    }
+
     /// The copy that goes to students: no private notes.
     pub fn for_students(&self) -> Self {
         let mut copy = self.clone();
@@ -308,6 +409,76 @@ impl ClassSchedule {
             session.plan.private_note.clear();
         }
         copy
+    }
+}
+
+/// What changed for students between two published versions of a schedule.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ScheduleChange {
+    Moved {
+        from: NaiveDate,
+        to: NaiveDate,
+        start: NaiveTime,
+    },
+    Cancelled {
+        date: NaiveDate,
+    },
+    Added {
+        date: NaiveDate,
+        start: NaiveTime,
+    },
+}
+
+impl ClassSchedule {
+    /// The classes from `today` on that moved, were cancelled or were added
+    /// since `old`, by date.
+    pub fn changes_since(&self, old: &ClassSchedule, today: NaiveDate) -> Vec<ScheduleChange> {
+        let mut changes = Vec::new();
+        for session in &self.sessions {
+            let before = old.sessions.iter().find(|s| s.key == session.key);
+            let upcoming = session.date >= today || before.is_some_and(|b| b.date >= today);
+            if !upcoming {
+                continue;
+            }
+            match before {
+                None if session.status == SessionStatus::Planned => {
+                    changes.push(ScheduleChange::Added {
+                        date: session.date,
+                        start: session.start,
+                    });
+                }
+                Some(before)
+                    if session.status == SessionStatus::Cancelled
+                        && before.status != SessionStatus::Cancelled =>
+                {
+                    changes.push(ScheduleChange::Cancelled { date: before.date });
+                }
+                Some(before)
+                    if session.status == SessionStatus::Planned
+                        && (before.date, before.start) != (session.date, session.start) =>
+                {
+                    changes.push(ScheduleChange::Moved {
+                        from: before.date,
+                        to: session.date,
+                        start: session.start,
+                    });
+                }
+                _ => {}
+            }
+        }
+        for before in &old.sessions {
+            if before.date >= today
+                && before.status == SessionStatus::Planned
+                && !self.sessions.iter().any(|s| s.key == before.key)
+            {
+                changes.push(ScheduleChange::Cancelled { date: before.date });
+            }
+        }
+        changes.sort_by_key(|c| match c {
+            ScheduleChange::Moved { from, .. } => *from,
+            ScheduleChange::Cancelled { date } | ScheduleChange::Added { date, .. } => *date,
+        });
+        changes
     }
 }
 
@@ -432,7 +603,7 @@ pub fn replan(
     let covered: BTreeSet<&str> = kept
         .iter()
         .filter(|s| s.kind == SessionKind::Class)
-        .flat_map(|s| s.topics.iter().map(String::as_str))
+        .flat_map(|s| s.covered_topics().iter().map(String::as_str))
         .collect();
     let left: Vec<TopicLoad> = topics
         .iter()
@@ -497,6 +668,7 @@ fn fill_from(
             status: SessionStatus::Planned,
             locked: false,
             plan: SessionPlan::default(),
+            covered: None,
         };
         if current.is_none() {
             break;
@@ -570,6 +742,7 @@ fn fill_from(
             status: SessionStatus::Planned,
             locked: false,
             plan: SessionPlan::default(),
+            covered: None,
         });
     }
 
@@ -657,6 +830,118 @@ mod tests {
                 minutes: m,
             })
             .collect()
+    }
+
+    fn bare(key: &str, date: NaiveDate, minutes: u32, topics: &[&str]) -> Session {
+        Session {
+            key: key.into(),
+            date,
+            start: t(19, 0),
+            minutes,
+            kind: SessionKind::Class,
+            topics: topics.iter().map(|t| (*t).to_owned()).collect(),
+            status: SessionStatus::Planned,
+            locked: false,
+            plan: SessionPlan::default(),
+            covered: None,
+        }
+    }
+
+    #[test]
+    fn split_merge_and_move_keep_the_calendar_in_order() {
+        let mut spec = mon_wed(d(2026, 3, 2), d(2026, 6, 30));
+        spec.classes.clear();
+        let mut schedule = ClassSchedule::new(
+            spec,
+            Schedule {
+                sessions: vec![
+                    bare("s1", d(2026, 3, 2), 120, &["a", "b", "c"]),
+                    bare("s2", d(2026, 3, 4), 60, &["d"]),
+                ],
+                ..Schedule::default()
+            },
+        );
+        assert!(schedule.split(0));
+        assert_eq!(schedule.sessions.len(), 3);
+        assert_eq!(schedule.sessions[0].minutes, 60);
+        assert_eq!(schedule.sessions[0].topics, ["a", "b"]);
+        assert_eq!(schedule.sessions[1].key, "s3");
+        assert_eq!(schedule.sessions[1].topics, ["c"]);
+        assert_eq!(schedule.sessions[1].start, t(20, 0));
+
+        assert!(schedule.merge_with_next(1));
+        assert_eq!(schedule.sessions.len(), 2);
+        assert_eq!(schedule.sessions[1].topics, ["c", "d"]);
+        assert_eq!(schedule.sessions[1].minutes, 120);
+
+        let at = schedule.move_session(1, d(2026, 3, 1), t(20, 0));
+        assert_eq!(at, 0);
+        assert_eq!(schedule.sessions[0].key, "s3");
+
+        schedule.sessions[1].status = SessionStatus::Given;
+        assert!(!schedule.split(1));
+        assert!(!schedule.merge_with_next(0));
+    }
+
+    #[test]
+    fn replanning_puts_back_what_a_given_class_did_not_cover() {
+        let mut spec = mon_wed(d(2026, 3, 2), d(2026, 3, 31));
+        spec.classes.truncate(1);
+        spec.classes[0].minutes = 60;
+        let topics = topics(&[30, 30, 60]);
+        let mut first = plan(&spec, &topics);
+        assert_eq!(first.sessions[0].topics, ["t1", "t2"]);
+        first.sessions[0].status = SessionStatus::Given;
+        first.sessions[0].covered = Some(vec!["t1".into()]);
+        let again = replan(&spec, &topics, &first.sessions, d(2026, 3, 3));
+        assert_eq!(again.sessions[0].covered_topics(), ["t1"]);
+        assert_eq!(again.sessions[1].topics, ["t2", "t3"]);
+    }
+
+    #[test]
+    fn changes_list_moved_cancelled_and_added_classes_ahead() {
+        let mut spec = mon_wed(d(2026, 3, 2), d(2026, 6, 30));
+        spec.classes.clear();
+        let old = ClassSchedule::new(
+            spec.clone(),
+            Schedule {
+                sessions: vec![
+                    bare("s1", d(2026, 3, 2), 60, &["a"]),
+                    bare("s2", d(2026, 3, 9), 60, &["b"]),
+                    bare("s3", d(2026, 3, 11), 60, &["c"]),
+                    bare("s4", d(2026, 3, 16), 60, &["d"]),
+                ],
+                ..Schedule::default()
+            },
+        );
+        let mut new = old.clone();
+        new.sessions[0].date = d(2026, 3, 3); // in the past: not reported
+        new.sessions[1].date = d(2026, 3, 10);
+        new.sessions[2].status = SessionStatus::Cancelled;
+        new.sessions.remove(3);
+        new.sessions.push(bare("s5", d(2026, 3, 18), 60, &["d"]));
+        let changes = new.changes_since(&old, d(2026, 3, 5));
+        assert_eq!(
+            changes,
+            [
+                ScheduleChange::Moved {
+                    from: d(2026, 3, 9),
+                    to: d(2026, 3, 10),
+                    start: t(19, 0)
+                },
+                ScheduleChange::Cancelled {
+                    date: d(2026, 3, 11)
+                },
+                ScheduleChange::Cancelled {
+                    date: d(2026, 3, 16)
+                },
+                ScheduleChange::Added {
+                    date: d(2026, 3, 18),
+                    start: t(19, 0)
+                },
+            ]
+        );
+        assert!(old.changes_since(&old, d(2026, 3, 5)).is_empty());
     }
 
     #[test]

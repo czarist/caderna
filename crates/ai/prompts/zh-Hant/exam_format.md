@@ -12,7 +12,8 @@
 - "options" 是每道選擇題的選項數（例如 4 或 5）；是非題填 2。
 - 答錯會抵銷答對的分數（或倒扣分）時，"wrong_cancels" 為 true。
 - 考試包含作文或申論題時，"essay" 為 true。
+- "cutoff_percent" 是簡章寫明的選擇題最低分數線占總分的百分比（例如「總分的50%」寫 50），沒有則為 0。"cutoff_points" 是簡章寫明的最低分（分數），沒有則為 0。不要計算，照抄簡章中的數字。
 - 在 "sections" 中，為考試涉及的每個計畫科目寫一行，包括題數和每題配分。簡章把幾個科目合為一個部分時，把該部分的題數分給這些科目，總數保持不變。
 
 只回覆有效的 JSON，前後不要有任何文字，格式如下：
-{"found": true, "minutes": 240, "style": "choice", "options": 5, "wrong_cancels": false, "essay": true, "sections": [{"subject": "...", "questions": 10, "weight": 1.0}]}
+{"found": true, "minutes": 240, "style": "choice", "options": 5, "wrong_cancels": false, "essay": true, "cutoff_percent": 0, "cutoff_points": 0, "sections": [{"subject": "...", "questions": 10, "weight": 1.0}]}

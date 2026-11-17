@@ -12,7 +12,8 @@
 - "options" 是每道选择题的选项数（例如 4 或 5）；判断题填 2。
 - 答错会抵消答对的分数（或倒扣分）时，"wrong_cancels" 为 true。
 - 考试包含作文或主观题时，"essay" 为 true。
+- "cutoff_percent" 是简章写明的客观题最低分数线占总分的百分比（例如“总分的50%”写 50），没有则为 0。"cutoff_points" 是简章写明的最低分（分数），没有则为 0。不要计算，照抄简章中的数字。
 - 在 "sections" 中，为考试涉及的每个计划科目写一行，包括题量和每题分值。公告把几个科目合为一个部分时，把该部分的题量分给这些科目，总数保持不变。
 
 只回复有效的 JSON，前后不要有任何文字，格式如下：
-{"found": true, "minutes": 240, "style": "choice", "options": 5, "wrong_cancels": false, "essay": true, "sections": [{"subject": "...", "questions": 10, "weight": 1.0}]}
+{"found": true, "minutes": 240, "style": "choice", "options": 5, "wrong_cancels": false, "essay": true, "cutoff_percent": 0, "cutoff_points": 0, "sections": [{"subject": "...", "questions": 10, "weight": 1.0}]}

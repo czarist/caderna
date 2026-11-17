@@ -204,6 +204,10 @@ pub struct KnowGiverApp {
     window_hidden: bool,
     quit_requested: bool,
     reminder_schedule: crate::reminders::ReminderSchedule,
+    /// Class reminders already shown in this run, and when they were last
+    /// looked for.
+    class_reminders_shown: std::collections::HashSet<String>,
+    class_reminders_checked: Option<Instant>,
 }
 
 impl std::fmt::Debug for KnowGiverApp {
@@ -320,6 +324,8 @@ impl KnowGiverApp {
             window_hidden: run_options.start_hidden,
             quit_requested: false,
             reminder_schedule: crate::reminders::ReminderSchedule::new(Instant::now()),
+            class_reminders_shown: std::collections::HashSet::new(),
+            class_reminders_checked: None,
         };
         if !cfg!(test) {
             app.dispatch(Command::CheckForUpdate);
@@ -734,7 +740,7 @@ fn channel_banner(ui: &mut egui::Ui) {
     let Some(label) = crate::brand::channel_label() else {
         return;
     };
-    let fill = if kg_brand::CHANNEL == "hom" {
+    let fill = if crate::brand::channel_id() == "hom" {
         egui::Color32::from_rgb(0xB4, 0x5A, 0x09)
     } else {
         egui::Color32::from_rgb(0x5B, 0x3F, 0xA8)
@@ -850,6 +856,10 @@ impl eframe::App for KnowGiverApp {
         };
         let mut go_to_reader = false;
         for notice in &notices {
+            // A new environment is chosen: start again in it.
+            if let kg_engine::Notice::DeveloperSwitched = notice {
+                crate::screens::developer::restart(ctx);
+            }
             if let kg_engine::Notice::HandoutSaved(_) = notice {
                 go_to_reader = true;
             }
@@ -868,6 +878,12 @@ impl eframe::App for KnowGiverApp {
         };
         for sticker in &stickers[..shown] {
             self.push_sticker_toast(*sticker);
+        }
+        // One soft sound for the lot, when the student keeps it on.
+        if !stickers.is_empty()
+            && let Ok(engine) = self.engine.as_mut()
+        {
+            engine.play_unlock_sound();
         }
         if stickers.len() > shown {
             self.push_toast(
@@ -927,6 +943,26 @@ impl eframe::App for KnowGiverApp {
             tracing::warn!(%err, "could not show study reminder");
         }
 
+        // Class reminders (Phase W8): looked for once a minute, each shown once.
+        if self
+            .class_reminders_checked
+            .is_none_or(|at| at.elapsed() >= Duration::from_secs(60))
+            && let Ok(engine) = self.engine.as_ref()
+        {
+            self.class_reminders_checked = Some(Instant::now());
+            let now = chrono::Local::now().naive_local();
+            let due = engine
+                .class_reminders(now)
+                .into_iter()
+                .find(|r| !self.class_reminders_shown.contains(&r.id));
+            if let Some(reminder) = due {
+                self.class_reminders_shown.insert(reminder.id.clone());
+                if let Err(err) = self.reminder_schedule.show_class(&reminder) {
+                    tracing::warn!(%err, "could not show class reminder");
+                }
+            }
+        }
+
         if self.window_hidden {
             ctx.request_repaint_after(Duration::from_millis(250));
         } else if reminders_on {
@@ -948,6 +984,7 @@ impl eframe::App for KnowGiverApp {
             crate::capture::show_cover(ui.ctx(), &cover);
         }
         channel_banner(ui);
+        crate::screens::developer::window(self, &ui.ctx().clone());
         let locale = i18n::current();
         if locale != self.fonts_locale {
             theme::set_fonts(ui.ctx(), &locale);

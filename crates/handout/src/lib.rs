@@ -16,12 +16,18 @@ use typst_layout::PagedDocument;
 
 mod cjk;
 mod exam;
+mod lesson_plan;
+pub mod omr;
 mod pages;
 
 pub use cjk::{CjkFont, CjkScript, cjk_font};
 pub use exam::{
     CardLayout, EssaySheet, ExamDocument, ExamLabels, ExamPageQuestion, ExamPageSection,
     render_exam_pages, render_exam_pdf,
+};
+pub use lesson_plan::{
+    LessonPlanActivity, LessonPlanDocument, LessonPlanLabels, LessonPlanSession,
+    lesson_plan_page_count, render_lesson_plan_pdf,
 };
 pub use pages::{PageImage, Pages, TextBox, paginate};
 
@@ -149,7 +155,52 @@ pub struct TopicHandout {
     pub picture: Option<Picture>,
 }
 
+/// The first sentence of `text` (up to its first full stop), or all of it.
+fn first_sentence(text: &str) -> String {
+    let text = text.trim();
+    match text.find(". ") {
+        Some(end) => text[..=end].trim().to_owned(),
+        None => text.to_owned(),
+    }
+}
+
 impl TopicHandout {
+    /// The one-page version for lessons straight to the point (Phase 10):
+    /// the rules (each section's key points, or its first sentence), one
+    /// example, the traps and the summary; no long text, pictures or
+    /// exercises.
+    pub fn condensed(&self) -> Self {
+        Self {
+            topic: self.topic.clone(),
+            subject: self.subject.clone(),
+            introduction: first_sentence(&self.introduction),
+            sections: self
+                .sections
+                .iter()
+                .map(|s| Section {
+                    heading: s.heading.clone(),
+                    paragraphs: Vec::new(),
+                    key_points: if s.key_points.is_empty() {
+                        s.paragraphs
+                            .first()
+                            .map(|p| vec![first_sentence(p)])
+                            .unwrap_or_default()
+                    } else {
+                        s.key_points.clone()
+                    },
+                    image: String::new(),
+                    picture: None,
+                })
+                .collect(),
+            examples: self.examples.iter().take(1).cloned().collect(),
+            pitfalls: self.pitfalls.clone(),
+            summary: self.summary.clone(),
+            exercises: Vec::new(),
+            references: self.references.clone(),
+            picture: None,
+        }
+    }
+
     /// Drops exercises the template cannot show (bad answer index, too many
     /// options), so one bad question never breaks the whole PDF.
     pub fn sanitized(mut self) -> Self {

@@ -68,6 +68,7 @@ impl Command {
                 | Self::SuggestSessionPlans { .. }
                 | Self::PublishSchedule { .. }
                 | Self::ExportScheduleCalendar { .. }
+                | Self::ExportSchedulePdf { .. }
                 | Self::LoadClassrooms
         )
     }
@@ -533,7 +534,11 @@ impl Engine {
             let ours = self.store.plan_progress(plan)?;
             let delta = ours.missing_from(&theirs, restoring.contains(&plan));
             self.store.apply_plan_progress(plan, &delta)?;
-            let merged = self.store.plan_progress(plan)?;
+            let mut merged = self.store.plan_progress(plan)?;
+            // A student's work on the classroom's classes, for the school.
+            if let Some(saved) = self.store.class_schedules(plan)?.first() {
+                merged.homework = merged.schedule_work(&saved.schedule, Self::today());
+            }
             if merged != theirs
                 && let Ok(value) = serde_json::to_value(&merged)
             {

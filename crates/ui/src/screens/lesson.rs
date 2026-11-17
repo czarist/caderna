@@ -635,6 +635,28 @@ fn side_panel(
 ) {
     let p = theme::palette(ui.ctx());
     ui.label(RichText::new(t!("lesson.transcript")).family(theme::strong_family()));
+    if !lesson.finished {
+        let length = lesson.length();
+        ui.horizontal_wrapped(|ui| {
+            widgets::chip(ui, &crate::i18n::lesson_length(length), p.accent);
+            if length != kg_engine::LessonLength::Full
+                && ui
+                    .small_button(t!("lesson_type.deeper"))
+                    .on_hover_text(t!("lesson_type.change_hint"))
+                    .clicked()
+            {
+                actions.send(Command::ChangeLessonLength(length.deeper()));
+            }
+            if length != kg_engine::LessonLength::Quick
+                && ui
+                    .small_button(t!("lesson_type.shorter"))
+                    .on_hover_text(t!("lesson_type.change_hint"))
+                    .clicked()
+            {
+                actions.send(Command::ChangeLessonLength(length.shorter()));
+            }
+        });
+    }
     if !lesson.outline.is_empty() {
         egui::CollapsingHeader::new(t!("lesson.outline"))
             .id_salt("lesson_outline")

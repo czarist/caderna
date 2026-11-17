@@ -222,6 +222,7 @@ mod tests {
             }],
             essay: false,
             source: FormatSource::Notice,
+            cutoff: None,
         }
     }
 

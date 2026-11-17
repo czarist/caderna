@@ -98,7 +98,12 @@ Cada aula segue um roteiro feito a partir da apostila do tópico (ou escrito pel
 professor): cada etapa traz os pontos-chave da apostila, o professor confere se você
 entendeu antes de seguir, e tudo o que o quiz vai perguntar é visto no caminho. Você sempre
 sabe onde está ("Etapa 2 de 5"), e a aula fecha com um resumo e o convite para o quiz.
-Escolha aulas **Rápida**, **Normal** ou **Completa** nas Configurações. Aulas feitas ganham
+Cada aula tem um tipo: **Direto ao ponto** (o que a prova cobra, regras e pegadinhas),
+**Equilibrada** ou **Aprofundada** (porquês, exceções, questões de provas anteriores e uma
+resposta escrita no fim). A setinha ▾ ao lado do botão da aula escolhe, com uma sugestão
+tirada dos seus dados (aprofundada para tópico novo ou fraco, direto ao ponto para tópico
+dominado ou prova perto); **Aprofundar** e **Encurtar**, ou pedir falando, mudam o resto da
+aula sem recomeçar, e o quiz depois acompanha o tipo. Aulas feitas ganham
 um visto no plano e guardam o roteiro, o quadro e o fechamento para rever depois. Saiu no
 meio? **Continuar aula** retoma de onde parou. Palavras e frases em inglês podem ser lidas
 por uma voz em inglês.
@@ -143,7 +148,9 @@ Arraste sobre um trecho para destacar, clique nele para escrever uma nota e enco
 os destaques na lista lateral. Navegue pelo sumário, digite uma página, arraste a página
 para movê-la ou clique com a rodinha do mouse para rolar sozinho. O Caderna lembra onde
 você parou e quanto já leu de cada apostila, e salva um PDF com os seus destaques quando
-você quiser.
+você quiser. O **Resumo de uma página** mostra só as regras, um exemplo, as pegadinhas e o
+resumo, para as aulas direto ao ponto; **Reportar** avisa o painel da escola quando uma
+apostila da base comum está errada.
 
 <p align="center">
   <img src="docs/images/pt-BR/reader.png" alt="Uma apostila aberta no leitor, com um trecho destacado, a nota na lista lateral e a barra de progresso da leitura" width="100%">
@@ -176,7 +183,8 @@ guiam o estilo), e um tema de redação quando o programa prevê prova discursiv
 
 Faça **na tela**, com o relógio no canto, ou **imprima**: um PDF com o caderno de questões em
 duas colunas, a folha de redação com linhas numeradas e o cartão-resposta com marcadores nos
-cantos. Fazendo no papel, você passa as marcações para o cartão-resposta do app e entrega. O
+cantos. Fazendo no papel, você fotografa o cartão preenchido e o app lê as marcações (sem IA;
+o número do simulado vai impresso no cartão), ou as passa à mão; você confere e entrega. O
 relógio continua se você sair da tela ou fechar o app, e só uma prova corre por vez. A nota é
 conta simples sobre o gabarito salvo, por matéria e com os pesos do programa: certas, erradas,
 em branco, tempo usado e se passou do tempo. As erradas vão para o caderno de erros, a redação
@@ -207,8 +215,15 @@ todas as conquistas, com filtro de obtidas e bloqueadas e os detalhes ao passar 
 o nível aparece na cor do aro e em um a três pontos. As conquistas vêm só de regras no
 código, a partir do seu estudo salvo, nunca da IA; cada plano tem o próprio progresso. O
 estudo de antes deste recurso também conta; quando o histórico não diz o dia, o cartão avisa.
-Um aviso curto aparece depois que a aula ou o quiz termina, nunca no meio, e uma vez só. Sem
-pontos, sem ranking, sem sequência a perder.
+Um aviso curto aparece depois que a aula ou o quiz termina, nunca no meio, e uma vez só, com
+um som baixo que dá para desligar. Algumas conquistas ficam secretas até serem ganhas.
+
+A aba **Perfil** mostra seu nível, vindo do tempo de estudo e dos resultados (nunca de
+cliques), até seis medalhas fixadas, um calendário dos dias de estudo e o histórico por
+matéria. Defina suas metas da semana (horas, tópicos e uma meta de acertos até uma data); o
+app sugere valores pela data da prova e pelo seu ritmo, o Hoje mostra a semana e uma semana
+abaixo da meta ganha só um recado gentil. A sequência perdoa um dia de descanso por semana e
+os dias marcados como folga (viagem, doença). Sem ranking e sem comparação com outros alunos.
 
 <table>
   <tr>

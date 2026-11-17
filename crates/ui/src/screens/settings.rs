@@ -62,6 +62,21 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
                 });
             });
             widgets::hint(ui, &t!("settings.study_reminders.hint"));
+            ui.checkbox(
+                &mut draft.unlock_sound,
+                t!("settings.study_reminders.unlock_sound"),
+            );
+            if engine.role() == kg_engine::ClassRole::Student {
+                ui.add_space(6.0);
+                ui.checkbox(
+                    &mut draft.homework_reminders,
+                    t!("settings.study_reminders.homework"),
+                );
+                ui.checkbox(
+                    &mut draft.online_class_reminders,
+                    t!("settings.study_reminders.online_class"),
+                );
+            }
         });
         ui.add_space(12.0);
         about_section(ui, draft);
@@ -1008,7 +1023,18 @@ fn provider_picker(ui: &mut egui::Ui, draft: &mut Settings) {
 /// Version, update checks and the source code.
 fn about_section(ui: &mut egui::Ui, draft: &mut kg_engine::Settings) {
     section(ui, &t!("settings.about.title"), |ui| {
-        widgets::hint(ui, &t!("app.version", version = env!("CARGO_PKG_VERSION")));
+        // Seven clicks on the version open the developer area (team only).
+        let version = ui.add(
+            egui::Label::new(
+                egui::RichText::new(t!("app.version", version = env!("CARGO_PKG_VERSION")))
+                    .small()
+                    .color(crate::theme::palette(ui.ctx()).muted),
+            )
+            .sense(egui::Sense::click()),
+        );
+        if version.clicked() {
+            super::developer::version_clicked(ui.ctx());
+        }
         if !crate::brand::support_url().is_empty() {
             widgets::link(ui, &t!("licensing.support"), crate::brand::support_url());
         }

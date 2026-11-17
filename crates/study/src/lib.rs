@@ -7,6 +7,7 @@ pub mod activity;
 pub mod board;
 pub mod challenge;
 pub mod discursive;
+pub mod goals;
 pub mod mock;
 pub mod notebook;
 pub mod plan;

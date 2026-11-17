@@ -5,6 +5,7 @@ pub mod board;
 pub mod challenges;
 pub mod classes;
 pub mod demo;
+pub mod developer;
 pub mod discursive;
 pub mod edital;
 pub mod handout;
@@ -12,6 +13,7 @@ pub mod lesson;
 pub mod mock;
 pub mod plan;
 pub mod planning;
+pub mod profile;
 pub mod progress;
 pub mod quiz;
 pub mod reader;
@@ -78,6 +80,42 @@ pub fn lesson_action(engine: &Engine, topic: &kg_engine::Topic) -> (String, Comm
     }
 }
 
+/// The three lesson types, the suggested one marked with its reason.
+pub fn lesson_type_menu(
+    ui: &mut egui::Ui,
+    engine: &Engine,
+    topic: kg_engine::TopicId,
+    actions: &mut Actions,
+) {
+    let (suggested, reason) = engine.suggested_lesson_length(topic);
+    ui.menu_button("▾", |ui| {
+        ui.label(
+            egui::RichText::new(t!("lesson_type.choose"))
+                .small()
+                .strong(),
+        );
+        for length in kg_engine::LessonLength::ALL {
+            let mut text = crate::i18n::lesson_length(length);
+            if length == suggested {
+                text = format!("{text} · {}", t!("lesson_type.suggested"));
+            }
+            let button = ui
+                .button(text)
+                .on_hover_text(crate::i18n::lesson_length_hint(length));
+            if button.clicked() {
+                actions.send(Command::StartLessonAs { topic, length });
+                actions.go_to(Screen::Lesson);
+                ui.close();
+            }
+        }
+        if let Some(why) = crate::i18n::length_reason(reason) {
+            ui.label(egui::RichText::new(why).small());
+        }
+    })
+    .response
+    .on_hover_text(t!("lesson_type.menu_hint"));
+}
+
 /// A small button running [`lesson_action`]; opens the lesson screen.
 pub fn lesson_button(
     ui: &mut egui::Ui,
@@ -89,5 +127,9 @@ pub fn lesson_button(
     if ui.small_button(label).clicked() {
         actions.send(command);
         actions.go_to(Screen::Lesson);
+    }
+    // A new lesson: the student may pick its type (Phase 10).
+    if matches!(lesson_action(engine, topic).1, Command::StartLesson(_)) {
+        lesson_type_menu(ui, engine, topic.id, actions);
     }
 }
