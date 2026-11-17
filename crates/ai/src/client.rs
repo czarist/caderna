@@ -360,7 +360,12 @@ impl Client {
     pub(crate) fn chat(&self, request: &ChatRequest<'_>) -> Result<String, AiError> {
         let primary = self.config.models.for_task(request.task);
         match self.send(primary, request) {
-            Err(err) if should_fall_back(&err) && self.config.models.fallback != primary => {
+            // No fallback set (the panel's models have none): the error stands.
+            Err(err)
+                if should_fall_back(&err)
+                    && !self.config.models.fallback.trim().is_empty()
+                    && self.config.models.fallback != primary =>
+            {
                 tracing::warn!(%err, model = primary, fallback = %self.config.models.fallback, "retrying with fallback model");
                 self.send(&self.config.models.fallback, request)
             }

@@ -473,7 +473,7 @@ setup:
   subtitle: "Cinco passos rápidos. Seus planos e seu progresso continuam como estão."
   steps:
     language: "Idioma e região"
-    name: "Nome"
+    name: "Você"
     teacher: "Professor"
     ai: "IA"
     terms: "Termos"
@@ -483,6 +483,7 @@ setup:
   missing:
     language: "Escolha o idioma e o país ou região"
     name: "Digite seu nome"
+    role: "Diga se você é aluno ou professor"
     teacher: "Escolha um professor"
     ai: "Escolha o fornecedor, o modelo e informe a chave"
     terms: "Escolha o país ou região e marque que concorda com os termos"
@@ -557,6 +558,14 @@ setup:
     read_privacy: "Ler a Política de Privacidade"
     agree: "Li e concordo com os Termos de Uso e a Política de Privacidade"
 
+  role:
+    title: "Você vai usar o %{app} como"
+    student: "Sou aluno"
+    teacher: "Sou professor"
+    student_hint: "Para estudar: aulas, apostilas, quizzes e simulados."
+    teacher_hint: "Para ensinar: também o planejamento de aulas e as turmas, quando a escola cadastrar você como professor."
+    hint: "Escolha uma opção. O app mostra as telas de quem estuda ou de quem ensina."
+    from_school: "Definido pela sua escola na licença."
 update:
   available: "Versão %{version} disponível"
   failed: "Não deu para instalar a versão %{version} sozinho."

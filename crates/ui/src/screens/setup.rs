@@ -1,4 +1,4 @@
-//! Required first run: language, name, teacher, AI service and terms. Nothing
+//! Required first run: language, name and role, teacher, AI service and terms. Nothing
 //! else opens until it is done; study plans already saved are kept.
 
 use egui::{Color32, RichText};
@@ -80,7 +80,7 @@ impl SetupUi {
         };
         match step {
             0 => self.language_chosen && draft.region.is_some(),
-            1 => !draft.student_name.trim().is_empty(),
+            1 => !draft.student_name.trim().is_empty() && draft.role.is_some(),
             2 => draft.teacher.is_some(),
             3 => self.ai_ready(),
             _ => self.agreed,
@@ -157,7 +157,7 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
                 ui.with_layout(egui::Layout::top_down(egui::Align::Min), |ui| {
                     match setup.step {
                         0 => language_step(ui, setup),
-                        1 => name_step(ui, setup),
+                        1 => name_step(ui, engine, setup),
                         2 => teacher_step(ui, engine, setup),
                         3 => ai_step(ui, engine, setup, &mut actions),
                         _ => terms_step(ui, setup),
@@ -259,11 +259,60 @@ fn language_step(ui: &mut egui::Ui, setup: &mut SetupUi) {
     region_select(ui, setup);
 }
 
-fn name_step(ui: &mut egui::Ui, setup: &mut SetupUi) {
+fn name_step(ui: &mut egui::Ui, engine: &Engine, setup: &mut SetupUi) {
     step_title(ui, &t!("setup.name.title"), &t!("setup.name.hint"));
-    if let Some(draft) = &mut setup.draft {
-        super::settings::name_field(ui, &mut draft.student_name).request_focus_once(ui);
+    let Some(draft) = &mut setup.draft else {
+        return;
+    };
+    super::settings::name_field(ui, &mut draft.student_name).request_focus_once(ui);
+    ui.add_space(14.0);
+    role_choice(ui, engine, draft);
+}
+
+/// "I am a student" or "I am a teacher". A role the school set in the panel
+/// is shown chosen and cannot be changed here.
+fn role_choice(ui: &mut egui::Ui, engine: &Engine, draft: &mut Settings) {
+    use kg_engine::UseRole;
+    let p = theme::palette(ui.ctx());
+    let from_school = engine.panel_role();
+    if let Some(role) = from_school {
+        draft.role = Some(role);
     }
+    ui.label(RichText::new(t!("setup.role.title")).strong());
+    ui.add_space(4.0);
+    ui.horizontal_wrapped(|ui| {
+        ui.spacing_mut().item_spacing = egui::vec2(12.0, 12.0);
+        for (role, label, hint) in [
+            (
+                UseRole::Student,
+                t!("setup.role.student"),
+                t!("setup.role.student_hint"),
+            ),
+            (
+                UseRole::Teacher,
+                t!("setup.role.teacher"),
+                t!("setup.role.teacher_hint"),
+            ),
+        ] {
+            let selected = draft.role == Some(role);
+            let button = egui::Button::new(RichText::new(label).size(16.0))
+                .selected(selected)
+                .min_size(egui::vec2(220.0, 44.0));
+            let response = ui
+                .add_enabled(from_school.is_none() || selected, button)
+                .on_hover_text(hint);
+            if response.clicked() {
+                draft.role = Some(role);
+            }
+        }
+    });
+    let note = match (from_school, draft.role) {
+        (Some(_), _) => t!("setup.role.from_school"),
+        (None, Some(UseRole::Student)) => t!("setup.role.student_hint"),
+        (None, Some(UseRole::Teacher)) => t!("setup.role.teacher_hint"),
+        (None, None) => t!("setup.role.hint"),
+    };
+    ui.label(RichText::new(note).small().color(p.muted));
 }
 
 /// Focus helper: the name field gets the cursor when the step opens.
@@ -839,14 +888,16 @@ fn start(setup: &mut SetupUi, settings: &Settings) {
         setup.api_key = settings.ai.api_key.clone();
         setup.base_url = settings.ai.base_url.clone();
         setup.original_ai = Some(settings.ai.clone());
-        setup.step = if settings.region.is_some() {
-            STEPS - 1
-        } else {
-            0
+        setup.step = match (settings.region, settings.role) {
+            (None, _) => 0,
+            // Saved before the role was asked: ask it now.
+            (Some(_), None) => 1,
+            (Some(_), Some(_)) => STEPS - 1,
         };
     } else {
         draft.student_name.clear();
         draft.teacher = None;
+        draft.role = None;
         draft.ai_provider.clear();
         // A brand with one region needs no choice.
         draft.region = match kg_engine::Region::offered().as_slice() {
@@ -1004,7 +1055,7 @@ fn navigation(ui: &mut egui::Ui, setup: &mut SetupUi, actions: &mut Actions) {
             }
             if !done {
                 ui.label(
-                    RichText::new(missing(setup.step))
+                    RichText::new(missing(setup))
                         .small()
                         .color(theme::palette(ui.ctx()).muted),
                 );
@@ -1032,9 +1083,14 @@ pub(crate) fn bullet(ui: &mut egui::Ui, text: &str) {
 }
 
 /// What the current step still needs, next to the disabled button.
-fn missing(step: usize) -> String {
-    match step {
+fn missing(setup: &SetupUi) -> String {
+    let named = setup
+        .draft
+        .as_ref()
+        .is_some_and(|d| !d.student_name.trim().is_empty());
+    match setup.step {
         0 => t!("setup.missing.language"),
+        1 if named => t!("setup.missing.role"),
         1 => t!("setup.missing.name"),
         2 => t!("setup.missing.teacher"),
         3 => t!("setup.missing.ai"),
@@ -1103,6 +1159,7 @@ mod tests {
             d.student_name = "Ana".into();
             d.teacher = Some(kg_engine::Teacher::ALL[0]);
             d.region = Some(kg_engine::Region::Br);
+            d.role = Some(kg_engine::UseRole::Student);
         }
         setup.pick_provider(kg_engine::ai_provider("zai").unwrap());
         setup.api_key = "key".into();
@@ -1209,6 +1266,7 @@ mod tests {
             ai: zai.config(zai.base_url, "key", "glm-5.3"),
             ai_provider: "zai".into(),
             region: Some(kg_engine::Region::Br),
+            role: Some(kg_engine::UseRole::Teacher),
             ..Settings::default()
         };
         saved.ai.models.quiz = "glm-5.3-flash".into();
@@ -1243,6 +1301,30 @@ mod tests {
         start(&mut new, &Settings::default());
         assert_eq!(new.step, 0);
         assert!(!new.step_done(1));
+
+        // Saved before the role was asked: the setup asks it, keeping the rest.
+        let mut unasked = SetupUi::default();
+        start(
+            &mut unasked,
+            &Settings {
+                role: None,
+                ..saved.clone()
+            },
+        );
+        assert_eq!(unasked.step, 1);
+        assert!(!unasked.step_done(1));
+        assert!(unasked.step_done(2));
+    }
+
+    #[test]
+    fn the_name_step_needs_a_role_too() {
+        let mut setup = ready();
+        assert!(setup.step_done(1));
+        if let Some(d) = &mut setup.draft {
+            d.role = None;
+        }
+        assert!(!setup.step_done(1));
+        assert!(finished(&setup).is_none());
     }
 
     #[test]

@@ -133,6 +133,17 @@ pub const TURN_PAUSE_RANGE: std::ops::RangeInclusive<f32> = 0.5..=3.0;
 
 use crate::Teacher;
 
+/// How the person said, in the first run, they use the app. The panel's
+/// enrolment wins over it (see [`crate::Engine::view_role`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum UseRole {
+    Student,
+    /// Also the view of someone who never chose: everything they had before.
+    #[default]
+    Teacher,
+}
+
 /// How photos of handwritten answers are transcribed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
@@ -206,6 +217,9 @@ pub struct Settings {
     /// [`Settings::teacher`]).
     #[serde(default, deserialize_with = "crate::teacher::lenient")]
     pub teacher: Option<Teacher>,
+    /// Student or teacher, chosen in the first run; `None` for settings
+    /// saved before the choice existed.
+    pub role: Option<UseRole>,
     /// Speech speed multiplier: 1.0 is normal, 1.2 is 20% faster.
     pub speech_rate: f32,
     pub quiz_size: u32,
@@ -257,6 +271,7 @@ impl Default for Settings {
             online_class_reminders: true,
             reminder_minutes: DEFAULT_REMINDER_MINUTES,
             teacher: None,
+            role: None,
             speech_rate: 0.95,
             quiz_size: 5,
             quiz_style: kg_study::QuizStyle::default(),

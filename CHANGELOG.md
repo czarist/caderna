@@ -10,6 +10,14 @@ repository.
 ## [Unreleased]
 
 ### Added
+- **"Sou aluno / Sou professor" in the first run.** The name step also asks how the
+  person uses the app. A role the school set on the licence in the panel shows
+  chosen and locked; otherwise the choice sets the view (`Engine::view_role`): the
+  student view has no lesson planning or classrooms. Settings saved before ask it
+  once. Stored only on the computer.
+- End-to-end UI test (`crates/ui/src/e2e.rs`, ignored by default): activation with
+  a test licence on the local panel, the first run by clicking, a handout, a lesson
+  with the panel's AI and the chat, then sign-out.
 - **Lesson planning (Phase W8), module "Planejamento de aulas".** A Planejamento screen
   for teachers builds a classroom's class calendar from a plan, in code and without AI:
   class days and times, Brazilian holidays (Carnaval, Sexta-feira Santa and Corpus
@@ -66,6 +74,13 @@ repository.
   `2026-11-17.3`).
 - Examples `activate`, `planning_live` and `classes_live` for live checks with two
   copies of the app.
+
+### Fixed
+- Handouts of a plan without a notice (a classroom's course) failed with "The model
+  answered in an unexpected format": the plan's own subjects and topics now serve as
+  the syllabus.
+- An AI error no longer retries with an empty fallback model (the panel's models have
+  none), which the panel refused with HTTP 422.
 
 ### Changed
 - Lessons no longer stop when the student talks over the tutor: the microphone listens

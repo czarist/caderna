@@ -61,7 +61,7 @@ The user uploads an exam notice (edital PDF), the AI generates a study plan and 
 - Legal texts follow the region (`Region` in engine `settings.rs`), not the language: `docs/legal/{terms-of-use,privacy-policy}.<lang>.md` per region version, `partner-access.<lang>.md` for regions where the app is not public. The partner text names no country; a test checks it
 - Teaching prompts follow the student's exam culture (`crates/ai/src/culture.rs`, from `Region::exam_culture`): exams, question formats, written-test conventions and the teacher's manner. A new region gets its note in Portuguese and English; extraction tasks never get it
 - Free plans (`Provider::free_tier`) state what they do with the data; recheck them when providers change their terms
-- First run is required (`Settings::needs_setup`, `SETUP_VERSION`): language, name, teacher, AI provider and key, terms. It never touches plans or progress. The provider list is `crates/ai/src/providers.rs`; model names there are suggestions, the app also lists the account's models
+- First run is required (`Settings::needs_setup`, `SETUP_VERSION`): language, name and "I am a student / I am a teacher" (`Settings::role`; a role the school set in the panel is shown locked, `Engine::view_role`), teacher, AI provider and key, terms. It never touches plans or progress. The provider list is `crates/ai/src/providers.rs`; model names there are suggestions, the app also lists the account's models
 - Before committing: `cargo fmt --all`, `cargo clippy --workspace --all-targets -- -D warnings` and `cargo test --workspace`; CI runs the same checks on every push to `dev` and before a release
 
 ## Git workflow

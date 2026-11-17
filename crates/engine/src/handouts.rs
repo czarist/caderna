@@ -320,8 +320,35 @@ impl Engine {
     pub(crate) fn handout_edital(&self) -> Result<String, EngineError> {
         let plan = self.active.as_ref().ok_or(EngineError::NoActivePlan)?;
         let text = self.store.edital_text(plan.id)?;
+        if text.trim().is_empty() {
+            // A plan from a classroom's course has no notice: its own
+            // subjects and topics are the syllabus.
+            return Ok(plan_syllabus(plan));
+        }
         Ok(kg_pdf::EditalText::from_raw(&text).for_prompt(EDITAL_CHARS))
     }
+}
+
+/// The plan's subjects and topics, written like a notice's syllabus.
+fn plan_syllabus(plan: &kg_study::StudyPlan) -> String {
+    let mut text = plan.title.trim().to_owned();
+    if !plan.exam.trim().is_empty() && plan.exam.trim() != plan.title.trim() {
+        text.push('\n');
+        text.push_str(plan.exam.trim());
+    }
+    for subject in &plan.subjects {
+        let topics: Vec<&str> = subject.topics.iter().map(|t| t.title.trim()).collect();
+        text.push_str(&format!(
+            "\n{}: {}.",
+            subject.name.trim(),
+            topics.join("; ")
+        ));
+    }
+    let mut cut: String = text.chars().take(EDITAL_CHARS).collect();
+    if cut.len() < text.len() {
+        cut.push('…');
+    }
+    cut
 }
 
 /// How far a handout build has gone, and whether the student cancelled it.
