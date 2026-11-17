@@ -1606,6 +1606,11 @@ channel:
   dev: "开发环境"
 
 planning:
+  suggest: "用 AI 为 %{count} 节课建议计划"
+  suggest_hint: "AI 通过学校的面板为尚未规划的课程建议教学目标、活动和作业。所有内容都会在应用中核对，你也可以编辑。"
+  suggesting: "AI 正在规划课程…"
+  suggested: "AI 已规划 %{applied} 节课。"
+  suggested_some: "AI 已规划 %{applied} 节课；%{failed} 节课因回答未通过核对而保持空白。请重试或手动填写。"
   title: "教学计划"
   subtitle: "根据学习计划生成的班级上课日历"
   no_plans: "请先创建学习计划：课程按其中的知识点安排。"

@@ -50,6 +50,7 @@ impl Command {
             | Self::ReplanSchedule { .. }
             | Self::UndoSchedule { .. }
             | Self::DeleteSchedule { .. }
+            | Self::SuggestSessionPlans { .. }
             | Self::ExportScheduleCalendar { .. } => Module::Planning,
             _ => return None,
         })

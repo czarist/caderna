@@ -238,6 +238,14 @@ pub fn notice(notice: &Notice) -> (String, bool) {
     let text = match notice {
         Notice::Error(err) => return (error_message(err), true),
         Notice::PlanCreated => t!("notice.plan_created"),
+        Notice::SessionsPlanned { applied, failed } if *failed > 0 => t!(
+            "planning.suggested_some",
+            applied = applied,
+            failed = failed
+        ),
+        Notice::SessionsPlanned { applied, .. } => {
+            t!("planning.suggested", applied = applied)
+        }
         Notice::SettingsSaved => t!("notice.settings_saved"),
         Notice::ConnectionOk => t!("notice.connection_ok"),
         Notice::AccountConnected(kind) => {

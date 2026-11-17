@@ -1606,6 +1606,11 @@ channel:
   dev: "開発環境"
 
 planning:
+  suggest: "AI で %{count} 回の授業計画を提案"
+  suggest_hint: "まだ空の授業について、学校のパネル経由で AI が目標、活動、宿題を提案します。内容はアプリで確認され、編集できます。"
+  suggesting: "AI が授業を計画しています…"
+  suggested: "AI が %{applied} 回の授業を計画しました。"
+  suggested_some: "AI が %{applied} 回の授業を計画しました。%{failed} 回は回答が確認を通らなかったため空のままです。もう一度試すか、手で入力してください。"
   title: "授業計画"
   subtitle: "学習プランから作るクラスの授業カレンダー"
   no_plans: "まず学習プランを作成してください。授業はその単元から組み立てられます。"

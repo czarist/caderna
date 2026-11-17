@@ -199,7 +199,7 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
                 form_card(ui, state, spec, plan, saved.is_some(), &mut actions);
             }
             (Some(saved), false) => {
-                toolbar(ui, state, &saved.schedule, plan, &mut actions);
+                toolbar(ui, engine, state, &saved.schedule, plan, &mut actions);
                 ui.add_space(8.0);
                 sessions(ui, engine, state, &saved.schedule, plan, &mut actions);
             }
@@ -369,6 +369,7 @@ fn form_card(
 
 fn toolbar(
     ui: &mut egui::Ui,
+    engine: &Engine,
     state: &mut PlanningUi,
     schedule: &ClassSchedule,
     plan: PlanId,
@@ -404,6 +405,25 @@ fn toolbar(
         }
         ui.add_space(6.0);
         ui.horizontal_wrapped(|ui| {
+            let empty = schedule
+                .sessions
+                .iter()
+                .filter(|s| {
+                    s.status == SessionStatus::Planned
+                        && s.kind != SessionKind::MockExam
+                        && s.plan.is_empty()
+                })
+                .count();
+            if engine.suggesting_sessions() == Some((plan, classroom)) {
+                ui.spinner();
+                ui.label(t!("planning.suggesting"));
+            } else if empty > 0
+                && widgets::primary_button(ui, &t!("planning.suggest", count = empty))
+                    .on_hover_text(t!("planning.suggest_hint"))
+                    .clicked()
+            {
+                actions.send(Command::SuggestSessionPlans { plan, classroom });
+            }
             if ui
                 .button(t!("planning.replan"))
                 .on_hover_text(t!("planning.replan_hint"))

@@ -1606,6 +1606,11 @@ channel:
   dev: "DESENVOLVIMENTO"
 
 planning:
+  suggest: "Sugerir o plano de %{count} aulas com IA"
+  suggest_hint: "A IA sugere objetivos, atividades e tarefa das aulas ainda vazias, pelo painel da escola. Tudo é conferido no app e você pode editar."
+  suggesting: "A IA está planejando as aulas…"
+  suggested: "A IA planejou %{applied} aulas."
+  suggested_some: "A IA planejou %{applied} aulas; %{failed} ficaram sem plano porque a resposta não passou na conferência. Tente de novo ou preencha à mão."
   title: "Planejamento de aulas"
   subtitle: "O calendário das aulas de uma turma, a partir do plano"
   no_plans: "Crie um plano primeiro: as aulas são montadas com os tópicos dele."

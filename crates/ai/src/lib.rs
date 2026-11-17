@@ -16,6 +16,7 @@ mod culture;
 mod discursive;
 mod handout_review;
 mod mock;
+mod planning;
 mod prompts;
 mod providers;
 mod purpose;
@@ -46,6 +47,9 @@ pub use handout_review::{ReviewedHandout, review_handout};
 pub use mock::{
     ExamQuestionDraft, ExamQuestionsInput, FormatDraft, FormatSectionDraft,
     generate_exam_questions, read_exam_format,
+};
+pub use planning::{
+    ACTIVITY_KINDS, ActivityDraft, PlanningInput, SessionBrief, SessionDraft, suggest_session_plans,
 };
 pub use prompts::handout_pipeline as handout_pipeline_prompts;
 pub use prompts::{Prompts, get as prompts_in};

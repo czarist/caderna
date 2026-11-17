@@ -1606,6 +1606,11 @@ channel:
   dev: "DEVELOPMENT"
 
 planning:
+  suggest: "Suggest the plan of %{count} classes with AI"
+  suggest_hint: "The AI suggests objectives, activities and homework for the classes still empty, through the school's panel. Everything is checked in the app and you can edit it."
+  suggesting: "The AI is planning the classes…"
+  suggested: "The AI planned %{applied} classes."
+  suggested_some: "The AI planned %{applied} classes; %{failed} stayed empty because the answer did not pass the checks. Try again or fill them in by hand."
   title: "Lesson planning"
   subtitle: "A classroom's class calendar, from the plan"
   no_plans: "Create a plan first: the classes are built from its topics."

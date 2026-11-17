@@ -8,13 +8,36 @@ use std::collections::HashMap;
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
+use kg_ai::{PlanningInput, SessionBrief, SessionDraft};
 use kg_study::schedule::{
-    ClassSchedule, ScheduleSpec, SessionKind, SessionStatus, TopicLoad, plan as plan_schedule,
-    replan,
+    Activity, ActivityKind, ClassSchedule, ScheduleSpec, Session, SessionKind, SessionPlan,
+    SessionStatus, TopicLoad, plan as plan_schedule, replan,
 };
 use kg_study::{PlanId, SavedSchedule};
 
-use crate::{Engine, EngineError};
+use crate::{Engine, EngineError, Event};
+
+/// Classes asked of the model at once.
+const BATCH: usize = 6;
+
+/// A suggestion job for one schedule, while it runs.
+#[derive(Debug, Default)]
+pub(crate) struct PlanningState {
+    pub(crate) suggesting: Option<(PlanId, i64)>,
+}
+
+#[derive(Debug)]
+pub(crate) enum PlanningEvent {
+    Suggested {
+        plan: PlanId,
+        classroom: i64,
+        /// Checked plans by session key.
+        plans: Vec<(String, SessionPlan)>,
+        /// Classes left empty: the model's answer did not pass the checks twice.
+        failed: usize,
+        error: Option<kg_ai::AiError>,
+    },
+}
 
 /// Words the calendar file needs, in the app's language (the UI passes them).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -27,6 +50,165 @@ pub struct CalendarLabels {
 }
 
 impl Engine {
+    /// The schedule whose classes the AI is planning now, if any.
+    pub fn suggesting_sessions(&self) -> Option<(PlanId, i64)> {
+        self.planning.suggesting
+    }
+
+    /// Asks the AI (through the panel on brands with one) for the plan of
+    /// every class still empty. Classes already planned stay as they are.
+    pub(crate) fn suggest_session_plans(
+        &mut self,
+        plan: PlanId,
+        classroom: i64,
+    ) -> Result<(), EngineError> {
+        if self.planning.suggesting.is_some() {
+            return Ok(());
+        }
+        // The AI comes from the panel: without its token there is none.
+        if kg_brand::has_server() && self.panel_token().is_none() {
+            return Err(EngineError::PanelOffline);
+        }
+        let Some(saved) = self.class_schedule(plan, classroom) else {
+            return Ok(());
+        };
+        let study = self.store.load_plan(plan)?;
+        let titles = self.schedule_topic_titles(plan);
+        let ids = self.store.topic_keys(plan)?;
+        let keys: Vec<String> = ids.iter().map(|(_, key)| key.clone()).collect();
+        let number: HashMap<&str, usize> = keys
+            .iter()
+            .enumerate()
+            .map(|(i, key)| (key.as_str(), i + 1))
+            .collect();
+        let language = self.prompt_language();
+        let mut materials = Vec::new();
+        for (id, key) in &ids {
+            let title = titles.get(key).cloned().unwrap_or_else(|| key.clone());
+            if self.store.handout(*id).ok().flatten().is_some() {
+                materials.push(format!(
+                    "{}{title}",
+                    language.pick("Apostila: ", "Handout: ")
+                ));
+            }
+            if self.store.quiz_bank(*id).ok().flatten().is_some() {
+                materials.push(format!(
+                    "{}{title}",
+                    language.pick("Questões: ", "Questions: ")
+                ));
+            }
+        }
+        let briefs: Vec<(Session, SessionBrief)> = saved
+            .schedule
+            .sessions
+            .iter()
+            .filter(|s| {
+                s.status == SessionStatus::Planned
+                    && s.kind != SessionKind::MockExam
+                    && s.plan.is_empty()
+            })
+            .enumerate()
+            .map(|(i, session)| {
+                let brief = SessionBrief {
+                    number: i + 1,
+                    kind: kind_id(session.kind).to_owned(),
+                    minutes: session.minutes,
+                    topics: session
+                        .topics
+                        .iter()
+                        .filter_map(|t| number.get(t.as_str()).copied())
+                        .collect(),
+                };
+                (session.clone(), brief)
+            })
+            .collect();
+        if briefs.is_empty() {
+            return Ok(());
+        }
+        let topics: Vec<String> = keys
+            .iter()
+            .map(|k| titles.get(k).cloned().unwrap_or_else(|| k.clone()))
+            .collect();
+        let client = self.ai_client();
+        let exam = study.exam.clone();
+        self.planning.suggesting = Some((plan, classroom));
+        let spawned = self.spawn(move || {
+            let (plans, failed, error) = suggest_in_batches(
+                &briefs,
+                |sessions| {
+                    kg_ai::suggest_session_plans(
+                        &client,
+                        &PlanningInput {
+                            exam: exam.clone(),
+                            topics: topics.clone(),
+                            sessions,
+                            materials: materials.clone(),
+                        },
+                    )
+                },
+                &keys,
+                &materials,
+            );
+            Event::Planning(PlanningEvent::Suggested {
+                plan,
+                classroom,
+                plans,
+                failed,
+                error,
+            })
+        });
+        if !spawned {
+            self.planning.suggesting = None;
+        }
+        Ok(())
+    }
+
+    pub(crate) fn on_planning_event(&mut self, event: PlanningEvent) {
+        match event {
+            PlanningEvent::Suggested {
+                plan,
+                classroom,
+                plans,
+                failed,
+                error,
+            } => {
+                self.planning.suggesting = None;
+                // Applied to the schedule as it is now: classes the teacher
+                // planned or changed meanwhile keep what they have.
+                if let Some(saved) = self.class_schedule(plan, classroom) {
+                    let mut schedule = saved.schedule;
+                    let mut applied = 0;
+                    for (key, suggestion) in plans {
+                        if let Some(session) = schedule
+                            .sessions
+                            .iter_mut()
+                            .find(|s| s.key == key && s.plan.is_empty())
+                        {
+                            let keep = std::mem::take(&mut session.plan);
+                            session.plan = SessionPlan {
+                                mode: keep.mode,
+                                note: keep.note,
+                                private_note: keep.private_note,
+                                ..suggestion
+                            };
+                            applied += 1;
+                        }
+                    }
+                    if applied > 0
+                        && let Err(err) = self.save_schedule(plan, classroom, &schedule)
+                    {
+                        self.notices.push(crate::Notice::Error(err));
+                    }
+                    self.notices
+                        .push(crate::Notice::SessionsPlanned { applied, failed });
+                }
+                if let Some(err) = error.filter(|_| failed > 0) {
+                    self.notices.push(crate::Notice::Error(err.into()));
+                }
+            }
+        }
+    }
+
     /// The saved schedule of `plan` for `classroom` (0: not tied to one).
     pub fn class_schedule(&self, plan: PlanId, classroom: i64) -> Option<SavedSchedule> {
         self.store
@@ -271,12 +453,244 @@ fn escape(text: &str) -> String {
         .replace('\n', "\\n")
 }
 
+/// Asks `ask` for the classes in batches; a class whose answer fails the
+/// checks is asked once more, then left empty.
+pub(crate) fn suggest_in_batches(
+    briefs: &[(Session, SessionBrief)],
+    mut ask: impl FnMut(Vec<SessionBrief>) -> Result<Vec<SessionDraft>, kg_ai::AiError>,
+    keys: &[String],
+    materials: &[String],
+) -> (Vec<(String, SessionPlan)>, usize, Option<kg_ai::AiError>) {
+    let mut plans = Vec::new();
+    let mut failed = 0;
+    let mut error = None;
+    for batch in briefs.chunks(BATCH) {
+        let mut left: Vec<&(Session, SessionBrief)> = batch.iter().collect();
+        for _attempt in 0..2 {
+            if left.is_empty() {
+                break;
+            }
+            match ask(left.iter().map(|(_, b)| b.clone()).collect()) {
+                Ok(drafts) => left.retain(|(session, brief)| {
+                    let checked = drafts
+                        .iter()
+                        .find(|d| d.session == brief.number)
+                        .and_then(|d| checked_plan(d, session, keys, materials));
+                    match checked {
+                        Some(plan) => {
+                            plans.push((session.key.clone(), plan));
+                            false
+                        }
+                        None => true,
+                    }
+                }),
+                Err(err) => {
+                    tracing::warn!(%err, "lesson planning request failed");
+                    error = Some(err);
+                }
+            }
+        }
+        failed += left.len();
+    }
+    (plans, failed, error)
+}
+
+fn kind_id(kind: SessionKind) -> &'static str {
+    match kind {
+        SessionKind::Class => "class",
+        SessionKind::Review => "review",
+        SessionKind::MockExam => "mock_exam",
+    }
+}
+
+fn activity_kind(id: &str) -> Option<ActivityKind> {
+    Some(match id {
+        "explanation" => ActivityKind::Explanation,
+        "voice_lesson" => ActivityKind::VoiceLesson,
+        "handout_reading" => ActivityKind::HandoutReading,
+        "quiz" => ActivityKind::Quiz,
+        "spoken_review" => ActivityKind::SpokenReview,
+        "written_answer" => ActivityKind::WrittenAnswer,
+        "mock_exam" => ActivityKind::MockExam,
+        "exercise" => ActivityKind::Exercise,
+        "other" => ActivityKind::Other,
+        _ => return None,
+    })
+}
+
+/// The model's plan for `session`, if it passes the checks: objectives
+/// present, known activity kinds, topics of that class, minutes within the
+/// class, homework the app can follow. Materials that are not in the plan
+/// are dropped rather than failing the class.
+pub(crate) fn checked_plan(
+    draft: &SessionDraft,
+    session: &Session,
+    keys: &[String],
+    materials: &[String],
+) -> Option<SessionPlan> {
+    let objectives: Vec<String> = draft
+        .objectives
+        .iter()
+        .map(|o| o.trim().to_owned())
+        .filter(|o| !o.is_empty())
+        .collect();
+    if objectives.is_empty() || draft.activities.is_empty() {
+        return None;
+    }
+    let topic = |number: usize| -> Option<Option<String>> {
+        if number == 0 {
+            return Some(None);
+        }
+        let key = keys.get(number - 1)?;
+        session.topics.contains(key).then(|| Some(key.clone()))
+    };
+    let activity = |a: &kg_ai::ActivityDraft| -> Option<Activity> {
+        let text = a.text.trim();
+        if text.is_empty() || a.minutes == 0 {
+            return None;
+        }
+        Some(Activity {
+            kind: activity_kind(a.kind.trim())?,
+            minutes: a.minutes,
+            text: text.to_owned(),
+            topic: topic(a.topic)?,
+        })
+    };
+    let activities: Vec<Activity> = draft
+        .activities
+        .iter()
+        .map(activity)
+        .collect::<Option<_>>()?;
+    if activities.iter().map(|a| a.minutes).sum::<u32>() > session.minutes {
+        return None;
+    }
+    let homework: Vec<Activity> = draft.homework.iter().map(activity).collect::<Option<_>>()?;
+    if homework.iter().any(|a| !a.kind.works_as_homework()) {
+        return None;
+    }
+    Some(SessionPlan {
+        objectives,
+        activities,
+        materials: draft
+            .materials
+            .iter()
+            .map(|m| m.trim())
+            .filter(|m| materials.iter().any(|known| known == m))
+            .map(str::to_owned)
+            .collect(),
+        homework,
+        ..SessionPlan::default()
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use chrono::{NaiveDate, NaiveTime, Weekday};
 
     use super::*;
     use kg_study::schedule::{ClassTime, HolidayCalendar};
+
+    fn session(topics: &[&str], minutes: u32) -> Session {
+        Session {
+            key: "s1".into(),
+            date: NaiveDate::from_ymd_opt(2026, 3, 2).expect("date"),
+            start: NaiveTime::from_hms_opt(19, 0, 0).expect("time"),
+            minutes,
+            kind: SessionKind::Class,
+            topics: topics.iter().map(|t| (*t).to_owned()).collect(),
+            status: SessionStatus::Planned,
+            locked: false,
+            plan: SessionPlan::default(),
+        }
+    }
+
+    fn draft(json: &str) -> SessionDraft {
+        serde_json::from_str(json).expect("draft")
+    }
+
+    #[test]
+    fn the_models_class_plan_is_checked_in_code() {
+        let keys = ["t1".to_owned(), "t2".to_owned(), "t3".to_owned()];
+        let materials = ["Apostila: Funções".to_owned()];
+        let class = session(&["t1", "t2"], 100);
+        let good = draft(
+            r#"{"session": 1, "objectives": ["Identificar funções"],
+                "activities": [{"kind": "explanation", "minutes": 40, "text": "Exposição", "topic": 1},
+                               {"kind": "exercise", "minutes": 50, "text": "Lista", "topic": 0}],
+                "materials": ["Apostila: Funções", "Livro inventado"],
+                "homework": [{"kind": "quiz", "minutes": 15, "text": "Quiz de funções", "topic": 1}]}"#,
+        );
+        let plan = checked_plan(&good, &class, &keys, &materials).expect("passes");
+        assert_eq!(plan.activity_minutes(), 90);
+        assert_eq!(
+            plan.materials,
+            ["Apostila: Funções"],
+            "unknown material dropped"
+        );
+        assert_eq!(plan.activities[0].topic.as_deref(), Some("t1"));
+
+        // A topic of another class, too many minutes, an unknown kind, homework
+        // the app cannot follow, no objectives: each fails.
+        for bad in [
+            r#"{"objectives": ["x"], "activities": [{"kind": "explanation", "minutes": 10, "text": "a", "topic": 3}]}"#,
+            r#"{"objectives": ["x"], "activities": [{"kind": "explanation", "minutes": 101, "text": "a"}]}"#,
+            r#"{"objectives": ["x"], "activities": [{"kind": "dance", "minutes": 10, "text": "a"}]}"#,
+            r#"{"objectives": ["x"], "activities": [{"kind": "quiz", "minutes": 10, "text": "a"}], "homework": [{"kind": "exercise", "minutes": 10, "text": "b"}]}"#,
+            r#"{"objectives": [" "], "activities": [{"kind": "quiz", "minutes": 10, "text": "a"}]}"#,
+        ] {
+            assert!(
+                checked_plan(&draft(bad), &class, &keys, &materials).is_none(),
+                "{bad}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_class_failing_the_checks_is_asked_once_more_then_left_empty() {
+        let keys = ["t1".to_owned()];
+        let briefs: Vec<(Session, SessionBrief)> = (1..=2)
+            .map(|n| {
+                let mut s = session(&["t1"], 60);
+                s.key = format!("s{n}");
+                let brief = SessionBrief {
+                    number: n,
+                    kind: "class".into(),
+                    minutes: 60,
+                    topics: vec![1],
+                };
+                (s, brief)
+            })
+            .collect();
+        let mut calls = Vec::new();
+        let (plans, failed, error) = suggest_in_batches(
+            &briefs,
+            |sessions| {
+                calls.push(sessions.len());
+                // Class 1 is always fine; class 2 always runs over its time.
+                Ok(sessions
+                    .iter()
+                    .map(|b| SessionDraft {
+                        session: b.number,
+                        objectives: vec!["Aplicar".into()],
+                        activities: vec![kg_ai::ActivityDraft {
+                            kind: "exercise".into(),
+                            minutes: if b.number == 1 { 50 } else { 90 },
+                            text: "Exercícios".into(),
+                            topic: 1,
+                        }],
+                        ..SessionDraft::default()
+                    })
+                    .collect())
+            },
+            &keys,
+            &[],
+        );
+        assert_eq!(calls, [2, 1], "only the failed class is asked again");
+        assert_eq!(plans.len(), 1);
+        assert_eq!(plans[0].0, "s1");
+        assert_eq!(failed, 1);
+        assert!(error.is_none());
+    }
 
     #[test]
     fn the_calendar_file_lists_classes_with_topics_and_skips_cancelled_ones() {

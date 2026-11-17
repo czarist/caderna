@@ -385,6 +385,11 @@ pub enum Command {
         plan: PlanId,
         classroom: i64,
     },
+    /// The AI plans every class still empty (through the panel).
+    SuggestSessionPlans {
+        plan: PlanId,
+        classroom: i64,
+    },
     ExportScheduleCalendar {
         plan: PlanId,
         classroom: i64,
@@ -478,6 +483,11 @@ pub enum EngineError {
 #[derive(Debug)]
 pub enum Notice {
     Error(EngineError),
+    /// The AI planned `applied` classes; `failed` stayed empty.
+    SessionsPlanned {
+        applied: usize,
+        failed: usize,
+    },
     PlanCreated,
     SettingsSaved,
     ConnectionOk,
@@ -578,6 +588,7 @@ pub(crate) enum Event {
     },
     Discursive(discursive::DiscursiveEvent),
     Mock(mock::MockEvent),
+    Planning(planning::PlanningEvent),
     EditalRevalidated {
         plan: PlanId,
         result: Result<Edital, EngineError>,
@@ -657,6 +668,7 @@ pub struct Engine {
     board_job: Option<BoardJob>,
     discursive: discursive::DiscursiveState,
     mock: mock::MockState,
+    planning: planning::PlanningState,
     /// Plan whose notice is being read again.
     revalidating: Option<PlanId>,
     streak: u32,
@@ -821,6 +833,7 @@ impl Engine {
             board_job: None,
             discursive: discursive::DiscursiveState::default(),
             mock: mock::MockState::default(),
+            planning: planning::PlanningState::default(),
             revalidating: None,
             streak: 0,
             studied_today: false,
@@ -1252,6 +1265,9 @@ impl Engine {
             Command::ReplanSchedule { plan, classroom } => self.replan_schedule(plan, classroom),
             Command::UndoSchedule { plan, classroom } => self.undo_schedule(plan, classroom),
             Command::DeleteSchedule { plan, classroom } => self.delete_schedule(plan, classroom),
+            Command::SuggestSessionPlans { plan, classroom } => {
+                self.suggest_session_plans(plan, classroom)
+            }
             Command::ExportScheduleCalendar {
                 plan,
                 classroom,
@@ -1360,6 +1376,10 @@ impl Engine {
                 }
                 Event::Discursive(event) => self.on_discursive_event(event),
                 Event::Mock(event) => self.on_mock_event(event),
+                Event::Planning(event) => {
+                    self.on_planning_event(event);
+                    Ok(())
+                }
                 Event::EditalRevalidated { plan, result } => {
                     self.on_edital_revalidated(plan, result)
                 }

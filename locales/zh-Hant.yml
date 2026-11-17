@@ -1606,6 +1606,11 @@ channel:
   dev: "開發環境"
 
 planning:
+  suggest: "用 AI 為 %{count} 堂課建議計畫"
+  suggest_hint: "AI 透過學校的面板為尚未規劃的課程建議教學目標、活動和作業。所有內容都會在應用程式中核對，你也可以編輯。"
+  suggesting: "AI 正在規劃課程…"
+  suggested: "AI 已規劃 %{applied} 堂課。"
+  suggested_some: "AI 已規劃 %{applied} 堂課；%{failed} 堂課因回答未通過核對而保持空白。請重試或手動填寫。"
   title: "教學計畫"
   subtitle: "根據學習計畫產生的班級上課日曆"
   no_plans: "請先建立學習計畫：課程依其中的主題安排。"
