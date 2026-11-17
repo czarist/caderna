@@ -843,7 +843,12 @@ impl eframe::App for KnowGiverApp {
             Ok(engine) => {
                 engine.poll();
                 if engine.take_brand_change() {
+                    crate::brand::set_presenting(engine.presenting().is_some());
                     crate::brand::refresh(ctx, engine.panel_brand());
+                    // Without a brand change the title still loses or regains the channel.
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Title(
+                        crate::brand::window_title(),
+                    ));
                 }
                 self.capture.sync(
                     frame,

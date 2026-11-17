@@ -10,6 +10,12 @@ repository.
 ## [Unreleased]
 
 ### Added
+- **Developer area: views and presentation mode (Phase W9).** With a valid developer
+  token, the area forces the student or teacher view (every module open, whatever the
+  licence) and lists the panel's clients with a brand; *Present* shows the app with
+  that client's name, colours and pictures and hides the development strip, until
+  *Stop presenting*. Nothing is saved; the next start is as before. The end-to-end
+  test covers it (`KG_E2E_DEV_CODE`).
 - **"Sou aluno / Sou professor" in the first run.** The name step also asks how the
   person uses the app. A role the school set on the licence in the panel shows
   chosen and locked; otherwise the choice sets the view (`Engine::view_role`): the

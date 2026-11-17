@@ -137,6 +137,43 @@ fn seed_plan(paths: &AppPaths) {
 #[test]
 #[ignore = "needs the brand's panel and KG_E2E_CODE; see the module docs"]
 fn a_new_student_gets_from_activation_to_a_lesson() {
+    activated(|harness| {
+        first_run(harness);
+        handout_and_lesson(harness);
+    });
+}
+
+/// Developer mode (Phase W9): the student and teacher views, and
+/// presentation mode with the brand of a client registered in the panel.
+/// Needs `KG_E2E_DEV_CODE`, a developer code made in the panel; the token is
+/// saved in the build's standard data folder, whose `developer.json` is put
+/// back as it was afterwards.
+#[test]
+#[ignore = "needs the brand's panel, KG_E2E_CODE and KG_E2E_DEV_CODE; see the module docs"]
+fn a_developer_switches_views_and_presents_a_clients_brand() {
+    let code = std::env::var("KG_E2E_DEV_CODE").expect("KG_E2E_DEV_CODE: a developer code");
+    let file = AppPaths::standard().data_dir.join("developer.json");
+    let saved = std::fs::read(&file).ok();
+    let result = std::panic::catch_unwind(|| {
+        activated(|harness| {
+            first_run(harness);
+            developer_tools(harness, &code);
+        });
+    });
+    match saved {
+        Some(bytes) => std::fs::write(&file, bytes).unwrap(),
+        None => {
+            let _ = std::fs::remove_file(&file);
+        }
+    }
+    if let Err(panic) = result {
+        std::panic::resume_unwind(panic);
+    }
+}
+
+/// A new copy of the app, activated with `KG_E2E_CODE` when the brand has a
+/// panel; signs out afterwards, whatever `body` did.
+fn activated(body: impl FnOnce(&mut App<'_>)) {
     // The app's log, on the test's output (RUST_LOG, default info).
     let _ = tracing_subscriber::fmt()
         .with_env_filter(
@@ -175,7 +212,7 @@ fn a_new_student_gets_from_activation_to_a_lesson() {
         );
     }
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        first_run_and_lesson(&mut harness);
+        body(&mut harness);
     }));
     // Free the seat whatever happened.
     if kg_brand::has_server() {
@@ -192,7 +229,7 @@ fn a_new_student_gets_from_activation_to_a_lesson() {
     }
 }
 
-fn first_run_and_lesson(harness: &mut App<'_>) {
+fn first_run(harness: &mut App<'_>) {
     // 1. Language (the region comes with it).
     click(harness, &crate::i18n::language_name("pt-BR"));
     click(harness, &t!("setup.next"));
@@ -237,7 +274,9 @@ fn first_run_and_lesson(harness: &mut App<'_>) {
     assert!(!engine(harness).needs_tour());
     harness.state_mut().clear_toasts();
     frames(harness);
+}
 
+fn handout_and_lesson(harness: &mut App<'_>) {
     // The topic's handout, from the study plan.
     assert_eq!(harness.state().ui.screen, Screen::Today);
     click(harness, &t!("nav.plan"));
@@ -348,4 +387,158 @@ fn first_run_and_lesson(harness: &mut App<'_>) {
         "the reply shows in the chat panel; labels {:?}",
         labels(harness)
     );
+}
+
+fn developer_tools(harness: &mut App<'_>, code: &str) {
+    let strip = crate::brand::channel_label();
+    // The hidden area: seven clicks on the version in Settings.
+    click(harness, &t!("nav.settings"));
+    let version = t!("app.version", version = env!("CARGO_PKG_VERSION")).into_owned();
+    // The sidebar shows the version too; the one in Settings is the last.
+    if let Some(node) = harness.query_all_by_label(&version).last() {
+        node.scroll_to_me();
+    }
+    frames(harness);
+    for _ in 0..crate::screens::developer::CLICKS {
+        if let Some(node) = harness.query_all_by_label(&version).last() {
+            node.click();
+        }
+        frames(harness);
+    }
+    assert!(
+        harness
+            .query_all_by_label(&t!("developer.use_code"))
+            .next()
+            .is_some(),
+        "the developer area opened; screen {:?}; labels {:?}",
+        harness.state().ui.screen,
+        labels(harness)
+    );
+    type_in_field_labeled(harness, "DEV-XXXX-XXXX-XXXX", code);
+    click(harness, &t!("developer.use_code"));
+    wait_for(
+        harness,
+        "the developer token",
+        Duration::from_secs(30),
+        |h| {
+            engine(h)
+                .developer_status()
+                .is_some_and(|s| s.claims.is_some())
+        },
+    );
+
+    // The teacher view, then the student view, whatever the licence says.
+    click(harness, &t!("developer.view_teacher"));
+    assert_eq!(engine(harness).view_role(), kg_engine::UseRole::Teacher);
+    assert!(
+        harness
+            .query_all_by_label(&t!("nav.planning"))
+            .next()
+            .is_some(),
+        "lesson planning in the teacher view"
+    );
+    click(harness, &t!("developer.view_student"));
+    assert_eq!(engine(harness).view_role(), kg_engine::UseRole::Student);
+    assert!(
+        harness
+            .query_all_by_label(&t!("nav.planning"))
+            .next()
+            .is_none(),
+        "no lesson planning in the student view"
+    );
+    click(harness, &t!("developer.view_licence"));
+    assert_eq!(engine(harness).developer_view(), None);
+
+    // Presentation mode: the panel's clients, then one client's brand.
+    click(harness, &t!("developer.clients_load"));
+    wait_for(harness, "the clients", Duration::from_secs(30), |h| {
+        engine(h).presentation_clients().is_some()
+    });
+    let clients = engine(harness).presentation_clients().unwrap().to_vec();
+    eprintln!("clients: {clients:?}");
+    let client = clients
+        .iter()
+        .find(|c| c.name.starts_with("Escola Teste"))
+        .expect("the test client has a brand")
+        .clone();
+    // The list starts on the first client (sorted by name): the test one.
+    assert_eq!(clients[0].id, client.id, "the test client comes first");
+    click(harness, &t!("developer.present"));
+    wait_for(
+        harness,
+        "the client's brand",
+        Duration::from_secs(60),
+        |h| engine(h).presenting() == Some(client.id),
+    );
+    frames(harness);
+    let brand = engine(harness).panel_brand().cloned().unwrap();
+    assert_eq!(brand.app_name.as_deref(), Some("Escola Teste"));
+    for file in [
+        "icon.png",
+        "cover.png",
+        "engraving.png",
+        "mark.svg",
+        "watermark.svg",
+    ] {
+        assert!(brand.image(file).is_some(), "{file} came with the brand");
+    }
+    assert_eq!(
+        crate::brand::name(),
+        "Escola Teste",
+        "the UI shows the client's name"
+    );
+    assert_eq!(
+        crate::brand::channel_label(),
+        None,
+        "nothing shows it is a development run"
+    );
+
+    click(harness, &t!("developer.present_stop"));
+    assert_eq!(engine(harness).presenting(), None);
+    frames(harness);
+    assert_eq!(
+        crate::brand::channel_label(),
+        strip,
+        "the channel strip is back"
+    );
+}
+
+/// Types into the text field showing `hint`.
+fn type_in_field_labeled(harness: &mut App<'_>, hint: &str, text: &str) {
+    let field = |h: &App<'_>| {
+        h.query_all_by(|n| {
+            matches!(n.role(), Role::TextInput)
+                && (n.placeholder().is_some_and(|p| p == hint)
+                    || n.label().is_some_and(|l| l == hint))
+        })
+        .next()
+        .is_some()
+    };
+    if !field(harness) {
+        // Fall back to the last text field on screen (the area's).
+        let last = harness
+            .query_all_by(|n| matches!(n.role(), Role::TextInput))
+            .last();
+        let Some(node) = last else {
+            panic!("no field for {hint:?}; labels {:?}", labels(harness));
+        };
+        node.click();
+    } else if let Some(node) = harness
+        .query_all_by(|n| {
+            matches!(n.role(), Role::TextInput)
+                && (n.placeholder().is_some_and(|p| p == hint)
+                    || n.label().is_some_and(|l| l == hint))
+        })
+        .next()
+    {
+        node.click();
+    }
+    frames(harness);
+    if let Some(node) = harness
+        .query_all_by(|n| matches!(n.role(), Role::TextInput) && n.is_focused())
+        .next()
+    {
+        node.type_text(text);
+    }
+    frames(harness);
 }

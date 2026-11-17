@@ -13,9 +13,31 @@ use kg_engine::PanelBrand;
 /// leaks one or two at most.
 static PANEL: RwLock<Option<&'static PanelBrand>> = RwLock::new(None);
 
-/// Lays the panel's brand over the build's. Returns whether it changed.
+/// Presentation mode (developer area): a client's brand is on screen, so
+/// nothing shows that this is a development run.
+static PRESENTING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+pub fn set_presenting(on: bool) {
+    PRESENTING.store(on, std::sync::atomic::Ordering::Relaxed);
+}
+
+fn presenting() -> bool {
+    PRESENTING.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+/// Lays the panel's brand over the build's (`None`: the build's again).
+/// Returns whether it changed.
 pub fn apply(brand: Option<&PanelBrand>) -> bool {
-    let Some(brand) = brand else { return false };
+    let Some(brand) = brand else {
+        if panel().is_none() {
+            return false;
+        }
+        match PANEL.write() {
+            Ok(mut current) => *current = None,
+            Err(poisoned) => *poisoned.into_inner() = None,
+        }
+        return true;
+    };
     if panel() == Some(brand) {
         return false;
     }
@@ -62,6 +84,9 @@ pub fn channel_id() -> &'static str {
 /// The build's channel in the UI language ("HOMOLOGAÇÃO", "DESENVOLVIMENTO");
 /// `None` in production and for brands without a panel.
 pub fn channel_label() -> Option<String> {
+    if presenting() {
+        return None;
+    }
     match channel_id() {
         "hom" => Some(t!("channel.hom").into_owned()),
         "dev" => Some(t!("channel.dev").into_owned()),

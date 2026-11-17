@@ -30,6 +30,7 @@ mod planning;
 mod plans;
 mod practice;
 mod prepare;
+mod presentation;
 mod progress;
 mod reader;
 mod restrictions;
@@ -124,6 +125,7 @@ pub use paths::AppPaths;
 pub use planning::{AgendaItem, CalendarLabels, ClassReminder, ClassReminderKind, ScheduleNote};
 pub use practice::{QuizSession, QuizStep, REVIEW_ROUNDS, ReviewSession, ReviewStep};
 pub use prepare::{PrepareJob, PrepareRequest, PrepareSummary, slug};
+pub use presentation::PresentationClient;
 pub use progress::Milestone;
 pub use reader::{ContentsEntry, ReaderState};
 pub use restrictions::Restriction;
@@ -412,6 +414,12 @@ pub enum Command {
     DeveloperReset(developer::Environment),
     /// Forgets the token; the next start is in production.
     DeveloperLeave,
+    /// Lists the panel's clients with a brand (presentation mode).
+    DeveloperClients,
+    /// Shows a client's brand, or `None` the licence's own again.
+    DeveloperPresent(Option<i64>),
+    /// Forces the student or teacher view, or `None` the licence's.
+    DeveloperView(Option<UseRole>),
     DeleteMockAttempt(MockAttemptId),
     /// Plans a classroom's classes from a plan (no AI; classroom 0 for none).
     GenerateSchedule {
@@ -683,6 +691,7 @@ pub(crate) enum Event {
     Discursive(discursive::DiscursiveEvent),
     Mock(mock::MockEvent),
     Developer(developer_area::DeveloperEvent),
+    Presentation(presentation::PresentationEvent),
     SharedReported(bool),
     Planning(planning::PlanningEvent),
     EditalRevalidated {
@@ -773,6 +782,7 @@ pub struct Engine {
     /// Kept while the unlock chime plays.
     chime: Option<kg_audio::Speaker>,
     developer: developer_area::DeveloperState,
+    presentation: presentation::PresentationState,
     study_clock: study_time::StudyClock,
     updates: update::Updates,
 
@@ -948,6 +958,7 @@ impl Engine {
             studied_today: false,
             chime: None,
             developer: developer_area::DeveloperState::default(),
+            presentation: presentation::PresentationState::default(),
             study_clock: study_time::StudyClock::new(Self::today(), Instant::now()),
             updates: update::Updates::default(),
             notices,
@@ -1458,6 +1469,18 @@ impl Engine {
             } => self.developer_switch(environment, port, copy, fresh),
             Command::DeveloperReset(environment) => self.developer_reset(environment),
             Command::DeveloperLeave => self.developer_leave(),
+            Command::DeveloperClients => {
+                self.developer_list_clients();
+                Ok(())
+            }
+            Command::DeveloperPresent(client) => {
+                self.developer_present(client);
+                Ok(())
+            }
+            Command::DeveloperView(view) => {
+                self.developer_set_view(view);
+                Ok(())
+            }
             Command::DeleteMockAttempt(id) => self.delete_mock_attempt(id),
             Command::ExportProgress { path, content } => {
                 std::fs::write(&path, content).map_err(|source| EngineError::Export {
@@ -1574,6 +1597,10 @@ impl Engine {
                     } else {
                         Notice::SharedReportFailed
                     });
+                    Ok(())
+                }
+                Event::Presentation(event) => {
+                    self.on_presentation_event(event);
                     Ok(())
                 }
                 Event::Developer(event) => {
