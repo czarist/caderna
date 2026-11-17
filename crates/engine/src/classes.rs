@@ -66,6 +66,7 @@ impl Command {
                 | Self::UndoSchedule { .. }
                 | Self::DeleteSchedule { .. }
                 | Self::SuggestSessionPlans { .. }
+                | Self::PublishSchedule { .. }
                 | Self::ExportScheduleCalendar { .. }
                 | Self::LoadClassrooms
         )
@@ -86,9 +87,9 @@ pub struct CourseSummary {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 struct CourseContent {
     weeks: u32,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "kg_study::schedule::null_as_default")]
     syllabus_name: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "kg_study::schedule::null_as_default")]
     syllabus: String,
     subjects: Vec<WireSubject>,
 }
@@ -190,6 +191,8 @@ pub(crate) struct SyncDownload {
     courses: Vec<CourseSummary>,
     fresh: Vec<CourseDownload>,
     progress: Vec<ProgressDoc>,
+    /// The classrooms' class schedules (lesson planning).
+    schedules: Vec<crate::planning::ScheduleDownload>,
 }
 
 /// The engine's class state.
@@ -203,7 +206,7 @@ pub(crate) struct Classes {
     last_sync: Option<DateTime<Utc>>,
 }
 
-fn data<T: for<'de> Deserialize<'de>>(status: u16, text: &str) -> Result<T, PanelError> {
+pub(crate) fn data<T: for<'de> Deserialize<'de>>(status: u16, text: &str) -> Result<T, PanelError> {
     #[derive(Deserialize)]
     struct Envelope<T> {
         data: T,
@@ -234,10 +237,17 @@ fn download(
     }
     let (status, text) = panel.call("GET", "progress", token, None)?;
     let progress = data(status, &text)?;
+    // A panel without lesson planning answers 404: no schedules.
+    let schedules = match panel.call("GET", "schedules", token, None) {
+        Ok((status, text)) => data(status, &text)?,
+        Err(PanelError::Unexpected { status: 404, .. }) => Vec::new(),
+        Err(err) => return Err(err),
+    };
     Ok(SyncDownload {
         courses,
         fresh,
         progress,
+        schedules,
     })
 }
 
@@ -436,6 +446,7 @@ impl Engine {
             }
         };
         let uploads = self.apply_class_download(&download)?;
+        self.apply_schedule_download(&download.schedules)?;
         self.classes.last_sync = Some(Utc::now());
         if !download.fresh.is_empty() {
             self.notices
@@ -738,8 +749,23 @@ impl Engine {
                 status: 0,
                 detail: e.to_string(),
             })?,
+            schedules: Vec::new(),
         };
         self.apply_class_download(&download)
+    }
+
+    /// Test hook: applies the schedules of a sync as if the panel had sent them.
+    #[cfg(test)]
+    pub(crate) fn apply_schedule_json(
+        &mut self,
+        schedules: serde_json::Value,
+    ) -> Result<(), EngineError> {
+        let schedules: Vec<crate::planning::ScheduleDownload> =
+            serde_json::from_value(schedules).map_err(|e| PanelError::Unexpected {
+                status: 0,
+                detail: e.to_string(),
+            })?;
+        self.apply_schedule_download(&schedules)
     }
 }
 

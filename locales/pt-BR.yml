@@ -182,6 +182,7 @@ edital:
   confirm_delete: "Excluir este plano e todo o progresso dele? Não dá para desfazer."
 
 plan:
+  opens_on: "Abre em %{date}"
   prepare_all: "Preparar tudo agora"
   prepare_all_hint: "Escreve as apostilas e os quizzes que faltam para todos os tópicos e salva o PDF completo na pasta de dados do %{app}."
   prepare_title: "Preparando o conteúdo do plano"
@@ -394,6 +395,9 @@ export:
     next_review: "Próxima revisão"
 
 today:
+  agenda: "Próximas aulas"
+  agenda_join: "Entrar na aula"
+  agenda_prepare: "Para a aula: %{items}"
   greeting_named: "%{greeting}, %{name}"
   study_time: "Tempo de estudo hoje: %{duration}"
   study_time_hint: "Conta o estudo ativo; pausas e inatividade não entram."
@@ -1606,6 +1610,13 @@ channel:
   dev: "DESENVOLVIMENTO"
 
 planning:
+  publish: "Publicar para a turma"
+  publish_hint: "Envia o calendário à turma pelo painel. As anotações só suas não vão."
+  published: "Calendário publicado para a turma."
+  published_version: "Publicado no painel (versão %{version}). Depois de mudar algo, publique de novo."
+  needs_classroom: "Escolha uma turma para publicar o calendário."
+  needs_course: "Publique o plano para a turma em Turmas antes do calendário."
+  topic_opens: "Este tópico abre em %{date}, no dia da primeira aula dele."
   suggest: "Sugerir o plano de %{count} aulas com IA"
   suggest_hint: "A IA sugere objetivos, atividades e tarefa das aulas ainda vazias, pelo painel da escola. Tudo é conferido no app e você pode editar."
   suggesting: "A IA está planejando as aulas…"

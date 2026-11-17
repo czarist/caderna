@@ -1,6 +1,6 @@
 # Termos de Uso do {{app}}
 
-Versão {{version}} · Última atualização: 16 de novembro de 2026.
+Versão {{version}} · Última atualização: 16 de novembro de 2026 (2).
 
 Estes Termos regem o uso do aplicativo {{app}}, do painel da escola (área do cliente) e do
 site do {{app}}. Leia com atenção: ao aceitar, você concorda com eles e com a Política de
@@ -81,7 +81,9 @@ O {{app}} é oferecido apenas no Brasil e em português do Brasil.
 
 - A Escola cadastra professores e alunos e organiza as turmas. O aluno recebe o acesso por
   um código enviado ao email cadastrado pela Escola.
-- O **professor** cria planos, apostilas e questões e os publica para as turmas. Ele e a
+- O **professor** cria planos, apostilas e questões e os publica para as turmas. Com o
+  Planejamento de aulas, monta e publica o calendário de aulas de cada turma; as sugestões
+  da IA para cada aula podem ter erros e devem ser conferidas antes de publicar. Ele e a
   Escola respondem por conferir o que publicam e por ter o direito de usar os materiais que
   enviam.
 - O **aluno** usa o que as turmas dele recebem. O progresso do aluno fica guardado no

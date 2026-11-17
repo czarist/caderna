@@ -318,6 +318,9 @@ fn topic_row(
                 actions.go_to(Screen::Quiz);
             }
             ask.button(ui, &t!("plan.handout"), HandoutScope::Topic(topic.id), idle);
+            if let Some(day) = engine.topic_opens_on(topic.id) {
+                widgets::chip(ui, &t!("plan.opens_on", date = i18n::date(day)), p.muted);
+            }
             if topic.is_due(today) {
                 widgets::chip(ui, &t!("plan.review_due"), p.accent);
             }

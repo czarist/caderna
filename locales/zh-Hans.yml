@@ -182,6 +182,7 @@ edital:
   confirm_delete: "删除这个计划和全部进度？此操作无法撤销。"
 
 plan:
+  opens_on: "%{date} 开放"
   prepare_all: "现在全部准备"
   prepare_all_hint: "为所有知识点补齐缺少的讲义和测验，并把完整 PDF 保存到 %{app} 的数据文件夹。"
   prepare_title: "正在准备计划的内容"
@@ -394,6 +395,9 @@ export:
     next_review: "下次复习"
 
 today:
+  agenda: "接下来的课程"
+  agenda_join: "进入课堂"
+  agenda_prepare: "课前准备：%{items}"
   greeting_named: "%{greeting}，%{name}"
   study_time: "今天的学习时间：%{duration}"
   study_time_hint: "只计算实际学习的时间，不含休息和无操作的时间。"
@@ -1606,6 +1610,13 @@ channel:
   dev: "开发环境"
 
 planning:
+  publish: "发布给班级"
+  publish_hint: "通过面板把日历发送给班级。你的个人备注不会发送。"
+  published: "日历已发布给班级。"
+  published_version: "已发布到面板（版本 %{version}）。修改后请重新发布。"
+  needs_classroom: "请选择要发布日历的班级。"
+  needs_course: "发布日历前，请先在“班级”中把计划发布给该班级。"
+  topic_opens: "此知识点在 %{date}（第一节课当天）开放。"
   suggest: "用 AI 为 %{count} 节课建议计划"
   suggest_hint: "AI 通过学校的面板为尚未规划的课程建议教学目标、活动和作业。所有内容都会在应用中核对，你也可以编辑。"
   suggesting: "AI 正在规划课程…"

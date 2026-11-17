@@ -182,6 +182,7 @@ edital:
   confirm_delete: "このプランと進捗をすべて削除しますか？元に戻せません。"
 
 plan:
+  opens_on: "%{date} に公開"
   prepare_all: "今すぐすべて準備する"
   prepare_all_hint: "足りないテキストとクイズを全トピック分作り、全体のPDFを%{app}のデータフォルダーに保存します。"
   prepare_title: "プランの教材を準備中"
@@ -394,6 +395,9 @@ export:
     next_review: "次の復習"
 
 today:
+  agenda: "次の授業"
+  agenda_join: "授業に参加"
+  agenda_prepare: "授業の準備：%{items}"
   greeting_named: "%{greeting}、%{name}さん"
   study_time: "今日の学習時間：%{duration}"
   study_time_hint: "実際に学習している時間を数えます。休憩や操作のない時間は含みません。"
@@ -1606,6 +1610,13 @@ channel:
   dev: "開発環境"
 
 planning:
+  publish: "クラスに公開"
+  publish_hint: "パネルを通じてクラスにカレンダーを送ります。自分用のメモは送られません。"
+  published: "カレンダーをクラスに公開しました。"
+  published_version: "パネルに公開済み（バージョン %{version}）。変更したら、もう一度公開してください。"
+  needs_classroom: "カレンダーを公開するクラスを選んでください。"
+  needs_course: "カレンダーの前に、「クラス」画面でプランをクラスに公開してください。"
+  topic_opens: "この単元は最初の授業の日、%{date} に公開されます。"
   suggest: "AI で %{count} 回の授業計画を提案"
   suggest_hint: "まだ空の授業について、学校のパネル経由で AI が目標、活動、宿題を提案します。内容はアプリで確認され、編集できます。"
   suggesting: "AI が授業を計画しています…"

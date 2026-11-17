@@ -1,6 +1,6 @@
 # Política de Privacidade do {{app}}
 
-Versão {{version}} · Última atualização: 16 de novembro de 2026.
+Versão {{version}} · Última atualização: 16 de novembro de 2026 (2).
 
 Esta Política explica como tratamos dados pessoais no aplicativo {{app}}, no painel da
 escola (área do cliente) e no site do {{app}}, de acordo com a Lei nº 13.709/2018 (Lei Geral
@@ -51,7 +51,10 @@ de Proteção de Dados, LGPD). Ela faz parte dos Termos de Uso.
 
 - Nome, email, turmas e a licença de cada um.
 - Do professor: os planos que ele publica (título, prova, matérias, tópicos, programa da
-  prova, apostilas e questões).
+  prova, apostilas e questões) e, com o Planejamento de aulas, o calendário de aulas de cada
+  turma (datas, horários, tópicos, objetivos, atividades, materiais, tarefas, recados aos
+  alunos e o link de aulas on-line). As anotações que o professor marca como só dele ficam
+  no computador dele e nunca vão ao Painel.
 - Do aluno: o progresso nos planos das turmas (situação e agenda de revisão de cada tópico,
   resultados de quizzes, resumos de aulas, revisões, caderno de erros) e o tempo de estudo
   por dia.
@@ -84,7 +87,7 @@ gravações de tela. Essa lista é lida no computador e não é guardada nem env
 | Painel | Chave de licença; código do computador (identificador do sistema passado por hash); versão do app; sistema operacional; endereço IP | Ao ativar, ao abrir o app e a cada hora |
 | Painel, que repassa ao fornecedor de IA | Trechos do programa da prova e dos materiais, tópicos, mensagens e respostas, o nome do aluno (para o tutor chamá-lo) e textos das apostilas | Em cada tarefa de IA |
 | Painel, para o modelo de visão do fornecedor de IA | Fotos de respostas discursivas e páginas de PDFs escaneados | Só quando o usuário escolhe a leitura pela nuvem; por padrão, as fotos são lidas no computador |
-| Painel | Progresso do aluno e planos publicados pelo professor, descritos na seção 3 | A cada hora e em "Sincronizar agora" |
+| Painel | Progresso do aluno, planos e calendários de aulas publicados pelo professor, descritos na seção 3 | A cada hora e em "Sincronizar agora"; o calendário, quando o professor o publica |
 | Painel, base comum | Planos, apostilas e questões feitos pela IA, sem dados pessoais | Antes e depois de cada material feito pela IA |
 | Wikipédia e Wikimedia Commons | Termo de busca de uma imagem e o nome do arquivo, para o crédito | Se as imagens estiverem ligadas |
 | GitHub, Hugging Face e sites das vozes | Pedidos de download, que mostram o IP e a versão do app | Ao procurar atualizações e baixar modelos |

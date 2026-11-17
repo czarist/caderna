@@ -15,6 +15,16 @@ use serde::{Deserialize, Serialize};
 
 use crate::plan::Difficulty;
 
+/// Reads `null` as the type's default: the panel (Laravel) turns empty
+/// strings into `null` on the way in.
+pub fn null_as_default<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Default + Deserialize<'de>,
+{
+    Ok(Option::<T>::deserialize(deserializer)?.unwrap_or_default())
+}
+
 /// Review session every this many class sessions, unless the teacher sets it.
 pub const DEFAULT_REVIEW_EVERY: u32 = 6;
 
@@ -46,15 +56,15 @@ pub struct ScheduleSpec {
     pub end: NaiveDate,
     pub classes: Vec<ClassTime>,
     /// State and city holidays, recess and any other day without class.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub blocked: BTreeSet<NaiveDate>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub holidays: HolidayCalendar,
     /// A review session after every this many class sessions; 0 for none.
     #[serde(default = "default_review_every")]
     pub review_every: u32,
     /// The plan has an exam format: the last session becomes a mock exam.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub mock_exam: bool,
 }
 
@@ -117,14 +127,14 @@ pub struct Session {
     pub kind: SessionKind,
     /// Topic keys, in order; a long topic appears in several sessions.
     pub topics: Vec<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub status: SessionStatus,
     /// The teacher fixed it: replanning keeps it as it is.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub locked: bool,
     /// What happens in it: suggested by the AI when the panel's AI is
     /// reachable, then edited by the teacher. Empty until then.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub plan: SessionPlan,
 }
 
@@ -183,22 +193,22 @@ pub struct Activity {
 /// The teacher's plan for one class.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct SessionPlan {
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub mode: SessionMode,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub objectives: Vec<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub activities: Vec<Activity>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub materials: Vec<String>,
     /// Done by the students before the next class.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub homework: Vec<Activity>,
     /// Shown to the students.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub note: String,
     /// Only for the teacher; never published.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub private_note: String,
 }
 
@@ -235,15 +245,15 @@ pub enum ReleaseRule {
 pub struct ClassSchedule {
     pub spec: ScheduleSpec,
     pub sessions: Vec<Session>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub release: ReleaseRule,
     /// IANA time zone of the classroom.
     #[serde(default = "default_time_zone")]
     pub time_zone: String,
     /// Shortfall of the last planning, for the screen's warning.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub shortfall_minutes: u32,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_default")]
     pub unplaced: Vec<String>,
 }
 
@@ -827,6 +837,20 @@ mod tests {
         assert_eq!(TopicLoad::estimate("a", Difficulty::Easy, 100).minutes, 50);
         assert_eq!(TopicLoad::estimate("a", Difficulty::Hard, 200).minutes, 220);
         assert_eq!(TopicLoad::estimate("a", Difficulty::Medium, 0).minutes, 1);
+    }
+
+    #[test]
+    fn empty_texts_the_panel_turned_into_null_read_as_empty() {
+        let session: Session = serde_json::from_str(
+            r#"{"key": "s1", "date": "2026-03-02", "start": "19:00:00", "minutes": 60,
+                "kind": "class", "topics": ["t1"], "status": null, "locked": null,
+                "plan": {"mode": {"mode": "in_person"}, "objectives": null,
+                         "note": null, "private_note": null, "homework": null}}"#,
+        )
+        .expect("session");
+        assert!(session.plan.note.is_empty());
+        assert_eq!(session.status, SessionStatus::Planned);
+        assert!(!session.locked);
     }
 
     #[test]

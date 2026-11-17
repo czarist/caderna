@@ -51,6 +51,7 @@ impl Command {
             | Self::UndoSchedule { .. }
             | Self::DeleteSchedule { .. }
             | Self::SuggestSessionPlans { .. }
+            | Self::PublishSchedule { .. }
             | Self::ExportScheduleCalendar { .. } => Module::Planning,
             _ => return None,
         })

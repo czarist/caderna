@@ -182,6 +182,7 @@ edital:
   confirm_delete: "Delete this plan and all its progress? This cannot be undone."
 
 plan:
+  opens_on: "Opens on %{date}"
   prepare_all: "Prepare everything now"
   prepare_all_hint: "Writes the missing handouts and quizzes for every topic and saves the full PDF in %{app}'s data folder."
   prepare_title: "Preparing the plan's content"
@@ -394,6 +395,9 @@ export:
     next_review: "Next review"
 
 today:
+  agenda: "Next classes"
+  agenda_join: "Join the class"
+  agenda_prepare: "For the class: %{items}"
   greeting_named: "%{greeting}, %{name}"
   study_time: "Study time today: %{duration}"
   study_time_hint: "Counts active study; breaks and inactivity are excluded."
@@ -1606,6 +1610,13 @@ channel:
   dev: "DEVELOPMENT"
 
 planning:
+  publish: "Publish to the classroom"
+  publish_hint: "Sends the calendar to the classroom through the panel. Your private notes stay here."
+  published: "Calendar published to the classroom."
+  published_version: "Published to the panel (version %{version}). After changing something, publish again."
+  needs_classroom: "Choose a classroom to publish the calendar."
+  needs_course: "Publish the plan to the classroom in Classes before its calendar."
+  topic_opens: "This topic opens on %{date}, the day of its first class."
   suggest: "Suggest the plan of %{count} classes with AI"
   suggest_hint: "The AI suggests objectives, activities and homework for the classes still empty, through the school's panel. Everything is checked in the app and you can edit it."
   suggesting: "The AI is planning the classes…"

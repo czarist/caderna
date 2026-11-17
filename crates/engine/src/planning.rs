@@ -24,6 +24,26 @@ const BATCH: usize = 6;
 #[derive(Debug, Default)]
 pub(crate) struct PlanningState {
     pub(crate) suggesting: Option<(PlanId, i64)>,
+    pub(crate) publishing: Option<(PlanId, i64)>,
+}
+
+/// A schedule as the panel sends it to a student.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
+pub(crate) struct ScheduleDownload {
+    pub(crate) course_id: i64,
+    pub(crate) classroom_id: i64,
+    pub(crate) version: i64,
+    pub(crate) schedule: ClassSchedule,
+}
+
+/// The next class of one of the student's schedules.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AgendaItem {
+    pub plan: PlanId,
+    pub plan_title: String,
+    pub session: Session,
+    /// The session's topics, by title.
+    pub topics: Vec<String>,
 }
 
 #[derive(Debug)]
@@ -36,6 +56,11 @@ pub(crate) enum PlanningEvent {
         /// Classes left empty: the model's answer did not pass the checks twice.
         failed: usize,
         error: Option<kg_ai::AiError>,
+    },
+    Published {
+        plan: PlanId,
+        classroom: i64,
+        result: Result<i64, crate::server::PanelError>,
     },
 }
 
@@ -163,8 +188,184 @@ impl Engine {
         Ok(())
     }
 
+    /// The schedule being sent to the panel, if any.
+    pub fn publishing_schedule(&self) -> Option<(PlanId, i64)> {
+        self.planning.publishing
+    }
+
+    /// Sends a classroom's schedule to the panel, for the school and the
+    /// students. The plan must be published as a course first; the
+    /// teacher's private notes never leave this computer.
+    pub(crate) fn publish_schedule(
+        &mut self,
+        plan: PlanId,
+        classroom: i64,
+    ) -> Result<(), EngineError> {
+        if self.role() != crate::ClassRole::Teacher {
+            return Err(EngineError::TeachersOnly);
+        }
+        if classroom == 0 {
+            return Err(EngineError::ScheduleNeedsClassroom);
+        }
+        if self.planning.publishing.is_some() {
+            return Ok(());
+        }
+        let course = self
+            .course_link(plan)
+            .filter(|link| !link.assigned)
+            .map(|link| link.course_id)
+            .ok_or(EngineError::ScheduleNeedsCourse)?;
+        let token = self.panel_token().ok_or(EngineError::PanelOffline)?;
+        let Some(saved) = self.class_schedule(plan, classroom) else {
+            return Ok(());
+        };
+        let body = serde_json::json!({ "schedule": saved.schedule.for_students() });
+        self.planning.publishing = Some((plan, classroom));
+        self.spawn(move || {
+            #[derive(serde::Deserialize)]
+            struct Version {
+                version: i64,
+            }
+            let path = format!("courses/{course}/schedules/{classroom}");
+            let result = crate::server::HttpPanel::for_content()
+                .call("PUT", &path, &token, Some(&body))
+                .and_then(|(status, text)| crate::classes::data::<Version>(status, &text))
+                .map(|v| v.version);
+            Event::Planning(PlanningEvent::Published {
+                plan,
+                classroom,
+                result,
+            })
+        });
+        Ok(())
+    }
+
+    /// Keeps the schedules a student's sync brought, for the plans of their
+    /// courses, and drops those no longer sent.
+    pub(crate) fn apply_schedule_download(
+        &mut self,
+        schedules: &[ScheduleDownload],
+    ) -> Result<(), EngineError> {
+        let links = self.store.course_links()?;
+        let plan_of = |course: i64| {
+            links
+                .iter()
+                .find(|(_, link)| link.assigned && link.course_id == course)
+                .map(|(plan, _)| *plan)
+        };
+        let now = chrono::Local::now().naive_local();
+        let mut kept = std::collections::HashSet::new();
+        for download in schedules {
+            let Some(plan) = plan_of(download.course_id) else {
+                continue;
+            };
+            kept.insert((plan, download.classroom_id));
+            let current = self.class_schedule(plan, download.classroom_id);
+            if current.as_ref().and_then(|s| s.published_version) == Some(download.version) {
+                continue;
+            }
+            self.store
+                .save_class_schedule(plan, download.classroom_id, &download.schedule, now)?;
+            self.store.set_class_schedule_published(
+                plan,
+                download.classroom_id,
+                download.version,
+            )?;
+        }
+        for (plan, link) in &links {
+            if !link.assigned {
+                continue;
+            }
+            for saved in self.store.class_schedules(*plan)? {
+                if !kept.contains(&(*plan, saved.classroom)) {
+                    self.store.delete_class_schedule(*plan, saved.classroom)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// The student's next classes, one per schedule, soonest first.
+    pub fn agenda(&self, today: chrono::NaiveDate) -> Vec<AgendaItem> {
+        let mut items = Vec::new();
+        for plan in self.plans() {
+            if !self.course_link(plan.id).is_some_and(|link| link.assigned) {
+                continue;
+            }
+            let titles = self.schedule_topic_titles(plan.id);
+            for saved in self.class_schedules(plan.id) {
+                if let Some(session) = saved.schedule.next_session(today) {
+                    items.push(AgendaItem {
+                        plan: plan.id,
+                        plan_title: plan.title.clone(),
+                        topics: session
+                            .topics
+                            .iter()
+                            .map(|k| titles.get(k).cloned().unwrap_or_else(|| k.clone()))
+                            .collect(),
+                        session: session.clone(),
+                    });
+                }
+            }
+        }
+        items.sort_by_key(|item| (item.session.date, item.session.start));
+        items
+    }
+
+    /// For a student, the day a topic opens when its classroom opens topics
+    /// as the classes happen and its first class is still ahead.
+    pub fn topic_opens_on(&self, topic: kg_study::TopicId) -> Option<chrono::NaiveDate> {
+        if self.role() != crate::ClassRole::Student {
+            return None;
+        }
+        let plan = self.store.plan_of_topic(topic).ok().flatten()?;
+        let key = self
+            .store
+            .topic_keys(plan)
+            .ok()?
+            .into_iter()
+            .find(|(id, _)| *id == topic)
+            .map(|(_, key)| key)?;
+        let today = Self::today();
+        self.class_schedules(plan)
+            .iter()
+            .filter(|saved| !saved.schedule.topic_open(&key, today))
+            .filter_map(|saved| {
+                saved
+                    .schedule
+                    .sessions
+                    .iter()
+                    .filter(|s| {
+                        s.kind == SessionKind::Class && s.status != SessionStatus::Cancelled
+                    })
+                    .filter(|s| s.topics.contains(&key))
+                    .map(|s| s.date)
+                    .min()
+            })
+            .min()
+    }
+
     pub(crate) fn on_planning_event(&mut self, event: PlanningEvent) {
         match event {
+            PlanningEvent::Published {
+                plan,
+                classroom,
+                result,
+            } => {
+                self.planning.publishing = None;
+                match result {
+                    Ok(version) => {
+                        if let Err(err) = self
+                            .store
+                            .set_class_schedule_published(plan, classroom, version)
+                        {
+                            self.notices.push(crate::Notice::Error(err.into()));
+                        }
+                        self.notices.push(crate::Notice::SchedulePublished);
+                    }
+                    Err(err) => self.notices.push(crate::Notice::Error(err.into())),
+                }
+            }
             PlanningEvent::Suggested {
                 plan,
                 classroom,

@@ -111,7 +111,7 @@ pub use modules::Module;
 pub use ocr::{OcrError, OcrModelStatus};
 pub use panel_brand::{PanelBrand, load_panel_brand};
 pub use paths::AppPaths;
-pub use planning::CalendarLabels;
+pub use planning::{AgendaItem, CalendarLabels};
 pub use practice::{QuizSession, QuizStep, REVIEW_ROUNDS, ReviewSession, ReviewStep};
 pub use prepare::{PrepareJob, PrepareRequest, PrepareSummary, slug};
 pub use progress::Milestone;
@@ -390,6 +390,11 @@ pub enum Command {
         plan: PlanId,
         classroom: i64,
     },
+    /// Sends a classroom's schedule to the panel (school and students).
+    PublishSchedule {
+        plan: PlanId,
+        classroom: i64,
+    },
     ExportScheduleCalendar {
         plan: PlanId,
         classroom: i64,
@@ -419,6 +424,12 @@ pub enum EngineError {
     TeachersOnly,
     #[error("the panel is not connected")]
     PanelOffline,
+    #[error("a schedule is published for a classroom")]
+    ScheduleNeedsClassroom,
+    #[error("publish the plan to the classroom before its schedule")]
+    ScheduleNeedsCourse,
+    #[error("the topic opens on {0}")]
+    TopicNotOpen(NaiveDate),
     #[error(transparent)]
     Study(#[from] StudyError),
     #[error(transparent)]
@@ -483,6 +494,8 @@ pub enum EngineError {
 #[derive(Debug)]
 pub enum Notice {
     Error(EngineError),
+    /// A classroom's schedule reached the panel.
+    SchedulePublished,
     /// The AI planned `applied` classes; `failed` stayed empty.
     SessionsPlanned {
         applied: usize,
@@ -1000,6 +1013,13 @@ impl Engine {
         if command.creates_plans() && !self.role().creates_plans() {
             return Err(EngineError::TeachersOnly);
         }
+        // A classroom that opens topics as the classes happen.
+        if let Command::StartLesson(topic) | Command::StartQuiz(topic) | Command::StartReview(topic) =
+            &command
+            && let Some(day) = self.topic_opens_on(*topic)
+        {
+            return Err(EngineError::TopicNotOpen(day));
+        }
         match command {
             Command::ImportEdital(path) => self.import_edital(path),
             Command::ClearEdital => {
@@ -1268,6 +1288,7 @@ impl Engine {
             Command::SuggestSessionPlans { plan, classroom } => {
                 self.suggest_session_plans(plan, classroom)
             }
+            Command::PublishSchedule { plan, classroom } => self.publish_schedule(plan, classroom),
             Command::ExportScheduleCalendar {
                 plan,
                 classroom,

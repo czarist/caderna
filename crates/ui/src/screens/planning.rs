@@ -201,6 +201,9 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
             (Some(saved), false) => {
                 toolbar(ui, engine, state, &saved.schedule, plan, &mut actions);
                 ui.add_space(8.0);
+                if let Some(version) = saved.published_version {
+                    widgets::hint(ui, &t!("planning.published_version", version = version));
+                }
                 sessions(ui, engine, state, &saved.schedule, plan, &mut actions);
             }
         }
@@ -431,6 +434,17 @@ fn toolbar(
             {
                 actions.send(Command::ReplanSchedule { plan, classroom });
                 state.editing = None;
+            }
+            if classroom != 0 {
+                if engine.publishing_schedule() == Some((plan, classroom)) {
+                    ui.spinner();
+                } else if ui
+                    .button(t!("planning.publish"))
+                    .on_hover_text(t!("planning.publish_hint"))
+                    .clicked()
+                {
+                    actions.send(Command::PublishSchedule { plan, classroom });
+                }
             }
             if ui.button(t!("planning.undo")).clicked() {
                 actions.send(Command::UndoSchedule { plan, classroom });

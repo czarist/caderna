@@ -65,6 +65,7 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
             widgets::hint(ui, &t!("today.study_time_hint"));
         });
         ui.add_space(14.0);
+        agenda(ui, engine);
         next_step(ui, engine, plan, &mut actions);
         ui.add_space(10.0);
         super::challenges::today_card(ui, engine, &mut actions);
@@ -72,6 +73,55 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
         this_week(ui, engine, plan, &mut actions);
     });
     actions.run(app);
+}
+
+/// The next class of each of the student's classroom schedules.
+fn agenda(ui: &mut egui::Ui, engine: &Engine) {
+    let items = engine.agenda(Engine::today());
+    if items.is_empty() {
+        return;
+    }
+    let p = crate::theme::palette(ui.ctx());
+    widgets::card(ui, |ui| {
+        ui.label(RichText::new(t!("today.agenda")).strong());
+        for item in items.iter().take(3) {
+            let session = &item.session;
+            ui.add_space(4.0);
+            ui.horizontal_wrapped(|ui| {
+                ui.label(
+                    RichText::new(format!(
+                        "{} · {}",
+                        i18n::date(session.date),
+                        session.start.format("%H:%M")
+                    ))
+                    .strong(),
+                );
+                widgets::chip(ui, &item.plan_title, p.muted);
+                if let kg_engine::SessionMode::Online(link) = &session.plan.mode {
+                    widgets::link(ui, &t!("today.agenda_join"), link);
+                }
+            });
+            if !item.topics.is_empty() {
+                ui.label(item.topics.join(" · "));
+            }
+            if !session.plan.note.is_empty() {
+                widgets::hint(ui, &session.plan.note);
+            }
+            if !session.plan.homework.is_empty() {
+                let homework: Vec<&str> = session
+                    .plan
+                    .homework
+                    .iter()
+                    .map(|a| a.text.as_str())
+                    .collect();
+                widgets::hint(
+                    ui,
+                    &t!("today.agenda_prepare", items = homework.join(" · ")),
+                );
+            }
+        }
+    });
+    ui.add_space(10.0);
 }
 
 fn study_duration(seconds: u64) -> String {

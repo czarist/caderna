@@ -182,6 +182,7 @@ edital:
   confirm_delete: "刪除這個計劃和全部進度？此操作無法撤銷。"
 
 plan:
+  opens_on: "%{date} 開放"
   prepare_all: "現在全部準備"
   prepare_all_hint: "為所有知識點補齊缺少的講義和測驗，並把完整 PDF 儲存到 %{app} 的資料夾。"
   prepare_title: "正在準備計劃的內容"
@@ -394,6 +395,9 @@ export:
     next_review: "下次複習"
 
 today:
+  agenda: "接下來的課程"
+  agenda_join: "進入課堂"
+  agenda_prepare: "課前準備：%{items}"
   greeting_named: "%{greeting}，%{name}"
   study_time: "今天的學習時間：%{duration}"
   study_time_hint: "只計算實際學習的時間，不含休息和無操作的時間。"
@@ -1606,6 +1610,13 @@ channel:
   dev: "開發環境"
 
 planning:
+  publish: "發布給班級"
+  publish_hint: "透過面板把日曆傳送給班級。你的個人備註不會傳送。"
+  published: "日曆已發布給班級。"
+  published_version: "已發布到面板（版本 %{version}）。修改後請重新發布。"
+  needs_classroom: "請選擇要發布日曆的班級。"
+  needs_course: "發布日曆前，請先在「班級」中把計畫發布給該班級。"
+  topic_opens: "此主題在 %{date}（第一堂課當天）開放。"
   suggest: "用 AI 為 %{count} 堂課建議計畫"
   suggest_hint: "AI 透過學校的面板為尚未規劃的課程建議教學目標、活動和作業。所有內容都會在應用程式中核對，你也可以編輯。"
   suggesting: "AI 正在規劃課程…"

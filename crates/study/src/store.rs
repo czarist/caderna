@@ -521,6 +521,19 @@ impl Store {
         .collect()
     }
 
+    /// The plan a topic belongs to.
+    pub fn plan_of_topic(&self, topic: TopicId) -> Result<Option<PlanId>> {
+        Ok(self
+            .conn
+            .query_row(
+                "SELECT s.plan_id FROM topics t JOIN subjects s ON s.id = t.subject_id
+                 WHERE t.id = ?1",
+                [topic.0],
+                |r| r.get(0).map(PlanId),
+            )
+            .optional()?)
+    }
+
     pub fn load_plan(&self, id: PlanId) -> Result<StudyPlan> {
         let header = self
             .conn
