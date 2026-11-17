@@ -1610,6 +1610,20 @@ channel:
   dev: "DEVELOPMENT"
 
 planning:
+  add_activity: "Add activity"
+  add_homework: "Add homework"
+  remove: "Remove"
+  minutes_over: "The activities add up to %{used} min, more than the class's %{length} min."
+  activity_kind:
+    explanation: "Explanation"
+    voice_lesson: "Voice lesson in the app"
+    handout_reading: "Handout reading"
+    quiz: "Quiz"
+    spoken_review: "Spoken review"
+    written_answer: "Written answer"
+    mock_exam: "Mock exam"
+    exercise: "Exercises in class"
+    other: "Other"
   publish: "Publish to the classroom"
   publish_hint: "Sends the calendar to the classroom through the panel. Your private notes stay here."
   published: "Calendar published to the classroom."

@@ -1610,6 +1610,20 @@ channel:
   dev: "開發環境"
 
 planning:
+  add_activity: "新增活動"
+  add_homework: "新增作業"
+  remove: "移除"
+  minutes_over: "活動共 %{used} 分鐘，超過本課的 %{length} 分鐘。"
+  activity_kind:
+    explanation: "講解"
+    voice_lesson: "應用程式內語音課"
+    handout_reading: "閱讀講義"
+    quiz: "測驗"
+    spoken_review: "口頭複習"
+    written_answer: "書面作答"
+    mock_exam: "模擬考"
+    exercise: "課堂練習"
+    other: "其他"
   publish: "發布給班級"
   publish_hint: "透過面板把日曆傳送給班級。你的個人備註不會傳送。"
   published: "日曆已發布給班級。"

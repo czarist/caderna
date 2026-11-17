@@ -6,8 +6,9 @@
 use chrono::{Datelike, NaiveDate, NaiveTime, Weekday};
 use egui::RichText;
 use kg_engine::{
-    CalendarLabels, ClassSchedule, ClassTime, Command, Engine, HolidayCalendar, PlanId,
-    ReleaseRule, ScheduleSpec, Session, SessionKind, SessionMode, SessionStatus,
+    Activity, ActivityKind, CalendarLabels, ClassSchedule, ClassTime, Command, Engine,
+    HolidayCalendar, PlanId, ReleaseRule, ScheduleSpec, Session, SessionKind, SessionMode,
+    SessionStatus,
 };
 
 use super::Actions;
@@ -137,6 +138,8 @@ struct Editing {
     note: String,
     private_note: String,
     link: String,
+    activities: Vec<Activity>,
+    homework: Vec<Activity>,
 }
 
 impl Editing {
@@ -151,7 +154,94 @@ impl Editing {
                 SessionMode::Online(link) => link.clone(),
                 _ => String::new(),
             },
+            activities: session.plan.activities.clone(),
+            homework: session.plan.homework.clone(),
         }
+    }
+}
+
+const ACTIVITY_KINDS: [ActivityKind; 9] = [
+    ActivityKind::Explanation,
+    ActivityKind::VoiceLesson,
+    ActivityKind::HandoutReading,
+    ActivityKind::Quiz,
+    ActivityKind::SpokenReview,
+    ActivityKind::WrittenAnswer,
+    ActivityKind::MockExam,
+    ActivityKind::Exercise,
+    ActivityKind::Other,
+];
+
+fn activity_kind_name(kind: ActivityKind) -> String {
+    match kind {
+        ActivityKind::Explanation => t!("planning.activity_kind.explanation"),
+        ActivityKind::VoiceLesson => t!("planning.activity_kind.voice_lesson"),
+        ActivityKind::HandoutReading => t!("planning.activity_kind.handout_reading"),
+        ActivityKind::Quiz => t!("planning.activity_kind.quiz"),
+        ActivityKind::SpokenReview => t!("planning.activity_kind.spoken_review"),
+        ActivityKind::WrittenAnswer => t!("planning.activity_kind.written_answer"),
+        ActivityKind::MockExam => t!("planning.activity_kind.mock_exam"),
+        ActivityKind::Exercise => t!("planning.activity_kind.exercise"),
+        ActivityKind::Other => t!("planning.activity_kind.other"),
+    }
+    .into_owned()
+}
+
+/// A list of activities edited in place: kind, minutes, text; add, remove
+/// and move up. Homework offers only what the student can do in the app.
+fn activity_list(ui: &mut egui::Ui, id: &str, list: &mut Vec<Activity>, homework: bool) {
+    let mut remove = None;
+    let mut raise = None;
+    let count = list.len();
+    for (i, activity) in list.iter_mut().enumerate() {
+        ui.horizontal(|ui| {
+            egui::ComboBox::from_id_salt((id, i))
+                .width(150.0)
+                .selected_text(activity_kind_name(activity.kind))
+                .show_ui(ui, |ui| {
+                    for kind in ACTIVITY_KINDS
+                        .into_iter()
+                        .filter(|k| !homework || k.works_as_homework())
+                    {
+                        ui.selectable_value(&mut activity.kind, kind, activity_kind_name(kind));
+                    }
+                });
+            ui.add(
+                egui::DragValue::new(&mut activity.minutes)
+                    .range(1..=600)
+                    .suffix(t!("planning.minutes_suffix")),
+            );
+            ui.add(egui::TextEdit::singleline(&mut activity.text).desired_width(300.0));
+            if i > 0 && ui.small_button("↑").clicked() {
+                raise = Some(i);
+            }
+            if ui.small_button(t!("planning.remove")).clicked() {
+                remove = Some(i);
+            }
+        });
+    }
+    if let Some(i) = raise {
+        list.swap(i - 1, i);
+    }
+    if let Some(i) = remove.filter(|i| *i < count) {
+        list.remove(i);
+    }
+    let label = if homework {
+        t!("planning.add_homework")
+    } else {
+        t!("planning.add_activity")
+    };
+    if ui.small_button(label).clicked() {
+        list.push(Activity {
+            kind: if homework {
+                ActivityKind::Quiz
+            } else {
+                ActivityKind::Explanation
+            },
+            minutes: 15,
+            text: String::new(),
+            topic: None,
+        });
     }
 }
 
@@ -663,16 +753,23 @@ fn details(
             ui.end_row();
         });
     let session = &schedule.sessions[index];
-    if !session.plan.activities.is_empty() {
-        ui.label(RichText::new(t!("planning.activities")).strong());
-        for activity in &session.plan.activities {
-            ui.label(format!(
-                "• {} — {}",
-                t!("planning.minutes", count = activity.minutes),
-                activity.text
-            ));
-        }
+    ui.add_space(6.0);
+    ui.label(RichText::new(t!("planning.activities")).strong());
+    activity_list(ui, "planning_activity", &mut editing.activities, false);
+    let used: u32 = editing.activities.iter().map(|a| a.minutes).sum();
+    if used > session.minutes {
+        widgets::hint(
+            ui,
+            &t!(
+                "planning.minutes_over",
+                used = used,
+                length = session.minutes
+            ),
+        );
     }
+    ui.add_space(6.0);
+    ui.label(RichText::new(t!("planning.homework")).strong());
+    activity_list(ui, "planning_homework", &mut editing.homework, true);
     let link = editing.link.trim();
     let link_ok = link.is_empty() || link.starts_with("https://");
     if !link_ok {
@@ -688,6 +785,17 @@ fn details(
         target.materials = lines(&editing.materials);
         target.note = editing.note.trim().to_owned();
         target.private_note = editing.private_note.trim().to_owned();
+        let filled = |list: &[Activity]| {
+            list.iter()
+                .filter(|a| !a.text.trim().is_empty())
+                .map(|a| Activity {
+                    text: a.text.trim().to_owned(),
+                    ..a.clone()
+                })
+                .collect::<Vec<_>>()
+        };
+        target.activities = filled(&editing.activities);
+        target.homework = filled(&editing.homework);
         target.mode = if link.is_empty() {
             match target.mode {
                 SessionMode::Online(_) => SessionMode::InPerson,

@@ -1610,6 +1610,20 @@ channel:
   dev: "開発環境"
 
 planning:
+  add_activity: "活動を追加"
+  add_homework: "宿題を追加"
+  remove: "削除"
+  minutes_over: "活動の合計は %{used} 分で、授業時間の %{length} 分を超えています。"
+  activity_kind:
+    explanation: "説明"
+    voice_lesson: "アプリの音声授業"
+    handout_reading: "プリントの読解"
+    quiz: "クイズ"
+    spoken_review: "口頭での復習"
+    written_answer: "記述解答"
+    mock_exam: "模試"
+    exercise: "授業内の演習"
+    other: "その他"
   publish: "クラスに公開"
   publish_hint: "パネルを通じてクラスにカレンダーを送ります。自分用のメモは送られません。"
   published: "カレンダーをクラスに公開しました。"
