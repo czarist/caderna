@@ -501,6 +501,46 @@ fn developer_tools(harness: &mut App<'_>, code: &str) {
         strip,
         "the channel strip is back"
     );
+
+    // The same views from Settings; the teacher checks lessons and quizzes.
+    // The developer window still covers the top of the screen, so these
+    // buttons are pressed through accessibility, not the pointer.
+    click(harness, &t!("nav.settings"));
+    let press = |harness: &mut App<'_>, label: &str| {
+        if let Some(node) = harness.query_all_by_label(label).next() {
+            node.click_accesskit();
+        }
+        frames(harness);
+    };
+    press(harness, &t!("settings.developer.teacher"));
+    assert_eq!(
+        engine(harness).developer_view(),
+        Some(kg_engine::UseRole::Teacher)
+    );
+    for label in [t!("nav.lesson_check"), t!("nav.quiz_check")] {
+        assert!(
+            harness.query_all_by_label(&label).next().is_some(),
+            "{label} in the teacher's sidebar"
+        );
+    }
+    press(harness, &t!("settings.developer.student"));
+    assert_eq!(
+        engine(harness).developer_view(),
+        Some(kg_engine::UseRole::Student)
+    );
+    assert!(
+        harness
+            .query_all_by_label(&t!("nav.lesson_check"))
+            .next()
+            .is_none()
+            && harness
+                .query_all_by_label(&t!("nav.lesson"))
+                .next()
+                .is_some(),
+        "the student takes lessons"
+    );
+    press(harness, &t!("settings.developer.licence"));
+    assert_eq!(engine(harness).developer_view(), None);
 }
 
 /// Types into the text field showing `hint`.

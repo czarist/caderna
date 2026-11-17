@@ -99,6 +99,16 @@ impl Screen {
         }
     }
 
+    /// The name in the sidebar: a teacher checks lessons and quizzes rather
+    /// than takes them.
+    fn nav_label(self, role: kg_engine::ClassRole) -> String {
+        match (self, role) {
+            (Self::Lesson, kg_engine::ClassRole::Teacher) => t!("nav.lesson_check").into_owned(),
+            (Self::Quiz, kg_engine::ClassRole::Teacher) => t!("nav.quiz_check").into_owned(),
+            _ => self.label(),
+        }
+    }
+
     fn label(self) -> String {
         match self {
             Self::Today => t!("nav.today"),
@@ -468,7 +478,7 @@ impl KnowGiverApp {
                     }
                     let selected = self.ui.screen == screen;
                     let color = if selected { p.accent } else { p.muted };
-                    let mut text = egui::RichText::new(screen.label());
+                    let mut text = egui::RichText::new(screen.nav_label(engine_badges.role));
                     if selected {
                         text = text.family(theme::strong_family()).color(p.text);
                     }

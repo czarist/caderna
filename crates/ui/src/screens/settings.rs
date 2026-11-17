@@ -24,6 +24,7 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
     widgets::header(ui, &t!("settings.title"), &t!("settings.subtitle"));
 
     egui::ScrollArea::vertical().show(ui, |ui| {
+        developer_views(ui, engine, &mut actions);
         section(ui, &t!("settings.you.title"), |ui| {
             name_field(ui, &mut draft.student_name);
         });
@@ -127,6 +128,50 @@ pub(crate) fn name_field(ui: &mut egui::Ui, name: &mut String) -> egui::Response
     );
     widgets::hint(ui, &t!("settings.you.name_hint"));
     response
+}
+
+/// Developer mode (Phase W9): open the student's or the teacher's view of
+/// the app, whatever the licence says. Only with a valid developer token.
+fn developer_views(ui: &mut egui::Ui, engine: &Engine, actions: &mut Actions) {
+    let valid = engine
+        .developer_status()
+        .is_some_and(|status| status.claims.is_some());
+    if !valid {
+        return;
+    }
+    let current = engine.developer_view();
+    section(ui, &t!("settings.developer.title"), |ui| {
+        widgets::hint(ui, &t!("settings.developer.hint"));
+        ui.horizontal_wrapped(|ui| {
+            for (view, label) in [
+                (
+                    Some(kg_engine::UseRole::Student),
+                    t!("settings.developer.student"),
+                ),
+                (
+                    Some(kg_engine::UseRole::Teacher),
+                    t!("settings.developer.teacher"),
+                ),
+            ] {
+                if ui
+                    .add_enabled(current != view, egui::Button::new(label))
+                    .clicked()
+                {
+                    actions.send(Command::DeveloperView(view));
+                }
+            }
+            if current.is_some() && ui.button(t!("settings.developer.licence")).clicked() {
+                actions.send(Command::DeveloperView(None));
+            }
+        });
+        let now = match current {
+            Some(kg_engine::UseRole::Student) => t!("settings.developer.now_student"),
+            Some(kg_engine::UseRole::Teacher) => t!("settings.developer.now_teacher"),
+            None => t!("settings.developer.now_licence"),
+        };
+        ui.label(RichText::new(now).small());
+    });
+    ui.add_space(12.0);
 }
 
 fn section(ui: &mut egui::Ui, title: &str, add: impl FnOnce(&mut egui::Ui)) {

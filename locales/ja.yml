@@ -123,6 +123,8 @@ nav:
   board: "過去問"
   lesson: "レッスン"
   quiz: "クイズ"
+  lesson_check: "授業を確認"
+  quiz_check: "クイズを確認"
   review: "復習"
   progress: "進捗"
   challenges: "実績"
@@ -844,6 +846,15 @@ settings:
     piper_note: "Piper はプロジェクト公式の GitHub ページ（rhasspy/piper）からダウンロードします。"
     piper_unavailable: "Piper には macOS で動作する公式ビルドがありません。sherpa-onnx で動く Kokoro の音声を使ってください。"
     unavailable: "このシステムでは利用できません"
+  developer:
+    title: "開発者モード"
+    hint: "ライセンスに関係なく、生徒または先生の画面でアプリを表示します。アプリを閉じるまで有効です。"
+    student: "生徒の画面を開く"
+    teacher: "先生の画面を開く"
+    licence: "ライセンスの画面に戻る"
+    now_student: "現在：生徒の画面。"
+    now_teacher: "現在：先生の画面。"
+    now_licence: "現在：ライセンスが決める画面。"
 
 models:
   kokoro_runtime: "Sherpa-ONNX（Kokoro と Parakeet）"

@@ -123,6 +123,8 @@ nav:
   board: "Past exams"
   lesson: "Lesson"
   quiz: "Quiz"
+  lesson_check: "Check lessons"
+  quiz_check: "Check quizzes"
   review: "Review"
   progress: "Progress"
   challenges: "Achievements"
@@ -844,6 +846,15 @@ settings:
     piper_note: "Piper is downloaded from the project's official GitHub page (rhasspy/piper)."
     piper_unavailable: "Piper has no official build that works on macOS. Use the Kokoro voices, which run on sherpa-onnx."
     unavailable: "Not available on this system"
+  developer:
+    title: "Developer mode"
+    hint: "See the app as a student or as a teacher, whatever the licence. Lasts until the app closes."
+    student: "Open the student's view"
+    teacher: "Open the teacher's view"
+    licence: "Back to the licence's view"
+    now_student: "Now: the student's view."
+    now_teacher: "Now: the teacher's view."
+    now_licence: "Now: the view the licence sets."
 
 models:
   kokoro_runtime: "Sherpa-ONNX (Kokoro and Parakeet)"
