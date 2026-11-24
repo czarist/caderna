@@ -133,15 +133,18 @@ jobs:
             dist/*.tar.gz
           if-no-files-found: error
 
-  # Publication is explicit, uses the brand repository, and requires reviewed inputs.
+  # A version tag publishes the default brand's unsigned packages in this repository.
+  # A signed client release is explicit, uses the brand repository and reviewed inputs.
   release:
     needs: package
-    if: github.event_name == 'workflow_dispatch' && inputs.publish
-    environment: client-release
+    if: >-
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.publish)
+    environment: ${{ inputs.publish && 'client-release' || '' }}
     env:
       DATA_DIR: ${{ needs.package.outputs.data_dir }}
-      RELEASE_REPO: ${{ inputs.target_repository }}
-      RELEASE_TAG: ${{ inputs.release_tag }}
+      RELEASE_REPO: ${{ inputs.publish && inputs.target_repository || github.repository }}
+      RELEASE_TAG: ${{ inputs.publish && inputs.release_tag || github.ref_name }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -177,5 +180,5 @@ jobs:
           test -s notes.md || echo "$DATA_DIR $RELEASE_TAG" > notes.md
       - name: Publish
         env:
-          GH_TOKEN: ${{ secrets.CLIENT_RELEASE_TOKEN }}
+          GH_TOKEN: ${{ inputs.publish && secrets.CLIENT_RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
         run: gh release create "$RELEASE_TAG" release/* --repo "$RELEASE_REPO" --title "$DATA_DIR $RELEASE_TAG" --notes-file notes.md --verify-tag
