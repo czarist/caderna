@@ -9,6 +9,11 @@ repository.
 
 ## [Unreleased]
 
+### Fixed
+- A course received from a classroom no longer replaces the plan the student has open
+  when that plan was opened without being chosen (for example, the only plan, or one
+  from an earlier course). The end-to-end test stopped at the handout because of it.
+
 ## [0.5.1] - 2026-11-24
 
 ### Added
