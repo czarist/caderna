@@ -5,9 +5,13 @@
 //! (it needs an exam notice and the AI); everything else goes through the UI.
 //!
 //! With a brand that has a panel (the Caderna build `cargo test` uses here)
-//! it needs that panel running and a test licence's access code:
+//! it needs that panel running and a student who signs in (the panel's
+//! `DevTestSeeder` makes them), or a test licence's access code typed in the
+//! developer key box:
 //!
 //! ```sh
+//! KG_E2E_EMAIL=aluno.completo@caderna.test KG_E2E_PASSWORD=caderna-teste \
+//!   cargo test -p kg-ui e2e -- --ignored --nocapture
 //! KG_E2E_CODE=XXXX-XXXX-XXXX-XXXX cargo test -p kg-ui e2e -- --ignored --nocapture
 //! ```
 //!
@@ -192,18 +196,38 @@ fn activated(body: impl FnOnce(&mut App<'_>)) {
     frames(&mut harness);
     assert_eq!(harness.state().ui.screen, Screen::Setup);
 
-    // 0. A brand with a panel opens on the licence: type the code, activate.
+    // 0. A brand with a panel opens on the sign-in: email and password, or
+    // (development builds) the access code under the developer key box.
     if kg_brand::has_server() {
-        let code = std::env::var("KG_E2E_CODE").expect("KG_E2E_CODE: a test licence's access code");
         assert!(
             harness
-                .query_all_by_label(&t!("licensing.activate"))
+                .query_all_by_label(&t!("panel.sign_in.submit"))
                 .next()
                 .is_some(),
-            "a new copy asks for the licence first"
+            "a new copy asks to sign in first"
         );
-        type_in_field(&mut harness, &code);
-        click(&mut harness, &t!("licensing.activate"));
+        match (
+            std::env::var("KG_E2E_EMAIL"),
+            std::env::var("KG_E2E_PASSWORD"),
+        ) {
+            (Ok(email), Ok(password)) => {
+                type_in_field_labeled(&mut harness, &t!("panel.sign_in.email_hint"), &email);
+                type_in_nth_field(&mut harness, 1, &password);
+                click(&mut harness, &t!("panel.sign_in.submit"));
+            }
+            _ => {
+                let code = std::env::var("KG_E2E_CODE")
+                    .expect("KG_E2E_EMAIL and KG_E2E_PASSWORD, or KG_E2E_CODE");
+                click(&mut harness, &t!("panel.sign_in.developer_key"));
+                let fields = harness
+                    .query_all_by(|n| {
+                        matches!(n.role(), Role::TextInput | Role::MultilineTextInput)
+                    })
+                    .count();
+                type_in_nth_field(&mut harness, fields - 1, &code);
+                click(&mut harness, &t!("licensing.activate"));
+            }
+        }
         wait_for(
             &mut harness,
             "the activation",
@@ -541,6 +565,35 @@ fn developer_tools(harness: &mut App<'_>, code: &str) {
     );
     press(harness, &t!("settings.developer.licence"));
     assert_eq!(engine(harness).developer_view(), None);
+}
+
+/// Clicks the `n`th text field on screen (from 0) and types into it.
+fn type_in_nth_field(harness: &mut App<'_>, n: usize, text: &str) {
+    let Some(node) = harness
+        .query_all_by(|node| {
+            matches!(
+                node.role(),
+                Role::TextInput | Role::MultilineTextInput | Role::PasswordInput
+            )
+        })
+        .nth(n)
+    else {
+        panic!("no text field {n}; labels {:?}", labels(harness));
+    };
+    node.click();
+    frames(harness);
+    if let Some(node) = harness
+        .query_all_by(|node| {
+            matches!(
+                node.role(),
+                Role::TextInput | Role::MultilineTextInput | Role::PasswordInput
+            ) && node.is_focused()
+        })
+        .next()
+    {
+        node.type_text(text);
+    }
+    frames(harness);
 }
 
 /// Types into the text field showing `hint`.

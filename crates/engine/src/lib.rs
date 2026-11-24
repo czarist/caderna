@@ -38,6 +38,7 @@ mod server;
 mod settings;
 mod setup;
 mod shared;
+mod sign_in;
 mod stt;
 mod study_time;
 mod teacher;
@@ -135,6 +136,7 @@ pub use settings::{
     TERMS_VERSION, TURN_PAUSE_RANGE, TermsAcceptance, UseRole,
 };
 pub use setup::ModelList;
+pub use sign_in::{Captcha, SignInView, plausible_email};
 pub use study_time::StudyPresence;
 pub use teacher::Teacher;
 pub use update::{REPOSITORY, Release, UpdateStatus};
@@ -208,8 +210,24 @@ pub enum Command {
     CloseReview,
 
     SaveSettings(Settings),
-    /// Activates a licence key: offline, or with the brand's panel when it has one.
+    /// Activates a licence key: offline, or with the brand's panel when it
+    /// has one (there only in developer mode and tests, see
+    /// [`Engine::key_entry_allowed`]).
     ActivateLicense(String),
+    /// Signs in to the brand's panel as a student or teacher. `captcha` is the
+    /// code typed from the picture, when the panel asked for one.
+    SignIn {
+        email: String,
+        password: String,
+        captcha: String,
+    },
+    /// Asks the panel for a new captcha picture.
+    LoadCaptcha,
+    /// Asks the panel to email a link for a new password.
+    RequestPasswordReset {
+        email: String,
+        captcha: String,
+    },
     /// Activates this computer with the panel again, with the kept licence key.
     ReactivateDevice,
     /// Frees this computer's seat in the panel and forgets the licence here.
@@ -707,6 +725,7 @@ pub(crate) enum Event {
     },
     PanelChecked(Result<server::CheckIn, server::PanelError>),
     PanelSignedOut(Result<(), server::PanelError>),
+    SignIn(sign_in::SignInEvent),
     TeacherDownloaded(Result<classes::TeacherDownload, server::PanelError>),
     ClassesDownloaded(Result<classes::SyncDownload, server::PanelError>),
     ProgressUploaded(Result<(), server::PanelError>),
@@ -1265,10 +1284,25 @@ impl Engine {
             Command::SaveSettings(settings) => self.save_settings(settings),
             Command::ActivateLicense(token) => {
                 if kg_brand::has_server() {
-                    self.activate_online(&token)
+                    if !self.key_entry_allowed() {
+                        return Err(server::PanelError::Refused(Refusal::SignInRequired).into());
+                    }
+                    self.activate_online(&token, false)
                 } else {
                     self.activate_license(&token).map_err(EngineError::from)
                 }
+            }
+            Command::SignIn {
+                email,
+                password,
+                captcha,
+            } => self.sign_in(&email, &password, &captcha),
+            Command::LoadCaptcha => {
+                self.load_captcha();
+                Ok(())
+            }
+            Command::RequestPasswordReset { email, captcha } => {
+                self.request_password_reset(&email, &captcha)
             }
             Command::ReactivateDevice => self.reactivate_device(),
             Command::SignOutDevice => {
@@ -1579,6 +1613,7 @@ impl Engine {
                     Ok(())
                 }
                 Event::PanelSignedOut(result) => self.on_panel_signed_out(result),
+                Event::SignIn(event) => self.on_sign_in_event(event),
                 Event::ClassesDownloaded(result) => self.on_classes_downloaded(result),
                 Event::TeacherDownloaded(result) => self.on_teacher_downloaded(result),
                 Event::ProgressUploaded(result) => {

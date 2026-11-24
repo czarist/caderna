@@ -1,6 +1,6 @@
 # Política de Privacidade do {{app}}
 
-Versão {{version}} · Última atualização: 17 de novembro de 2026 (3).
+Versão {{version}} · Última atualização: 23 de novembro de 2026.
 
 Esta Política explica como tratamos dados pessoais no aplicativo {{app}}, no painel da
 escola (área do cliente) e no site do {{app}}, de acordo com a Lei nº 13.709/2018 (Lei Geral
@@ -50,6 +50,9 @@ de Proteção de Dados, LGPD). Ela faz parte dos Termos de Uso.
 **Professores e alunos (cadastrados pela Escola)**
 
 - Nome, email, turmas e a licença de cada um.
+- A senha de acesso ao aplicativo, criada pelo próprio professor ou aluno pelo link enviado
+  por email. O Painel guarda só um resumo criptográfico (hash) que não permite recuperá-la,
+  e o aplicativo não a guarda no computador.
 - Do professor: os planos que ele publica (título, prova, matérias, tópicos, programa da
   prova, apostilas e questões) e, com o Planejamento de aulas, o calendário de aulas de cada
   turma (datas, horários, tópicos, objetivos, atividades, materiais, tarefas, recados aos
@@ -90,6 +93,7 @@ gravações de tela. Essa lista é lida no computador e não é guardada nem env
 
 | Para | O quê | Quando |
 |---|---|---|
+| Painel | Ao entrar: email e senha (por conexão criptografada) e, depois de tentativas erradas, o código digitado de uma imagem de verificação | Ao entrar no aplicativo e ao pedir uma nova senha |
 | Painel | Chave de licença; código do computador (identificador do sistema passado por hash); versão do app; sistema operacional; endereço IP | Ao ativar, ao abrir o app e a cada hora |
 | Painel, que repassa ao fornecedor de IA | Trechos do programa da prova e dos materiais, tópicos, mensagens e respostas, o nome do aluno (para o tutor chamá-lo) e textos das apostilas | Em cada tarefa de IA |
 | Painel, para o modelo de visão do fornecedor de IA | Fotos de respostas discursivas e páginas de PDFs escaneados | Só quando o usuário escolhe a leitura pela nuvem; por padrão, as fotos são lidas no computador |
