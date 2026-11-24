@@ -22,12 +22,12 @@
   <a href="https://github.com/emilk/egui"><img alt="UI: egui" src="https://img.shields.io/badge/UI-egui%200.36-52613c?style=flat-square"></a>
   <a href="https://www.sqlite.org"><img alt="Storage: SQLite" src="https://img.shields.io/badge/storage-SQLite-52613c?style=flat-square&logo=sqlite&logoColor=white"></a>
   <a href="https://typst.app"><img alt="Handouts: Typst" src="https://img.shields.io/badge/handouts-Typst-52613c?style=flat-square&logo=typst&logoColor=white"></a>
-  <img alt="Speech to text: Whisper and Parakeet" src="https://img.shields.io/badge/speech-Whisper%20%C2%B7%20Parakeet-52613c?style=flat-square&logo=huggingface&logoColor=white">
+  <a href="https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b"><img alt="Speech to text: Nemotron, Parakeet and Whisper" src="https://img.shields.io/badge/speech-Nemotron%20%C2%B7%20Parakeet%20%C2%B7%20Whisper-52613c?style=flat-square&logo=huggingface&logoColor=white"></a>
   <a href="https://github.com/rhasspy/piper"><img alt="Voices: Piper and Kokoro" src="https://img.shields.io/badge/voices-Piper%20%C2%B7%20Kokoro-52613c?style=flat-square"></a>
   <img alt="AI: OpenAI-compatible APIs and GitHub Copilot" src="https://img.shields.io/badge/AI-OpenAI--compatible-52613c?style=flat-square&logo=ollama&logoColor=white">
   <img alt="Sign in: ChatGPT, Claude Code, GitHub Copilot" src="https://img.shields.io/badge/Sign%20in-ChatGPT%20%C2%B7%20Claude%20Code%20%C2%B7%20Copilot-52613c?style=flat-square&logo=openid&logoColor=white">
-  <a href="https://github.com/ggml-org/llama.cpp"><img alt="OCR runtime: llama.cpp" src="https://img.shields.io/badge/OCR-llama.cpp-52613c?style=flat-square"></a>
-  <a href="https://www.vulkan.org/"><img alt="GPU acceleration: Vulkan" src="https://img.shields.io/badge/GPU-Vulkan-52613c?style=flat-square&logo=vulkan&logoColor=white"></a>
+  <a href="https://github.com/ggml-org/llama.cpp"><img alt="Handwriting OCR: PaddleOCR-VL on llama.cpp" src="https://img.shields.io/badge/OCR-PaddleOCR--VL%20%C2%B7%20llama.cpp-52613c?style=flat-square"></a>
+  <img alt="GPU acceleration: CUDA, Vulkan and Metal" src="https://img.shields.io/badge/GPU-CUDA%20%C2%B7%20Vulkan%20%C2%B7%20Metal-52613c?style=flat-square&logo=vulkan&logoColor=white">
   <img alt="Windows" src="https://img.shields.io/badge/-Windows-52613c?style=flat-square&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0wIDBoMTEuNHYxMS40SDB6TTEyLjYgMEgyNHYxMS40SDEyLjZ6TTAgMTIuNmgxMS40VjI0SDB6TTEyLjYgMTIuNkgyNFYyNEgxMi42eiIvPjwvc3ZnPg%3D%3D&logoColor=white&labelColor=111111">
   <img alt="macOS" src="https://img.shields.io/badge/-macOS-52613c?style=flat-square&logo=apple&logoColor=white&labelColor=111111">
   <img alt="Linux" src="https://img.shields.io/badge/-Linux-52613c?style=flat-square&logo=linux&logoColor=white&labelColor=111111">
@@ -74,6 +74,10 @@
 老师按照课程安排一步步讲解知识点：每一步讲到讲义的要点，确认你理解后再继续，并覆盖测验会考的所有内容。最后有总结和测验提示。每节课有三种类型：「直击重点」（考什么、规则和陷阱）、「均衡」和「深入」（原因、例外、过去的考题，最后写一段回答）。在课程按钮旁的 ▾ 中选择，应用会根据你的数据给出建议（新主题或薄弱主题建议深入，已掌握或临近考试建议直击重点）；上课中可用「讲得更深」「讲得更短」或直接说出来，不用重来就能改变剩下的内容，之后的测验也会随之调整。
 
 **中文课堂目前通过文字进行。** 语音（本地语音识别和朗读）目前支持葡萄牙语和英语，中文语音将在之后支持。也可以在设置中使用云端语音服务。
+
+内存 8 GB 或以上的电脑上，葡萄牙语语音识别默认使用 **Nemotron 3.5**（NVIDIA）；低于 8 GB 时仍默认使用 Parakeet。可以在设置 →「语音」中更改。Nemotron 按指定的语言识别，而不是自己猜测语言；在首轮测试中，错误约为 Parakeet 的一半。NVIDIA 显卡用 CUDA，AMD 或 Intel 显卡用 Vulkan，没有独立显卡时用 CPU。
+
+**系统要求：** 内存至少 8 GB。推荐：16 GB 内存和 4 GB 独立显卡。有 2 GB 或以上的独立显卡时，Nemotron 在显卡上运行；内存低于 8 GB 时由 Parakeet 识别语音。语音和语音识别模型约需 2 GB 磁盘空间，首次需要时下载。
 
 AI 可以使用任何兼容 OpenAI 的模型（Z.ai、DeepSeek、Qwen、Kimi、Anthropic、OpenAI、Gemini、Ollama 等），给老师的指令（提示词）会跟随应用语言使用中文。
 

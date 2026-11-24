@@ -3980,10 +3980,12 @@ dependencies = [
  "tar",
  "tempfile",
  "thiserror 2.0.21",
+ "toml 0.9.12+spec-1.1.0",
  "tracing",
  "tracing-subscriber",
  "tungstenite",
  "ureq",
+ "windows-sys 0.61.2",
  "zip 9.1.2",
 ]
 

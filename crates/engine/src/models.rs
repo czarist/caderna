@@ -48,6 +48,10 @@ impl Engine {
         if id == ModelId::Parakeet {
             self.download_model(ModelId::KokoroRuntime);
         }
+        // Nemotron runs on the NeMo-Speech.cpp server.
+        if id == ModelId::Nemotron {
+            self.download_model(ModelId::NemoSpeechRuntime);
+        }
         let progress = Arc::new(AtomicU64::new(0));
         let cancel = Arc::new(AtomicBool::new(false));
         self.downloads.insert(
@@ -116,10 +120,11 @@ impl Engine {
         if !self.local_speech_language() {
             return Vec::new();
         }
-        let mut wanted = vec![match self.settings.stt_engine {
-            SttEngine::Parakeet => ModelId::Parakeet,
-            SttEngine::Whisper => ModelId::Whisper(self.settings.whisper_model),
-        }];
+        let mut wanted = match self.settings.stt_engine {
+            SttEngine::Parakeet => vec![ModelId::Parakeet],
+            SttEngine::Nemotron => vec![ModelId::NemoSpeechRuntime, ModelId::Nemotron],
+            SttEngine::Whisper => vec![ModelId::Whisper(self.settings.whisper_model)],
+        };
         if self.settings.voice_enabled && self.settings.tts_backend == TtsBackend::Local {
             let voice = self.settings.voice;
             wanted.push(voice.runtime_id());
@@ -132,9 +137,22 @@ impl Engine {
             .collect()
     }
 
+    /// The recognizer for this computer: Nemotron with 8 GB of memory or
+    /// more, Parakeet otherwise.
+    pub fn recommended_stt(&self) -> kg_audio::SttEngine {
+        kg_audio::SpeechHardware::detect().recommended_stt()
+    }
+
     /// True when speech recognition can run.
     pub fn stt_ready(&self) -> bool {
         self.local_speech_language() && self.stt_job().is_some()
+    }
+
+    /// True when what the student says always comes out in Portuguese
+    /// (Whisper chosen, or installed to read again what Parakeet heard as
+    /// another language).
+    pub fn stt_keeps_portuguese(&self) -> bool {
+        self.stt_job().is_none_or(|job| job.keeps_portuguese())
     }
 
     /// The local voices and speech recognition handle the app's language.

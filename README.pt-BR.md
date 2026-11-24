@@ -22,12 +22,12 @@
   <a href="https://github.com/emilk/egui"><img alt="UI: egui" src="https://img.shields.io/badge/UI-egui%200.36-52613c?style=flat-square"></a>
   <a href="https://www.sqlite.org"><img alt="Storage: SQLite" src="https://img.shields.io/badge/storage-SQLite-52613c?style=flat-square&logo=sqlite&logoColor=white"></a>
   <a href="https://typst.app"><img alt="Handouts: Typst" src="https://img.shields.io/badge/handouts-Typst-52613c?style=flat-square&logo=typst&logoColor=white"></a>
-  <img alt="Speech to text: Whisper and Parakeet" src="https://img.shields.io/badge/speech-Whisper%20%C2%B7%20Parakeet-52613c?style=flat-square&logo=huggingface&logoColor=white">
+  <a href="https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b"><img alt="Speech to text: Nemotron, Parakeet and Whisper" src="https://img.shields.io/badge/speech-Nemotron%20%C2%B7%20Parakeet%20%C2%B7%20Whisper-52613c?style=flat-square&logo=huggingface&logoColor=white"></a>
   <a href="https://github.com/rhasspy/piper"><img alt="Voices: Piper and Kokoro" src="https://img.shields.io/badge/voices-Piper%20%C2%B7%20Kokoro-52613c?style=flat-square"></a>
   <img alt="AI: OpenAI-compatible APIs and GitHub Copilot" src="https://img.shields.io/badge/AI-OpenAI--compatible-52613c?style=flat-square&logo=ollama&logoColor=white">
   <img alt="Sign in: ChatGPT, Claude Code, GitHub Copilot" src="https://img.shields.io/badge/Sign%20in-ChatGPT%20%C2%B7%20Claude%20Code%20%C2%B7%20Copilot-52613c?style=flat-square&logo=openid&logoColor=white">
-  <a href="https://github.com/ggml-org/llama.cpp"><img alt="OCR runtime: llama.cpp" src="https://img.shields.io/badge/OCR-llama.cpp-52613c?style=flat-square"></a>
-  <a href="https://www.vulkan.org/"><img alt="GPU acceleration: Vulkan" src="https://img.shields.io/badge/GPU-Vulkan-52613c?style=flat-square&logo=vulkan&logoColor=white"></a>
+  <a href="https://github.com/ggml-org/llama.cpp"><img alt="Handwriting OCR: PaddleOCR-VL on llama.cpp" src="https://img.shields.io/badge/OCR-PaddleOCR--VL%20%C2%B7%20llama.cpp-52613c?style=flat-square"></a>
+  <img alt="GPU acceleration: CUDA, Vulkan and Metal" src="https://img.shields.io/badge/GPU-CUDA%20%C2%B7%20Vulkan%20%C2%B7%20Metal-52613c?style=flat-square&logo=vulkan&logoColor=white">
   <img alt="Windows" src="https://img.shields.io/badge/-Windows-52613c?style=flat-square&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0wIDBoMTEuNHYxMS40SDB6TTEyLjYgMEgyNHYxMS40SDEyLjZ6TTAgMTIuNmgxMS40VjI0SDB6TTEyLjYgMTIuNkgyNFYyNEgxMi42eiIvPjwvc3ZnPg%3D%3D&logoColor=white&labelColor=111111">
   <img alt="macOS" src="https://img.shields.io/badge/-macOS-52613c?style=flat-square&logo=apple&logoColor=white&labelColor=111111">
   <img alt="Linux" src="https://img.shields.io/badge/-Linux-52613c?style=flat-square&logo=linux&logoColor=white&labelColor=111111">
@@ -88,10 +88,23 @@ a aula toda, vozes baixas são amplificadas antes do reconhecimento, e a sua vez
 depois de uma pausa que você escolhe nas Configurações, para dar tempo de pensar numa
 palavra.
 
+O **Nemotron 3.5** (NVIDIA) é o reconhecimento de voz padrão a partir de 8 GB de
+memória; abaixo disso, o padrão continua sendo o Parakeet. Dá para trocar em
+Configurações → Voz. O Nemotron recebe o idioma em vez de adivinhar e, nos primeiros
+testes, errou cerca de metade do que o Parakeet erra. Roda com CUDA nas placas NVIDIA,
+Vulkan nas AMD e Intel e, sem placa dedicada, no processador.
+
+**Requisitos do sistema:** mínimo de 8 GB de memória. Recomendado: 16 GB e placa de
+vídeo dedicada com 4 GB. A placa dedicada roda o Nemotron quando tem 2 GB ou mais;
+abaixo de 8 GB de memória, quem reconhece a fala é o Parakeet. Cerca de 2 GB de disco
+para os modelos de voz e de reconhecimento, baixados quando você precisa deles pela
+primeira vez.
+
 ### 🗣️ Fala
 O tutor começa a falar já na primeira frase da resposta, diz "Hum." enquanto pensa e
-só escuta quando passa a vez para você ou quando você aperta o microfone. As legendas acompanham a voz, frase a frase. Mãos livres, apertar
-para falar (Espaço) ou digitando.
+escuta quando você aperta o microfone (ou segura Espaço), ou sozinho quando termina com uma
+pergunta. Apertar o microfone enquanto ele fala faz ele parar. As legendas acompanham a voz,
+frase a frase, e a transcrição fica aberta ao lado da aula, onde você também pode digitar.
 
 ### 🧭 Uma aula com começo e fim
 Cada aula segue um roteiro feito a partir da apostila do tópico (ou escrito pelo
@@ -488,7 +501,7 @@ crates/
   engine/   # estado do app, comandos, trabalho em segundo plano, ciclo de voz
   study/    # planos, revisões (SM-2), quizzes, armazenamento SQLite
   ai/       # cliente compatível com OpenAI + prompts (crates/ai/prompts/{pt,en})
-  audio/    # captura do microfone, STT Parakeet/Whisper, TTS Piper/Kokoro, reprodução, downloads
+  audio/    # captura do microfone, STT Parakeet/Nemotron/Whisper, TTS Piper/Kokoro, reprodução, downloads
   pdf/      # extração do texto do programa da prova, cargos
   handout/  # apostilas renderizadas em PDF com Typst
 locales/    # traduções da interface (pt-BR, en, ja, zh-Hans, zh-Hant)
@@ -516,6 +529,7 @@ Verificações manuais com os serviços reais (precisam do `.env` e de rede):
 cargo run -p kg-ai --example live_check                          # todas as tarefas de IA (KG_PROMPT_LANG=en para prompts em inglês)
 cargo run -p kg-engine --example e2e -- edital.pdf                # importar → plano → quiz → revisão → apostila
 cargo run --release -p kg-audio --example parakeet_check -- <pasta-dos-modelos> fala.wav
+cargo run --release -p kg-audio --example nemotron_check -- <pasta-dos-modelos> rec/   # Nemotron (pt-BR) × Parakeet, WAVs ou pastas
 KG_SNAPSHOT_DIR=shots cargo test -p kg-ui snapshots -- --ignored  # gera um PNG de cada tela
 KG_SNAPSHOT_SIZE=1920x1080 KG_SNAPSHOT_LOCALE=pt-BR KG_SNAPSHOT_BOARD_SCALE=1.92 KG_SNAPSHOT_DIR=shots \
   cargo test -p kg-ui snapshots -- --ignored --test-threads=1   # Full HD, um idioma (site)
@@ -542,6 +556,8 @@ Mais: [builds nativos/CUDA](docs/builds.md), [avaliação do Kokoro](docs/kokoro
   legenda traz também o autor e a licença lidos na Wikimedia, e a bibliografia do tópico
   lista o artigo e o arquivo da imagem.
 - Ícones: [Lucide](https://lucide.dev), licença ISC (`crates/ui/assets/icons`).
+- Reconhecimento de fala Nemotron (baixado sob demanda): [nvidia/nemotron-3.5-asr-streaming-0.6b](https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b),
+  OpenMDW-1.1, executado pelo [NeMo-Speech.cpp](https://github.com/NVIDIA/NeMo-Speech.cpp) da NVIDIA, Apache-2.0.
 - Ícones das conquistas (`crates/ui/assets/stickers`): SVGs originais feitos para o Know
   Giver, sob a licença do projeto.
 - Logos dos fornecedores de IA: [Simple Icons](https://simpleicons.org), CC0

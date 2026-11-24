@@ -3,6 +3,7 @@
 *.sqlite
 .env
 /dist
+/rec/
 /branding/private/
 *.pk8
 *.pfx
