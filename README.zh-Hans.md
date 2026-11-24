@@ -250,7 +250,7 @@ cargo run -p kg-engine --example license_issue -- keygen private.pk8 public.txt
 cargo run -p kg-engine --example license_issue -- sign private.pk8 claims.json license.txt
 ```
 
-**CADERNA-DASHBOARD**：一个独立的 Laravel 和 Filament 项目是 Caderna 的管理面板：在那里审核客户，设置每个客户的颜色、图片和文本，并以应用离线验证的同一格式签发试用令牌和许可证。学校还有一个客户专区，可以登记学生，并通过 Pix 或信用卡支付面板开出的账单（经 Asaas，最多免息分 3 期）。它还提供兼容 OpenAI 的 AI 网关，服务商密钥只保存在服务器上；可通过 Docker 或本地 PHP 环境运行（[czarist/caderna-dashboard](https://github.com/czarist/caderna-dashboard)）。设置 `[server] url` 后，应用会在面板上激活许可证（每台电脑一个席位，7 天有效的设备令牌保存在操作系统的凭据存储中并自动续期），每小时核对一次，无法连接面板时仍可使用 14 天。它还会下载客户的名称、颜色、链接、图片和文本（下次启动时生效），并通过面板发送 AI 请求，因此学生不需要 AI 密钥。面板收到的是许可证密钥、电脑标识的哈希、应用版本、操作系统和 AI 请求，从不发送电脑名称；Caderna 的隐私政策也写明了这一点。详见 [branding/README.md](branding/README.md)。
+**CADERNA-DASHBOARD**：一个独立的 Laravel 和 Filament 项目是 Caderna 的管理面板：在那里审核客户，设置每个客户的颜色、图片和文本，并以应用离线验证的同一格式签发试用令牌和许可证。学校还有一个客户专区，可以登记学生，并通过 Pix 或信用卡支付面板开出的账单（经 Asaas，最多免息分 3 期）。它还提供兼容 OpenAI 的 AI 网关，服务商密钥只保存在服务器上；可通过 Docker 或本地 PHP 环境运行（[czarist/caderna-dashboard](https://github.com/czarist/caderna-dashboard)）。设置 `[server] url` 后，学生和教师使用学校登记的电子邮箱和通过邮件链接创建的密码登录（连续输错两次后，面板会要求输入它自己绘制的图片中的验证码；输入许可证密钥仅用于开发者模式和开发构建）。随后应用会在面板上激活许可证（每台电脑一个席位，7 天有效的设备令牌保存在操作系统的凭据存储中并自动续期），每小时核对一次，无法连接面板时仍可使用 14 天。它还会下载客户的名称、颜色、链接、图片和文本（下次启动时生效），并通过面板发送 AI 请求，因此学生不需要 AI 密钥。面板收到的是登录邮箱和密码（密码只保存哈希）、许可证密钥、电脑标识的哈希、应用版本、操作系统和 AI 请求，从不发送电脑名称；Caderna 的隐私政策也写明了这一点。详见 [branding/README.md](branding/README.md)。
 
 **云端班级**：学校在客户专区把每个人登记为老师或学生，并建立班级。老师在 Caderna 中创建计划，在“班级”页面把计划连同已做好的讲义和题目发布到班级，并能按学生查看已掌握的主题、正确率、课程、学习时长和最近活动。学生只能使用班级收到的内容（课程、测验、讲义和阅读材料），不能创建科目。学生的进度保存在面板上，换电脑也能恢复；两台电脑都离线学习过时，应用会合并两边的进度且不重复。向 AI 请求计划、讲义或题目之前，应用会先在**共享库**中查找任何学校提出过的相同请求，并共享 AI 生成的内容，以减少 AI 用量；共享库只收 AI 生成的材料，绝不包含学生数据或学校上传的试题。
 

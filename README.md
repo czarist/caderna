@@ -441,11 +441,15 @@ Schools get a client area there to enrol their students and to pay the panel's c
 Pix or credit card (up to 3 instalments without interest, through Asaas).
 It also runs an OpenAI-compatible AI gateway whose provider keys stay on the server, and
 runs with Docker or a local PHP install ([czarist/caderna-dashboard](https://github.com/czarist/caderna-dashboard)).
-With `[server] url` set, the app activates the licence there (one seat per computer, a
+With `[server] url` set, students and teachers sign in with the email their school
+enrolled and a password they create from an emailed link (after two wrong attempts the
+panel asks for the code in a picture it draws; typing a licence key is only for
+developer mode and development builds). The app then activates the licence there (one seat per computer, a
 7-day device token in the operating system's credential store, renewed by itself), checks
 in every hour and keeps working for 14 days without the panel. It also downloads the
 client's name, colours, links, pictures and texts, and sends AI requests through the panel, so the
-student needs no AI key. The panel receives the licence key, a hash of the computer's id,
+student needs no AI key. The panel receives the sign-in email and password (it keeps only a hash of the
+password), the licence key, a hash of the computer's id,
 the app version, the operating system and the AI requests, never the computer's name;
 the Caderna privacy policy says so. See [branding/README.md](branding/README.md).
 
