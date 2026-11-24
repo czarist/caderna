@@ -277,8 +277,12 @@ impl Engine {
             .flatten()
             .and_then(|v| v.parse::<i64>().ok())
             .map(PlanId);
+        // Without a saved choice the plan open now stays open: a course
+        // received from a classroom must not take the student's place.
+        let exists = |id: &PlanId| self.plans.iter().any(|p| p.id == *id);
         let id = saved
-            .filter(|id| self.plans.iter().any(|p| p.id == *id))
+            .filter(exists)
+            .or_else(|| self.active.as_ref().map(|p| p.id).filter(exists))
             .or_else(|| self.plans.first().map(|p| p.id));
         self.active = id.and_then(|id| match self.store.load_plan(id) {
             Ok(plan) => Some(plan),

@@ -9,6 +9,26 @@ repository.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-24
+
+### Changed
+- Local handwriting OCR picks its build by the dedicated graphics card, as speech
+  recognition does: CUDA on NVIDIA cards, Vulkan on AMD and Intel Arc cards, the
+  processor without a dedicated card (integrated graphics no longer run it on Vulkan).
+  A build that fails to start falls back to the next one and finally to the processor.
+  - The CUDA build is the official llama.cpp one of the pinned version (b11960, CUDA
+    13.4, about 590 MB with its libraries), pinned with checksums in `local-ai.toml`.
+    It is downloaded with the OCR model only on computers with a dedicated NVIDIA card
+    and its driver, and counted in the size shown; where the model was installed
+    before, the OCR screen offers it on its own.
+  - On laptops that list integrated graphics first, Vulkan now runs on the dedicated
+    card.
+
+### Fixed
+- A course received from a classroom no longer replaces the plan the student has open
+  when that plan was opened without being chosen (for example, the only plan, or one
+  from an earlier course). The end-to-end test stopped at the handout because of it.
+
 ## [0.5.1] - 2026-11-24
 
 ### Added
