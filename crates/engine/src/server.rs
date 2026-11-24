@@ -7,9 +7,14 @@
 //! it. The app keeps working without the panel for [`OFFLINE_GRACE_DAYS`]
 //! days after it last reached it. Study data is never touched.
 //!
-//! What the panel receives: the licence key, a hash of this computer's id,
-//! the app version and the operating system (see the privacy policy). Never
-//! the computer's name.
+//! Students and teachers sign in with their email and password
+//! ([`crate::sign_in`]); the panel answers with the licence key, which the app
+//! keeps for its offline check and silent renewals. Typing a licence key is
+//! only for developer mode and tests ([`crate::Engine::key_entry_allowed`]).
+//!
+//! What the panel receives: the email and password at sign-in, the licence
+//! key, a hash of this computer's id, the app version and the operating
+//! system (see the privacy policy). Never the computer's name.
 
 use std::time::{Duration as StdDuration, Instant};
 
@@ -52,6 +57,17 @@ pub enum Refusal {
     DeviceBlocked,
     /// The school's payment is overdue; lifts itself once it is paid.
     BillingPaused,
+    /// Wrong email or password (the panel does not say which).
+    InvalidCredentials,
+    /// Too many failed sign-ins: the next one needs the picture's code.
+    CaptchaRequired,
+    /// The picture's code was wrong or expired.
+    CaptchaInvalid,
+    /// This licence belongs to a student or teacher, who signs in with email
+    /// and password instead of the key.
+    SignInRequired,
+    /// The panel throttled this computer; try again in a minute.
+    TooManyAttempts,
 }
 
 impl Refusal {
@@ -65,6 +81,11 @@ impl Refusal {
             "device_revoked" => Self::DeviceRevoked,
             "device_blocked" => Self::DeviceBlocked,
             "billing_paused" => Self::BillingPaused,
+            "invalid_credentials" => Self::InvalidCredentials,
+            "captcha_required" => Self::CaptchaRequired,
+            "captcha_invalid" => Self::CaptchaInvalid,
+            "sign_in_required" => Self::SignInRequired,
+            "too_many_attempts" => Self::TooManyAttempts,
             _ => return None,
         })
     }
@@ -188,6 +209,22 @@ impl HttpPanel {
     fn url(&self, path: &str) -> String {
         format!("{}/{path}", self.base)
     }
+
+    /// A JSON POST without a device token (sign-in, captchas, password
+    /// resets): the status and the body, whatever the status.
+    pub(crate) fn post_open(
+        &self,
+        path: &str,
+        body: &serde_json::Value,
+    ) -> Result<(u16, String), PanelError> {
+        let (status, _, text) = read(
+            self.agent
+                .post(&self.url(path))
+                .header("Accept", "application/json")
+                .send_json(body),
+        )?;
+        Ok((status, text))
+    }
 }
 
 type Answer = (u16, Option<String>, String);
@@ -210,16 +247,16 @@ fn read(
 }
 
 /// The panel's error envelope (`{"error":{"code":…}}`) as a [`PanelError`].
-fn failure(status: u16, body: &str) -> PanelError {
-    if status == 401 {
-        return PanelError::Unauthenticated;
-    }
+/// A known code wins over the status: a wrong password is a 401 too.
+pub(crate) fn failure(status: u16, body: &str) -> PanelError {
     let code = serde_json::from_str::<serde_json::Value>(body)
         .ok()
         .and_then(|v| v.pointer("/error/code")?.as_str().map(str::to_owned))
         .unwrap_or_default();
     match Refusal::from_code(&code) {
         Some(refusal) => PanelError::Refused(refusal),
+        None if status == 401 => PanelError::Unauthenticated,
+        None if status == 429 => PanelError::Refused(Refusal::TooManyAttempts),
         None => PanelError::Unexpected {
             status,
             detail: if code.is_empty() {
@@ -231,7 +268,7 @@ fn failure(status: u16, body: &str) -> PanelError {
     }
 }
 
-fn platform() -> &'static str {
+pub(crate) fn platform() -> &'static str {
     if cfg!(windows) {
         "windows"
     } else if cfg!(target_os = "macos") {
@@ -722,7 +759,7 @@ pub(crate) struct Panel {
     token: Option<String>,
     vault: Vault,
     device: Option<String>,
-    busy: bool,
+    pub(crate) busy: bool,
     /// `None`: no background checks (tests, or nothing to check).
     next_check: Option<Instant>,
     /// The brand in use: the one kept at an earlier start, replaced as soon
@@ -732,6 +769,8 @@ pub(crate) struct Panel {
     brand_kept: bool,
     /// The panel sent a new brand the UI has not shown yet.
     brand_changed: bool,
+    /// The sign-in form's captcha and progress.
+    pub(crate) sign_in: crate::sign_in::SignIn,
 }
 
 impl Default for Panel {
@@ -746,6 +785,7 @@ impl Default for Panel {
             brand: None,
             brand_kept: false,
             brand_changed: false,
+            sign_in: crate::sign_in::SignIn::default(),
         }
     }
 }
@@ -778,6 +818,7 @@ impl crate::Engine {
             brand_kept: brand.is_some(),
             brand,
             brand_changed: false,
+            sign_in: crate::sign_in::SignIn::default(),
         };
     }
 
@@ -988,7 +1029,7 @@ impl crate::Engine {
         }
     }
 
-    fn device(&mut self) -> String {
+    pub(crate) fn device(&mut self) -> String {
         if let Some(device) = &self.panel.device {
             return device.clone();
         }
@@ -1022,7 +1063,9 @@ impl crate::Engine {
 
     /// Activates a licence key or a short access code with the panel; the
     /// signed key is kept only once the panel accepts this computer.
-    pub(crate) fn activate_online(&mut self, key: &str) -> Result<(), EngineError> {
+    /// `renew`: only renews this computer's activation, never taking a new
+    /// seat (outside developer mode a new seat needs signing in).
+    pub(crate) fn activate_online(&mut self, key: &str, renew: bool) -> Result<(), EngineError> {
         // A short access code is checked only by the panel, which answers with
         // the signed key; a signed key is checked here first.
         let key = match access_code(key) {
@@ -1043,18 +1086,21 @@ impl crate::Engine {
         let device = self.device();
         self.panel.busy = true;
         self.spawn(move || {
-            let result = HttpPanel::new().activate(&key, &device, false);
+            let result = HttpPanel::new().activate(&key, &device, renew);
             Event::PanelActivated { key, result }
         });
         Ok(())
     }
 
     /// Activates this computer again with the licence key already kept.
+    /// Outside developer mode this is only a renewal: a computer signed out
+    /// or past its seats signs in again with email and password.
     pub(crate) fn reactivate_device(&mut self) -> Result<(), EngineError> {
         let key = self
             .license_key()
             .ok_or(crate::license::LicenseError::Invalid)?;
-        self.activate_online(&key)
+        let renew = !self.key_entry_allowed();
+        self.activate_online(&key, renew)
     }
 
     /// Frees this computer's seat in the panel and forgets the licence here,
@@ -1357,6 +1403,59 @@ pqrs "
         );
         assert_eq!(engine.license_key(), None);
         assert!(engine.license().is_none());
+    }
+
+    #[test]
+    fn a_sign_in_without_the_signed_key_keeps_nothing() {
+        use crate::sign_in::SignInEvent;
+        let dir = tempfile::tempdir().unwrap();
+        let mut engine = engine(dir.path());
+        let result = engine.on_sign_in_event(SignInEvent::SignedIn {
+            result: Ok(fresh_token(7)),
+            captcha_required: false,
+        });
+        assert!(result.is_err());
+        assert_eq!(engine.license_key(), None);
+        assert!(engine.license().is_none());
+        assert_eq!(engine.panel.token, None);
+        assert!(!engine.panel.busy);
+    }
+
+    #[test]
+    fn failed_sign_ins_ask_for_the_captcha_when_the_panel_says_so() {
+        use crate::sign_in::SignInEvent;
+        let dir = tempfile::tempdir().unwrap();
+        let mut engine = engine(dir.path());
+        let wrong = |captcha_required| SignInEvent::SignedIn {
+            result: Err(PanelError::Refused(Refusal::InvalidCredentials)),
+            captcha_required,
+        };
+        // The first wrong password: the message, no captcha yet.
+        let err = engine.on_sign_in_event(wrong(false)).unwrap_err();
+        assert!(matches!(
+            err,
+            EngineError::Panel(PanelError::Refused(Refusal::InvalidCredentials))
+        ));
+        assert!(!engine.sign_in_view().needs_captcha);
+        // The panel flags the next attempt.
+        assert!(engine.on_sign_in_event(wrong(true)).is_err());
+        assert!(engine.sign_in_view().needs_captcha);
+        // Being asked for the picture is not an error to show.
+        let mut engine = self::engine(dir.path());
+        let asked = engine.on_sign_in_event(SignInEvent::SignedIn {
+            result: Err(PanelError::Refused(Refusal::CaptchaRequired)),
+            captcha_required: false,
+        });
+        assert!(asked.is_ok());
+        assert!(engine.sign_in_view().needs_captcha);
+    }
+
+    #[test]
+    fn a_typed_key_is_refused_with_a_panel_outside_developer_mode() {
+        let dir = tempfile::tempdir().unwrap();
+        let engine = engine(dir.path());
+        // Tests are development builds, which keep the key box.
+        assert!(engine.key_entry_allowed());
     }
 
     #[test]

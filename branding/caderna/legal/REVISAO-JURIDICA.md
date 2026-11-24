@@ -90,6 +90,7 @@ já os descrevem; a revisão é sobre forma, bases legais e lacunas.
 |---|---|---|
 | Estudos (editais, planos, progresso, anotações, fotos, respostas, conversas) | Só no computador do aluno | Ninguém, exceto o trecho necessário a cada tarefa de IA |
 | Áudio do microfone | Transcrito no computador | Ninguém |
+| Email e senha do professor ou aluno | A senha só no Painel, como hash; nunca no computador | Painel, ao entrar e ao pedir nova senha |
 | Chave de licença | Banco local, sem criptografia | Painel da prestadora, ao ativar e a cada verificação |
 | Código do computador (identificador do sistema passado por hash com o nome do produto) | — | Painel; o identificador original não sai do computador |
 | Versão do app e sistema (Windows, macOS, Linux) | — | Painel |

@@ -1,6 +1,6 @@
 # Termos de Uso do {{app}}
 
-Versão {{version}} · Última atualização: 17 de novembro de 2026 (3).
+Versão {{version}} · Última atualização: 23 de novembro de 2026.
 
 Estes Termos regem o uso do aplicativo {{app}}, do painel da escola (área do cliente) e do
 site do {{app}}. Leia com atenção: ao aceitar, você concorda com eles e com a Política de
@@ -64,9 +64,12 @@ O {{app}} é oferecido apenas no Brasil e em português do Brasil.
 
 ## 6. Licença, ativação e funcionamento sem internet
 
-- A chave de licença é da Escola ou do Usuário a quem foi entregue. Não a compartilhe além
-  das vagas contratadas.
-- Ao ativar, o aplicativo reserva uma vaga da licença para o computador. O {{app}} confirma
+- Professores e alunos entram no aplicativo com o email cadastrado pela Escola e uma senha
+  que eles mesmos criam. A senha é pessoal: não a compartilhe. Quem esquecer a senha pede
+  uma nova no aplicativo e recebe um link por email.
+- A licença é da Escola ou do Usuário a quem foi entregue. Não a use além das vagas
+  contratadas.
+- Ao entrar, o aplicativo reserva uma vaga da licença para o computador. O {{app}} confirma
   a licença com o Painel ao abrir e a cada hora. **Sem internet, ele funciona por até 14
   dias** desde o último contato; depois, pede uma conexão. Os estudos ficam guardados.
 - A inteligência artificial vem do Painel, incluída na licença. Não é preciso conta nem

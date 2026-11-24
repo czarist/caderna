@@ -51,6 +51,14 @@ repository.
     against a `.txt` next to each WAV, time, peak memory, fastest build);
     `docs/nemotron-evaluation.md` has the phrases, the procedure and the results.
 
+- **Sign in with email and password.** With a brand's panel, students and teachers sign in
+  with the email their school enrolled and a password they create from the emailed
+  invitation link; *Forgot my password* emails a new link. After two wrong attempts the
+  panel asks for the code in a picture it draws itself (a captcha). The password goes only
+  to the panel and is never kept on the computer. Typing a licence key or access code is
+  now only for developer mode and development builds; computers already activated with a
+  key keep working until they are signed out. The Caderna privacy policy and terms list the
+  sign-in data (legal version `2026-11-23.1`, so everyone agrees again).
 - Settings → *Developer mode* (with a valid developer token): *Open the student's view*
   and *Open the teacher's view*, and back to the licence's. In the teacher's view the
   sidebar says *Check lessons* and *Check quizzes*.

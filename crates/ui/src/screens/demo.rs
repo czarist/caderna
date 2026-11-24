@@ -83,23 +83,44 @@ pub fn activation(ui: &mut egui::Ui, engine: &kg_engine::Engine) -> Option<Comma
     } else if kg_brand::has_server() {
         panel_status(ui, engine, &mut command);
     }
-    if kg_brand::has_server() {
-        widgets::hint(ui, &t!("panel.hint"));
-    } else {
+    if !kg_brand::has_server() {
         widgets::hint(ui, &t!("licensing.offline"));
+        if let Some(c) = key_input(ui, engine, &t!("licensing.placeholder")) {
+            command = Some(c);
+        }
+        return command;
     }
+    // Students and teachers sign in; a licence key only in developer mode
+    // and tests (the panel refuses keys of enrolled people in production).
+    let signed_out = engine.license().is_none()
+        || matches!(
+            engine.panel_status(),
+            PanelStatus::Refused(refusal) if refusal != Refusal::BillingPaused
+        );
+    if signed_out && let Some(c) = sign_in_form(ui, engine) {
+        command = Some(c);
+    }
+    widgets::hint(ui, &t!("panel.hint"));
+    if engine.key_entry_allowed() {
+        ui.add_space(8.0);
+        egui::CollapsingHeader::new(t!("panel.sign_in.developer_key"))
+            .id_salt("developer_key")
+            .show(ui, |ui| {
+                if let Some(c) = key_input(ui, engine, &t!("panel.placeholder")) {
+                    command = Some(c);
+                }
+            });
+    }
+    command
+}
+
+/// The licence key box (brands without a panel, developer mode and tests).
+fn key_input(ui: &mut egui::Ui, engine: &kg_engine::Engine, placeholder: &str) -> Option<Command> {
     let id = egui::Id::new("license_input");
     let mut input = ui
         .ctx()
         .data_mut(|d| d.get_temp::<String>(id))
         .unwrap_or_default();
-    // With a panel the student types the short access code; the long signed
-    // key still works there and is the only kind without a panel.
-    let placeholder = if kg_brand::has_server() {
-        t!("panel.placeholder")
-    } else {
-        t!("licensing.placeholder")
-    };
     ui.add(
         egui::TextEdit::multiline(&mut input)
             .hint_text(placeholder)
@@ -114,11 +135,168 @@ pub fn activation(ui: &mut egui::Ui, engine: &kg_engine::Engine) -> Option<Comma
             egui::Button::new(t!("licensing.activate")),
         )
         .clicked();
-    if activate {
-        command = Some(Command::ActivateLicense(std::mem::take(&mut input)));
-    }
+    let command = activate.then(|| Command::ActivateLicense(std::mem::take(&mut input)));
     ui.ctx().data_mut(|d| d.insert_temp(id, input));
     command
+}
+
+/// What the sign-in form keeps between frames. The password is dropped as
+/// soon as it is sent.
+#[derive(Clone, Default)]
+struct SignInForm {
+    email: String,
+    password: String,
+    captcha: String,
+    forgot: bool,
+}
+
+/// Email and password, the captcha when the panel asks for it, and "forgot
+/// my password", which emails a link to create a new one.
+fn sign_in_form(ui: &mut egui::Ui, engine: &kg_engine::Engine) -> Option<Command> {
+    let id = egui::Id::new("sign_in_form");
+    let mut form: SignInForm = ui.ctx().data_mut(|d| d.get_temp(id)).unwrap_or_default();
+    let view = engine.sign_in_view();
+    let busy = engine.panel_status() == PanelStatus::Busy;
+    let mut command = None;
+    ui.add_space(12.0);
+    if form.forgot {
+        ui.label(RichText::new(t!("panel.sign_in.forgot_title")).strong());
+        widgets::hint(ui, &t!("panel.sign_in.forgot_body"));
+    } else {
+        ui.label(RichText::new(t!("panel.sign_in.title")).strong());
+    }
+    ui.add_space(4.0);
+    let mut enter = false;
+    egui::Grid::new("sign_in_grid")
+        .num_columns(2)
+        .spacing([12.0, 8.0])
+        .show(ui, |ui| {
+            ui.label(t!("panel.sign_in.email"));
+            ui.add(
+                egui::TextEdit::singleline(&mut form.email)
+                    .hint_text(t!("panel.sign_in.email_hint"))
+                    .desired_width(320.0)
+                    .char_limit(254),
+            );
+            ui.end_row();
+            if !form.forgot {
+                ui.label(t!("panel.sign_in.password"));
+                let field = ui.add(
+                    egui::TextEdit::singleline(&mut form.password)
+                        .password(true)
+                        .desired_width(320.0)
+                        .char_limit(256),
+                );
+                enter = field.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
+                ui.end_row();
+            }
+        });
+    let wants_captcha = form.forgot || view.needs_captcha;
+    if wants_captcha {
+        captcha(ui, &view, &mut form.captcha, &mut command);
+    }
+    let ready = kg_engine::plausible_email(&form.email)
+        && (form.forgot || !form.password.is_empty())
+        && (!wants_captcha || (view.captcha.is_some() && !form.captcha.trim().is_empty()));
+    ui.add_space(8.0);
+    ui.horizontal(|ui| {
+        if form.forgot {
+            let send = ui
+                .add_enabled(
+                    ready && !view.resetting,
+                    egui::Button::new(t!("panel.sign_in.send_link")),
+                )
+                .clicked();
+            if send {
+                command = Some(Command::RequestPasswordReset {
+                    email: form.email.trim().to_owned(),
+                    captcha: std::mem::take(&mut form.captcha),
+                });
+            }
+            if view.resetting {
+                ui.spinner();
+            }
+            if ui.button(t!("panel.sign_in.back")).clicked() {
+                form.forgot = false;
+                form.captcha.clear();
+            }
+        } else {
+            let go = ui
+                .add_enabled(
+                    ready && !busy,
+                    egui::Button::new(t!("panel.sign_in.submit")),
+                )
+                .clicked()
+                || (enter && ready && !busy);
+            if go {
+                command = Some(Command::SignIn {
+                    email: form.email.trim().to_owned(),
+                    password: std::mem::take(&mut form.password),
+                    captcha: std::mem::take(&mut form.captcha),
+                });
+            }
+            if ui.link(t!("panel.sign_in.forgot")).clicked() {
+                form.forgot = true;
+                form.captcha.clear();
+                if view.captcha.is_none() && !view.loading_captcha {
+                    command = Some(Command::LoadCaptcha);
+                }
+            }
+        }
+    });
+    if form.forgot && view.reset_sent {
+        let p = theme::palette(ui.ctx());
+        ui.label(RichText::new(t!("panel.sign_in.reset_sent")).color(p.success));
+    }
+    ui.ctx().data_mut(|d| d.insert_temp(id, form));
+    command
+}
+
+/// The panel's picture, a button for another one and the box for its code.
+fn captcha(
+    ui: &mut egui::Ui,
+    view: &kg_engine::SignInView<'_>,
+    code: &mut String,
+    command: &mut Option<Command>,
+) {
+    ui.add_space(8.0);
+    ui.label(t!("panel.sign_in.captcha"));
+    ui.horizontal(|ui| {
+        match view.captcha {
+            Some(picture) => {
+                ui.add(
+                    egui::Image::from_bytes(
+                        format!("bytes://captcha/{}.png", picture.id),
+                        egui::load::Bytes::Shared(picture.image_png.clone()),
+                    )
+                    .fit_to_exact_size(egui::vec2(200.0, 70.0)),
+                );
+            }
+            None if view.loading_captcha => {
+                ui.spinner();
+            }
+            None => {}
+        }
+        let another = ui
+            .add_enabled(
+                !view.loading_captcha,
+                egui::Button::new(t!("panel.sign_in.new_captcha")),
+            )
+            .clicked();
+        if another {
+            *command = Some(Command::LoadCaptcha);
+        }
+    });
+    if view.captcha_failed {
+        let p = theme::palette(ui.ctx());
+        ui.label(RichText::new(t!("panel.sign_in.captcha_failed")).color(p.danger));
+    }
+    ui.add(
+        egui::TextEdit::singleline(code)
+            .hint_text(t!("panel.sign_in.captcha_hint"))
+            .desired_width(160.0)
+            .char_limit(12),
+    );
 }
 
 /// What the panel says about this computer, with the action that fits.
@@ -175,7 +353,12 @@ fn panel_status(ui: &mut egui::Ui, engine: &kg_engine::Engine, command: &mut Opt
                     crate::app::open_url(url);
                 }
             }
+            // Outside developer mode a signed-out computer signs in again
+            // (the form is below) instead of reusing the key.
             let again = match refusal {
+                Refusal::DeviceRevoked | Refusal::SignInRequired if !engine.key_entry_allowed() => {
+                    None
+                }
                 Refusal::DeviceRevoked => Some(t!("panel.reactivate")),
                 Refusal::LicenseInvalid => None,
                 _ => Some(t!("panel.retry")),
@@ -236,6 +419,11 @@ pub fn refusal_message(refusal: Refusal) -> String {
         Refusal::DeviceRevoked => t!("panel.refused.device_revoked"),
         Refusal::DeviceBlocked => t!("panel.refused.device_blocked"),
         Refusal::BillingPaused => t!("panel.refused.billing_paused"),
+        Refusal::InvalidCredentials => t!("panel.refused.invalid_credentials"),
+        Refusal::CaptchaRequired => t!("panel.refused.captcha_required"),
+        Refusal::CaptchaInvalid => t!("panel.refused.captcha_invalid"),
+        Refusal::SignInRequired => t!("panel.refused.sign_in_required"),
+        Refusal::TooManyAttempts => t!("panel.refused.too_many_attempts"),
     }
     .into_owned()
 }
