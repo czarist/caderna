@@ -6,9 +6,14 @@ name: Channel builds
 # release tagged latest-<channel>. Production is published only once the
 # brand's legal and commercial review is done (`metadata release-ready`).
 on:
-  # Run by hand only (Actions tab or `gh workflow run channels.yml --ref <branch>`):
-  # every push used up the account's Actions minutes. Releases come from a
-  # `v*` tag (packages.yml).
+  # Every push to a channel branch rebuilds its download (the repository is
+  # public, so standard runners cost no minutes); documentation-only pushes
+  # are skipped. It can also run by hand (Actions tab or
+  # `gh workflow run channels.yml --ref <branch>`). Version releases come from
+  # a `v*` tag (packages.yml).
+  push:
+    branches: [main, hom, dev]
+    paths-ignore: ['**.md', 'docs/**', 'LICENSE*']
   workflow_dispatch:
 permissions:
   contents: read
