@@ -266,8 +266,8 @@ A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
       for the code in a picture it draws (one-time id). Typed licence keys and access
       codes are only for developer mode, development builds and tests; computers
       activated with a key keep working until signed out.
-- [ ] Check the invitation and password-reset emails in Mailpit, and an accessible
-      alternative to the picture captcha for blind students.
+- [x] Invitation and password-reset emails checked in Mailpit (2026-11-24): text, signed
+      links that open the password page, HTML check about 91% supported.
 - [x] Development test accounts (`DevTestSeeder`) and the pt-BR MVP test plan
       (`docs/mvp-test-plan.md`).
 - [ ] Production email for the panel (SMTP and a sender domain with SPF/DKIM) before the

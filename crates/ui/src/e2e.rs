@@ -153,7 +153,7 @@ fn a_new_student_gets_from_activation_to_a_lesson() {
 /// saved in the build's standard data folder, whose `developer.json` is put
 /// back as it was afterwards.
 #[test]
-#[ignore = "needs the brand's panel, KG_E2E_CODE and KG_E2E_DEV_CODE; see the module docs"]
+#[ignore = "needs the brand's panel, a sign-in (KG_E2E_EMAIL and KG_E2E_PASSWORD, or KG_E2E_CODE) and KG_E2E_DEV_CODE; see the module docs"]
 fn a_developer_switches_views_and_presents_a_clients_brand() {
     let code = std::env::var("KG_E2E_DEV_CODE").expect("KG_E2E_DEV_CODE: a developer code");
     let file = AppPaths::standard().data_dir.join("developer.json");

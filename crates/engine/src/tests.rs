@@ -2433,6 +2433,35 @@ fn a_teacher_gets_their_own_courses_back_on_a_new_computer() {
 }
 
 #[test]
+fn a_received_course_does_not_replace_the_open_plan() {
+    let (mut engine, _dir) = engine_with_plan();
+    let open = engine.active_plan().unwrap().id;
+    // A plan opened before the choice was saved (older data folders).
+    engine.store.remove_setting("active_plan").unwrap();
+    let course = kg_study::NewPlan::new(
+        "Curso da turma",
+        "ENEM 2027",
+        1,
+        vec![kg_study::NewSubject {
+            name: "Matemática".into(),
+            topics: vec![kg_study::NewTopic {
+                title: "Funções".into(),
+                difficulty: kg_study::Difficulty::Medium,
+                week: 1,
+            }],
+        }],
+    )
+    .unwrap();
+    engine
+        .store
+        .insert_plan(&course, "", "", chrono::Local::now().date_naive())
+        .unwrap();
+    engine.reload_plans();
+    assert_eq!(engine.plans().len(), 2);
+    assert_eq!(engine.active_plan().unwrap().id, open);
+}
+
+#[test]
 fn a_plan_without_a_notice_uses_its_own_topics_for_handouts() {
     let (mut engine, _dir) = engine();
     let plan = kg_study::NewPlan::new(
