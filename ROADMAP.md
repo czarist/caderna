@@ -91,12 +91,12 @@ Model reference: <https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b>
 
 ## Current Status
 
-Version 0.4.0 of the white-label base, forked from Know Giver 0.39.3 on 2026-11-08; 0.2.0
+Version 0.5.1 of the white-label base, forked from Know Giver 0.39.3 on 2026-11-08; 0.2.0
 added classes in the cloud (Phase W7); 0.3.0 voice downloads on Linux and macOS and
 Cebraspe-style true/false quizzes; 0.4.0 the Caderna panel (Phase W6: online licences,
 access codes, modules and student restrictions per school, charges and subscriptions,
-build channels, app releases on the panel) and one device token per data folder.
-Unreleased: synced with Know Giver 0.41.2 (microphone only on the student's turn or
+build channels, app releases on the panel) and one device token per data folder; 0.5.1
+email and password sign-in with the panel's own captcha, synced with Know Giver 0.41.2 (microphone only on the student's turn or
 after the tutor's question, lessons kept in Portuguese, one desktop icon on reinstall)
 and Nemotron speech recognition by computer (8 GB minimum). Everything Know Giver does
 is here (edital → plan, voice lessons with whiteboard,
@@ -260,6 +260,14 @@ A separate Laravel 13 + Filament 5 project. Its README holds the API contract.
       Linux (X11, Wayland) offers no way to leave a window out of captures. The handout
       PDFs also stay readable in the data folder: the restrictions cover the app, not
       copying files by hand.
+- [x] Email and password sign-in (2026-11-24): students and teachers sign in with the
+      email their school enrolled and a password set from an emailed invitation link;
+      *Forgot my password* emails a reset link. After two wrong attempts the panel asks
+      for the code in a picture it draws (one-time id). Typed licence keys and access
+      codes are only for developer mode, development builds and tests; computers
+      activated with a key keep working until signed out.
+- [ ] Check the invitation and password-reset emails in Mailpit, and an accessible
+      alternative to the picture captcha for blind students.
 - [x] Development test accounts (`DevTestSeeder`) and the pt-BR MVP test plan
       (`docs/mvp-test-plan.md`).
 - [ ] Production email for the panel (SMTP and a sender domain with SPF/DKIM) before the

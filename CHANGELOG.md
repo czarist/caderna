@@ -9,6 +9,8 @@ repository.
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-24
+
 ### Added
 - Speech recognition: **Nemotron 3.5** (NVIDIA Nemotron 3.5 ASR Streaming 0.6B,
   GGUF q8_0) in Settings → Voice → Speech recognition, next to Parakeet and Whisper.
