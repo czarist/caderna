@@ -89,6 +89,26 @@ longer come out in English.
 
 Model reference: <https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b>.
 
+## Done — Local OCR picks its build by the graphics card (2026-11-24)
+
+Same rule as Nemotron: CUDA on NVIDIA, Vulkan on AMD and Intel Arc, CPU without a
+dedicated card; each GPU build falls back to the next and finally to the CPU.
+
+- [x] CUDA: the official llama.cpp b11960 CUDA 13.4 build and its CUDA libraries (about
+      590 MB), pinned in `local-ai.toml`, downloaded with the OCR model only where a
+      dedicated NVIDIA card and driver are found, or later from the OCR screen.
+- [x] Vulkan runs on the dedicated card's device, not on the integrated one that laptops
+      often list first; integrated graphics no longer run OCR on Vulkan.
+- [x] Measured (one screenshot page, same 472-character transcript on every build):
+      RTX 3060 (Windows) installs the CUDA build in 30 s and starts in 6.8 s
+      (`cuda_runtime_installs_and_starts`, `#[ignore]`); RX 5500 + i7-4770 (Linux, RADV)
+      reads the page in 11.9 s on Vulkan against 59.6 s on the CPU.
+- [ ] Still to check: the CUDA build on Linux, and an NVIDIA driver too old for CUDA 13
+      falling back to Vulkan.
+- [ ] Other local models stay on the CPU: Parakeet and Kokoro (sherpa-onnx CPU library;
+      its GPU builds are CUDA-only and need cuDNN installed separately), Whisper (candle
+      CPU build) and Piper.
+
 ## Current Status
 
 Version 0.5.1 of the white-label base, forked from Know Giver 0.39.3 on 2026-11-08; 0.2.0
