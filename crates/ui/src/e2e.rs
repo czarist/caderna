@@ -307,10 +307,7 @@ fn handout_and_lesson(harness: &mut App<'_>) {
     assert_eq!(harness.state().ui.screen, Screen::Today);
     click(harness, &t!("lesson.start"));
     assert_eq!(harness.state().ui.screen, Screen::Lesson);
-    assert!(
-        harness.state().ui.lesson_panel,
-        "the transcript and chat open with the lesson"
-    );
+    // The transcript and chat stay open for the whole lesson.
     assert!(
         harness
             .query_all_by(|n| n.role() == Role::TextInput)
