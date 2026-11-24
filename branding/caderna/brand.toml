@@ -54,8 +54,8 @@ version = "2026-11-23.1"
 provider = "Caderna Educação, nome comercial da TRENTIN SOLUÇÕES EM SOFTWARE LTDA – ME, CNPJ 36.154.590/0001-54, com sede em Novo Hamburgo/RS"
 licensor = "TRENTIN SOLUÇÕES EM SOFTWARE LTDA – ME, CNPJ 36.154.590/0001-54"
 contact = "contato@caderna.ai.br"
-reviewed = false
-commercial_reviewed = false
+reviewed = true
+commercial_reviewed = true
 
 [licensing]
 required = true
