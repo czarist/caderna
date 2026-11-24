@@ -111,7 +111,7 @@ dedicated card; each GPU build falls back to the next and finally to the CPU.
 
 ## Current Status
 
-Version 0.5.1 of the white-label base, forked from Know Giver 0.39.3 on 2026-11-08; 0.2.0
+Version 0.6.0 of the white-label base, forked from Know Giver 0.39.3 on 2026-11-08; 0.2.0
 added classes in the cloud (Phase W7); 0.3.0 voice downloads on Linux and macOS and
 Cebraspe-style true/false quizzes; 0.4.0 the Caderna panel (Phase W6: online licences,
 access codes, modules and student restrictions per school, charges and subscriptions,
