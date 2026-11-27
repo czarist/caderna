@@ -203,6 +203,7 @@ pub struct KnowGiverApp {
     /// Screen shown last frame and when it appeared, for the fade-in.
     shown_screen: Screen,
     shown_since: f64,
+    sounds: crate::sounds::SoundState,
     /// Where each sidebar entry was drawn last frame, for the tour.
     pub(crate) nav_rects: Vec<(Screen, egui::Rect)>,
     /// UI language the fonts were set for (Chinese and Japanese need their own).
@@ -328,6 +329,7 @@ impl KnowGiverApp {
             icons_for: None,
             shown_screen: screen,
             shown_since: 0.0,
+            sounds: Default::default(),
             nav_rects: Vec::new(),
             fonts_locale: String::new(),
             tray: None,
@@ -491,6 +493,7 @@ impl KnowGiverApp {
                     let response = ui.add(button);
                     self.nav_rects.push((screen, response.rect));
                     if response.clicked() {
+                        crate::sounds::play(ui.ctx(), kg_engine::Cue::Navigate);
                         self.go_to(screen);
                     }
                 }
@@ -916,14 +919,12 @@ impl eframe::App for KnowGiverApp {
         } else {
             stickers.len()
         };
+        if !stickers.is_empty() {
+            crate::sounds::play(ctx, kg_engine::Cue::Unlock);
+            crate::motion::celebrate(ctx, 90);
+        }
         for sticker in &stickers[..shown] {
             self.push_sticker_toast(*sticker);
-        }
-        // One soft sound for the lot, when the student keeps it on.
-        if !stickers.is_empty()
-            && let Ok(engine) = self.engine.as_mut()
-        {
-            engine.play_unlock_sound();
         }
         if stickers.len() > shown {
             self.push_toast(
@@ -1014,6 +1015,10 @@ impl eframe::App for KnowGiverApp {
 
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         toggle_fullscreen(ui.ctx());
+        crate::motion::set_enabled(
+            ui.ctx(),
+            self.engine.as_ref().is_ok_and(|e| e.settings().animations),
+        );
         // macOS and Linux cannot keep the window out of captures: hide the
         // content while it is out of focus or a recorder runs.
         let block_capture = self
@@ -1162,5 +1167,7 @@ impl eframe::App for KnowGiverApp {
         if needs_tour && !demo_over {
             crate::tour::show(self, ui.ctx(), &badges);
         }
+        crate::motion::paint(ui.ctx());
+        self.sounds.end_frame(ui.ctx(), self.engine.as_ref().ok());
     }
 }

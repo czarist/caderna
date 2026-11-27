@@ -118,7 +118,7 @@ access codes, modules and student restrictions per school, charges and subscript
 build channels, app releases on the panel) and one device token per data folder; 0.5.1
 email and password sign-in with the panel's own captcha, synced with Know Giver 0.41.2 (microphone only on the student's turn or
 after the tutor's question, lessons kept in Portuguese, one desktop icon on reinstall)
-and Nemotron speech recognition by computer (8 GB minimum). Everything Know Giver does
+and Nemotron speech recognition by computer (8 GB minimum). Synced with Know Giver 0.45.1 since: interface sounds, celebrations, lesson pause and play, and a longer wait before the tutor answers. Everything Know Giver does
 is here (edital → plan, voice lessons with whiteboard,
 handouts and reader, quizzes and reviews, mock exams, written answers with local OCR,
 challenges, five UI languages, account sign-ins, tray and reminders). Know Giver's own
@@ -822,7 +822,8 @@ tab are still to be taken in each language.
 - [x] Profile screen: level and experience from study time and results (not from clicks),
       showcase of chosen medals, calendar heat map of study days, history per subject.
 - [x] Quiet unlock notice (a small toast with the medal and a sound that can be turned
-      off), never in the middle of a lesson; collected at the end.
+      off), never in the middle of a lesson; collected at the end. Since the Know Giver
+      0.45.1 sync, the sound is the interface sounds' fanfare, with confetti.
 - [x] Streaks forgive: one rest day per week keeps the streak, and travel or illness can
       be marked so it does not break.
 - [x] Everything local in SQLite, kept per plan and in total; export with the rest of
@@ -882,6 +883,11 @@ student fixes it in a minute); a generated exam prints cleanly; a sitting surviv
 the app; the grade matches a hand count.
 
 ## Not yet verified
+- Interface sounds and lesson pause (synced from Know Giver 0.45.1): listen to every cue on
+  real speakers and headphones (volume against the tutor's voice, whether the hover tick
+  tires over a long session); check that a cue never reaches the transcription; pause and
+  play mid-reply with Kokoro, Piper and a cloud voice; confetti in each brand's palette;
+  whether 1.6 s still cuts students off.
 - Answer-card photos (0.5.0): checked with the rendered card filled in code, tilted in
   perspective, shaded and turned upside down. Not yet tried with a phone photo of a card
   printed on paper and filled with a pen (lighting, paper curl, pencil marks).

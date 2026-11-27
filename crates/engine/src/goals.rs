@@ -242,19 +242,4 @@ impl Engine {
             subjects,
         }
     }
-
-    /// A soft two-note chime for a new sticker, when the student keeps it
-    /// on. The engine only releases sticker notices outside lessons.
-    pub fn play_unlock_sound(&mut self) {
-        if !self.settings.unlock_sound {
-            return;
-        }
-        match kg_audio::Speaker::open() {
-            Ok(speaker) => {
-                speaker.play(kg_audio::chime());
-                self.chime = Some(speaker);
-            }
-            Err(err) => tracing::debug!(%err, "no speaker for the unlock sound"),
-        }
-    }
 }
