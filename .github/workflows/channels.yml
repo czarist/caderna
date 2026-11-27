@@ -6,9 +6,14 @@ name: Channel builds
 # release tagged latest-<channel>. Production is published only once the
 # brand's legal and commercial review is done (`metadata release-ready`).
 on:
-  # Run by hand only (Actions tab or `gh workflow run channels.yml --ref <branch>`):
-  # every push used up the account's Actions minutes. Releases come from a
-  # `v*` tag (packages.yml).
+  # Every push to a channel branch rebuilds its download (the repository is
+  # public, so standard runners cost no minutes); documentation-only pushes
+  # are skipped. It can also run by hand (Actions tab or
+  # `gh workflow run channels.yml --ref <branch>`). Version releases come from
+  # a `v*` tag (packages.yml).
+  push:
+    branches: [main, hom, dev]
+    paths-ignore: ['**.md', 'docs/**', 'LICENSE*']
   workflow_dispatch:
 permissions:
   contents: read
@@ -22,11 +27,41 @@ env:
   CARGO_INCREMENTAL: '0'
   CARGO_PROFILE_DEV_DEBUG: '0'
 jobs:
-  package:
+  # Each build uploads its files to a draft release instead of workflow
+  # artifacts, so publishing downloads nothing and stays off the account's
+  # artifact egress limit. The draft replaces the channel's download at the end.
+  prepare:
     if: contains(fromJSON('["main", "hom", "dev"]'), github.ref_name)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    outputs:
+      draft: ${{ steps.draft.outputs.draft }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: latest-${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
+    steps:
+      - name: Draft release
+        id: draft
+        run: |
+          # Drafts left by cancelled or failed runs of this channel.
+          gh release list --limit 100 --json tagName,isDraft \
+            --jq ".[] | select(.isDraft and (.tagName | startswith(\"$TAG-run\"))) | .tagName" \
+            | while read -r old; do gh release delete "$old" --yes; done
+          draft="$TAG-run$GITHUB_RUN_ID"
+          gh release create "$draft" --draft --target "$GITHUB_SHA" --title "$draft" --notes "$draft"
+          echo "draft=$draft" >> "$GITHUB_OUTPUT"
+
+  package:
+    needs: prepare
+    permissions:
+      contents: write
     outputs:
       data_dir: ${{ steps.brand.outputs.data_dir }}
       name: ${{ steps.brand.outputs.name }}
+      version: ${{ steps.brand.outputs.version }}
       ready: ${{ steps.brand.outputs.ready }}
     strategy:
       fail-fast: false
@@ -54,6 +89,7 @@ jobs:
           [[ -f "$meta.exe" ]] && meta="$meta.exe"
           echo "data_dir=$("$meta" data_dir)" >> "$GITHUB_OUTPUT"
           echo "name=$("$meta" name)" >> "$GITHUB_OUTPUT"
+          echo "version=$(sed -nE 's/^version = "([0-9.]+)"/\1/p' Cargo.toml | head -n 1)" >> "$GITHUB_OUTPUT"
           if [[ "$KG_CHANNEL" != prod ]] || "$meta" release-ready; then
             echo "ready=yes" >> "$GITHUB_OUTPUT"
           else
@@ -78,18 +114,43 @@ jobs:
       - name: Unix package
         if: runner.os != 'Windows'
         run: bash scripts/package-unix.sh "$KG_BRAND_DIR"
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
-        with:
-          name: ${{ steps.brand.outputs.data_dir }}-${{ runner.os }}-${{ runner.arch }}
-          path: |
-            dist/*.zip
-            dist/*.exe
-            dist/*.tar.gz
-          if-no-files-found: error
+      - name: Upload to the draft release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          DRAFT: ${{ needs.prepare.outputs.draft }}
+        run: |
+          mkdir out
+          for file in dist/*.zip dist/*.exe dist/*.tar.gz; do
+            [[ -f "$file" ]] || continue
+            cp "$file" "out/$(basename "$file" | sed -E 's/-[0-9]+\.[0-9]+\.[0-9]+//')"
+          done
+          cd out
+          ls
+          if command -v sha256sum > /dev/null; then sha256sum -- *; else shasum -a 256 -- *; fi | sed -E 's/ \*/  /' > "../SHA256-$RUNNER_OS.part"
+          gh release upload "$DRAFT" -- * "../SHA256-$RUNNER_OS.part" --clobber
+      # The panel's "Versões do app" (CADERNA-DASHBOARD) keeps the same files for /baixar and
+      # the client area. Runs only where the panel is online: set the repository variable
+      # PANEL_URL (e.g. https://hom.caderna.ia.br) and the secret RELEASES_UPLOAD_TOKEN.
+      - name: Send the build to the panel
+        if: vars.PANEL_URL != '' && steps.brand.outputs.ready == 'yes'
+        shell: bash
+        env:
+          PANEL_URL: ${{ vars.PANEL_URL }}
+          UPLOAD_TOKEN: ${{ secrets.RELEASES_UPLOAD_TOKEN }}
+          VERSION: ${{ steps.brand.outputs.version }}
+        run: |
+          test -n "$UPLOAD_TOKEN" && test -n "$VERSION"
+          case "$GITHUB_REF_NAME" in main) channel=production ;; hom) channel=hom ;; *) channel=dev ;; esac
+          for file in out/*; do
+            curl -fsS -X PUT --data-binary "@$file" -H "Content-Type: application/octet-stream" -H "Authorization: Bearer $UPLOAD_TOKEN" "$PANEL_URL/api/releases/$channel/$VERSION/files/$(basename "$file")"
+            echo
+          done
 
   release:
-    needs: package
-    if: needs.package.outputs.ready == 'yes'
+    needs: [prepare, package]
+    if: ${{ !cancelled() && needs.prepare.result == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -97,51 +158,42 @@ jobs:
     env:
       DATA_DIR: ${{ needs.package.outputs.data_dir }}
       NAME: ${{ needs.package.outputs.name }}
+      VERSION: ${{ needs.package.outputs.version }}
+      DRAFT: ${{ needs.prepare.outputs.draft }}
       TAG: latest-${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
     steps:
-      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
-        with:
-          path: artifacts
-      - name: Assets with fixed names
-        run: |
-          mkdir release
-          find artifacts -type f | while read -r file; do
-            name="$(basename "$file" | sed -E 's/-[0-9]+\.[0-9]+\.[0-9]+//')"
-            cp "$file" "release/$name"
-          done
-          ls release
-          for required in "$DATA_DIR-setup.exe" "$DATA_DIR-windows-x64.zip" \
-              "$DATA_DIR-linux-x86_64.tar.gz" "$DATA_DIR-macos-arm64.tar.gz"; do
-            test -f "release/$required"
-          done
-          (cd release && sha256sum * > SHA256SUMS.txt)
+      - name: Drop the draft of a failed or unreviewed build
+        if: needs.package.result != 'success' || needs.package.outputs.ready != 'yes'
+        run: gh release delete "$DRAFT" --yes
       - name: Replace the channel's download
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
+        if: needs.package.result == 'success' && needs.package.outputs.ready == 'yes'
         run: |
+          gh release download "$DRAFT" --pattern 'SHA256-*.part' --dir parts
+          cat parts/*.part | sort -k 2 > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          for required in "$DATA_DIR-setup.exe" "$DATA_DIR-windows-x64.zip" "$DATA_DIR-linux-x86_64.tar.gz" "$DATA_DIR-macos-arm64.tar.gz"; do
+            grep -q "  $required\$" SHA256SUMS.txt
+          done
+          gh release upload "$DRAFT" SHA256SUMS.txt --clobber
+          for part in parts/*.part; do
+            gh release delete-asset "$DRAFT" "$(basename "$part")" --yes
+          done
           short="${GITHUB_SHA::7}"
           notes="$NAME built from $GITHUB_REF_NAME at $short. Install $DATA_DIR-setup.exe on Windows; it installs apart from the other channels."
           kind=(--prerelease)
-          [[ "$GITHUB_REF_NAME" == main ]] && kind=(--latest)
+          [[ "$GITHUB_REF_NAME" == main ]] && kind=(--prerelease=false --latest)
           gh release delete "$TAG" --cleanup-tag --yes || true
-          gh release create "$TAG" release/* --target "$GITHUB_SHA" \
-            --title "$NAME ($short)" --notes "$notes" "${kind[@]}"
-      # The panel's "Versões do app" (CADERNA-DASHBOARD) keeps the same files for /baixar and
-      # the client area. Runs only where the panel is online: set the repository variable
-      # PANEL_URL (e.g. https://hom.caderna.ia.br) and the secret RELEASES_UPLOAD_TOKEN.
-      - name: Send the build to the panel
-        if: vars.PANEL_URL != ''
+          gh release edit "$DRAFT" --tag "$TAG" --target "$GITHUB_SHA" --title "$NAME ($short)" \
+            --notes "$notes" --draft=false "${kind[@]}"
+      - name: Publish the build on the panel
+        if: vars.PANEL_URL != '' && needs.package.result == 'success' && needs.package.outputs.ready == 'yes'
         env:
           PANEL_URL: ${{ vars.PANEL_URL }}
           UPLOAD_TOKEN: ${{ secrets.RELEASES_UPLOAD_TOKEN }}
         run: |
-          test -n "$UPLOAD_TOKEN"
           case "$GITHUB_REF_NAME" in main) channel=production ;; hom) channel=hom ;; *) channel=dev ;; esac
-          version="$(find artifacts -type f -name '*-setup.exe' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)"
-          test -n "$version"
-          for file in release/*; do
-            curl -fsS -X PUT --data-binary "@$file" -H "Content-Type: application/octet-stream" -H "Authorization: Bearer $UPLOAD_TOKEN" "$PANEL_URL/api/releases/$channel/$version/files/$(basename "$file")"
-            echo
-          done
-          curl -fsS -X POST -H "Accept: application/json" -H "Authorization: Bearer $UPLOAD_TOKEN" "$PANEL_URL/api/releases/$channel/$version/publish"
+          gh release download "$TAG" --pattern SHA256SUMS.txt
+          curl -fsS -X PUT --data-binary "@SHA256SUMS.txt" -H "Content-Type: application/octet-stream" -H "Authorization: Bearer $UPLOAD_TOKEN" "$PANEL_URL/api/releases/$channel/$VERSION/files/SHA256SUMS.txt"
+          curl -fsS -X POST -H "Accept: application/json" -H "Authorization: Bearer $UPLOAD_TOKEN" "$PANEL_URL/api/releases/$channel/$VERSION/publish"

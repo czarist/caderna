@@ -33,7 +33,43 @@ env:
   CARGO_INCREMENTAL: '0'
   CARGO_PROFILE_DEV_DEBUG: '0'
 jobs:
+  # A version tag publishes the default brand's unsigned packages in this repository.
+  # Each build uploads its own files to a draft release instead of workflow
+  # artifacts, so publishing downloads nothing and stays off the account's
+  # artifact egress limit.
+  prepare:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            index($0, "## [" v "]") == 1 { on = 1; next }
+            on && /^## \[/ { exit }
+            on { print }
+          ' CHANGELOG.md > notes.md
+          test -s notes.md || echo "$GITHUB_REF_NAME" > notes.md
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME exists; its files are replaced."
+          else
+            gh release create "$GITHUB_REF_NAME" --draft --verify-tag               --title "$GITHUB_REF_NAME" --notes-file notes.md
+          fi
+
   package:
+    needs: prepare
+    if: ${{ !cancelled() && needs.prepare.result != 'failure' }}
+    permissions:
+      contents: write
     outputs:
       data_dir: ${{ steps.brand.outputs.data_dir }}
     strategy:
@@ -124,7 +160,25 @@ jobs:
         env:
           KG_SIGN_IDENTITY: ${{ secrets.KG_SIGN_IDENTITY }}
         run: bash scripts/package-unix.sh "$KG_BRAND_DIR"
+      - name: Upload to the draft release
+        if: github.event_name == 'push'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          mkdir out
+          for file in dist/*.zip dist/*.exe dist/*.tar.gz; do
+            [[ -f "$file" ]] || continue
+            cp "$file" "out/$(basename "$file" | sed -E 's/-[0-9]+\.[0-9]+\.[0-9]+//')"
+          done
+          cd out
+          ls
+          if command -v sha256sum > /dev/null; then sha256sum -- *; else shasum -a 256 -- *; fi             | sed -E 's/ \*/  /' > "../SHA256-$RUNNER_OS.part"
+          gh release upload "$GITHUB_REF_NAME" -- * "../SHA256-$RUNNER_OS.part" --clobber
+      # Manual runs keep workflow artifacts: test builds and signed client releases.
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: github.event_name != 'push'
         with:
           name: ${{ steps.brand.outputs.data_dir }}-${{ runner.os }}-${{ runner.arch }}
           path: |
@@ -133,7 +187,33 @@ jobs:
             dist/*.tar.gz
           if-no-files-found: error
 
-  # Publication is explicit, uses the brand repository, and requires reviewed inputs.
+  publish:
+    needs: package
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      DATA_DIR: ${{ needs.package.outputs.data_dir }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Checksums and publication
+        run: |
+          gh release download "$GITHUB_REF_NAME" --pattern 'SHA256-*.part' --dir parts
+          cat parts/*.part | sort -k 2 > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          for required in "$DATA_DIR-setup.exe" "$DATA_DIR-windows-x64.zip"               "$DATA_DIR-linux-x86_64.tar.gz" "$DATA_DIR-macos-arm64.tar.gz"; do
+            grep -q "  $required\$" SHA256SUMS.txt
+          done
+          gh release upload "$GITHUB_REF_NAME" SHA256SUMS.txt --clobber
+          for part in parts/*.part; do
+            gh release delete-asset "$GITHUB_REF_NAME" "$(basename "$part")" --yes
+          done
+          gh release edit "$GITHUB_REF_NAME" --title "$DATA_DIR $GITHUB_REF_NAME" --draft=false --latest
+
+  # A signed client release is explicit, uses the brand repository and reviewed inputs.
   release:
     needs: package
     if: github.event_name == 'workflow_dispatch' && inputs.publish

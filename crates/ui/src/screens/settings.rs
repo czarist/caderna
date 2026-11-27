@@ -63,10 +63,6 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
                 });
             });
             widgets::hint(ui, &t!("settings.study_reminders.hint"));
-            ui.checkbox(
-                &mut draft.unlock_sound,
-                t!("settings.study_reminders.unlock_sound"),
-            );
             if engine.role() == kg_engine::ClassRole::Student {
                 ui.add_space(6.0);
                 ui.checkbox(
@@ -78,6 +74,10 @@ pub fn show(app: &mut KnowGiverApp, ui: &mut egui::Ui) {
                     t!("settings.study_reminders.online_class"),
                 );
             }
+        });
+        ui.add_space(12.0);
+        section(ui, &t!("settings.feedback.title"), |ui| {
+            feedback_section(ui, draft);
         });
         ui.add_space(12.0);
         about_section(ui, draft);
@@ -172,6 +172,62 @@ fn developer_views(ui: &mut egui::Ui, engine: &Engine, actions: &mut Actions) {
         ui.label(RichText::new(now).small());
     });
     ui.add_space(12.0);
+}
+
+/// Interface sounds and motion. The volume is heard as it is chosen, before
+/// saving.
+fn feedback_section(ui: &mut egui::Ui, draft: &mut Settings) {
+    ui.checkbox(&mut draft.ui_sounds, t!("settings.feedback.sounds"));
+    ui.add_enabled_ui(draft.ui_sounds, |ui| {
+        ui.horizontal(|ui| {
+            ui.add_space(24.0);
+            ui.label(t!("settings.feedback.volume"));
+            let slider =
+                ui.add(egui::Slider::new(&mut draft.ui_sound_volume, 0.0..=1.0).show_value(false));
+            if slider.drag_stopped() || (slider.changed() && !slider.dragged()) {
+                crate::sounds::preview(ui.ctx(), kg_engine::Cue::Correct, draft.ui_sound_volume);
+            }
+            if ui.button(t!("settings.feedback.try")).clicked() {
+                crate::sounds::preview(ui.ctx(), kg_engine::Cue::Complete, draft.ui_sound_volume);
+            }
+        });
+    });
+    ui.add_enabled_ui(draft.ui_sounds, |ui| {
+        for group in kg_engine::CueGroup::ALL {
+            ui.horizontal(|ui| {
+                ui.add_space(24.0);
+                let mut on = !draft.muted_sound_groups.contains(&group);
+                if ui.checkbox(&mut on, sound_group_name(group)).changed() {
+                    draft.muted_sound_groups.retain(|g| *g != group);
+                    if !on {
+                        draft.muted_sound_groups.push(group);
+                    }
+                }
+                if ui
+                    .small_button("▶")
+                    .on_hover_text(t!("settings.feedback.try"))
+                    .clicked()
+                {
+                    crate::sounds::preview(ui.ctx(), group.sample(), draft.ui_sound_volume);
+                }
+            });
+        }
+    });
+    ui.checkbox(&mut draft.animations, t!("settings.feedback.animations"));
+    widgets::hint(ui, &t!("settings.feedback.hint"));
+}
+
+fn sound_group_name(group: kg_engine::CueGroup) -> String {
+    use kg_engine::CueGroup;
+    match group {
+        CueGroup::Hover => t!("settings.feedback.group_hover"),
+        CueGroup::Buttons => t!("settings.feedback.group_buttons"),
+        CueGroup::Navigation => t!("settings.feedback.group_navigation"),
+        CueGroup::Toggles => t!("settings.feedback.group_toggles"),
+        CueGroup::Answers => t!("settings.feedback.group_answers"),
+        CueGroup::Celebrations => t!("settings.feedback.group_celebrations"),
+    }
+    .into_owned()
 }
 
 fn section(ui: &mut egui::Ui, title: &str, add: impl FnOnce(&mut egui::Ui)) {

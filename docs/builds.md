@@ -4,7 +4,9 @@ Build on each target OS rather than copying a binary between operating systems.
 `scripts/package.ps1` builds Windows portable/installer packages;
 `bash scripts/package-unix.sh` builds Linux tarballs and macOS app bundles.
 `.github/workflows/packages.yml` runs native builds for version tags or a manual run.
-It uploads workflow artifacts; it does not publish a GitHub release or sign packages.
+A version tag publishes the default brand's unsigned packages as a GitHub release of this
+repository; a manual run with `publish` signs and publishes a client release to the brand's
+repository (environment `client-release`).
 Packaging builds the pinned llama.cpp CPU runtime on every platform and a Vulkan runtime
 on Windows and Linux. It needs Git, CMake and a native C/C++ toolchain; the build is
 limited to two jobs. Windows builds also need the Vulkan SDK (`VULKAN_SDK`); Linux builds
