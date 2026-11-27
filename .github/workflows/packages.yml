@@ -175,7 +175,7 @@ jobs:
           cd out
           ls
           if command -v sha256sum > /dev/null; then sha256sum -- *; else shasum -a 256 -- *; fi             | sed -E 's/ \*/  /' > "../SHA256-$RUNNER_OS.part"
-          gh release upload "$GITHUB_REF_NAME" -- * "../SHA256-$RUNNER_OS.part" --clobber
+          gh release upload "$GITHUB_REF_NAME" --clobber -- * "../SHA256-$RUNNER_OS.part"
       # Manual runs keep workflow artifacts: test builds and signed client releases.
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: github.event_name != 'push'
