@@ -39,6 +39,7 @@ mod settings;
 mod setup;
 mod shared;
 mod sign_in;
+mod sounds;
 mod stt;
 mod study_time;
 mod teacher;
@@ -73,8 +74,8 @@ pub use kg_ai::{
     provider as ai_provider, provider_for_url,
 };
 pub use kg_audio::{
-    AudioError, CloudSpeechConfig, EnglishVoice, KokoroVoice, ModelId, PiperVoice, SttEngine,
-    TtsBackend, Voice, VoiceGender, WhisperModel,
+    AudioError, CloudSpeechConfig, Cue, CueGroup, EnglishVoice, KokoroVoice, ModelId, PiperVoice,
+    SttEngine, TtsBackend, Voice, VoiceGender, WhisperModel,
 };
 pub use kg_audio::{EXPRESSIVENESS_RANGE, RHYTHM_VARIATION_RANGE};
 pub use kg_handout::omr::OmrError;
@@ -132,8 +133,8 @@ pub use reader::{ContentsEntry, ReaderState};
 pub use restrictions::Restriction;
 pub use server::{OFFLINE_GRACE_DAYS, PanelError, PanelStatus, Refusal};
 pub use settings::{
-    DEFAULT_REMINDER_MINUTES, DEFAULT_TURN_PAUSE, ManuscriptOcr, Region, SETUP_VERSION, Settings,
-    TERMS_VERSION, TURN_PAUSE_RANGE, TermsAcceptance, UseRole,
+    DEFAULT_REMINDER_MINUTES, DEFAULT_TURN_PAUSE, DEFAULT_UI_SOUND_VOLUME, ManuscriptOcr, Region,
+    SETUP_VERSION, Settings, TERMS_VERSION, TURN_PAUSE_RANGE, TermsAcceptance, UseRole,
 };
 pub use setup::ModelList;
 pub use sign_in::{Captcha, SignInView, plausible_email};
@@ -181,6 +182,9 @@ pub enum Command {
     StopListening,
     SendMessage(String),
     StopSpeaking,
+    /// Holds the tutor's voice; [`Command::ResumeSpeaking`] goes on from there.
+    PauseSpeaking,
+    ResumeSpeaking,
     PreviewVoice {
         settings: Settings,
         text: String,
@@ -776,6 +780,7 @@ pub struct Engine {
     quiz: Option<QuizSession>,
     review: Option<ReviewSession>,
     voice: lesson::VoiceRuntime,
+    cues: kg_audio::CuePlayer,
     stt: stt::Recognizers,
     illustrations: illustrations::Illustrations,
     downloads: HashMap<ModelId, models::Download>,
@@ -798,8 +803,6 @@ pub struct Engine {
     revalidating: Option<PlanId>,
     streak: u32,
     studied_today: bool,
-    /// Kept while the unlock chime plays.
-    chime: Option<kg_audio::Speaker>,
     developer: developer_area::DeveloperState,
     presentation: presentation::PresentationState,
     study_clock: study_time::StudyClock,
@@ -955,6 +958,7 @@ impl Engine {
             quiz: None,
             review: None,
             voice: lesson::VoiceRuntime::default(),
+            cues: kg_audio::CuePlayer::new(),
             stt: stt::Recognizers::default(),
             illustrations: illustrations::Illustrations::default(),
             downloads: HashMap::new(),
@@ -975,7 +979,6 @@ impl Engine {
             revalidating: None,
             streak: 0,
             studied_today: false,
-            chime: None,
             developer: developer_area::DeveloperState::default(),
             presentation: presentation::PresentationState::default(),
             study_clock: study_time::StudyClock::new(Self::today(), Instant::now()),
@@ -1237,6 +1240,14 @@ impl Engine {
             }
             Command::StopSpeaking => {
                 self.stop_speaking();
+                Ok(())
+            }
+            Command::PauseSpeaking => {
+                self.pause_speaking();
+                Ok(())
+            }
+            Command::ResumeSpeaking => {
+                self.resume_speaking();
                 Ok(())
             }
             Command::PreviewVoice { settings, text } => self.preview_voice(settings, text),
