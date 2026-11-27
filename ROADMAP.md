@@ -111,14 +111,14 @@ dedicated card; each GPU build falls back to the next and finally to the CPU.
 
 ## Current Status
 
-Version 0.6.0 of the white-label base, forked from Know Giver 0.39.3 on 2026-11-08; 0.2.0
+Version 0.7.0 of the white-label base, forked from Know Giver 0.39.3 on 2026-11-08; 0.2.0
 added classes in the cloud (Phase W7); 0.3.0 voice downloads on Linux and macOS and
 Cebraspe-style true/false quizzes; 0.4.0 the Caderna panel (Phase W6: online licences,
 access codes, modules and student restrictions per school, charges and subscriptions,
 build channels, app releases on the panel) and one device token per data folder; 0.5.1
 email and password sign-in with the panel's own captcha, synced with Know Giver 0.41.2 (microphone only on the student's turn or
 after the tutor's question, lessons kept in Portuguese, one desktop icon on reinstall)
-and Nemotron speech recognition by computer (8 GB minimum). Synced with Know Giver 0.45.1 since: interface sounds, celebrations, lesson pause and play, and a longer wait before the tutor answers. Everything Know Giver does
+and Nemotron speech recognition by computer (8 GB minimum); 0.7.0, synced with Know Giver 0.45.1: interface sounds, celebrations, lesson pause and play, and a longer wait before the tutor answers. Everything Know Giver does
 is here (edital → plan, voice lessons with whiteboard,
 handouts and reader, quizzes and reviews, mock exams, written answers with local OCR,
 challenges, five UI languages, account sign-ins, tray and reminders). Know Giver's own

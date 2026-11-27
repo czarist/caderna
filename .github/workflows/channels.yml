@@ -129,7 +129,7 @@ jobs:
           cd out
           ls
           if command -v sha256sum > /dev/null; then sha256sum -- *; else shasum -a 256 -- *; fi | sed -E 's/ \*/  /' > "../SHA256-$RUNNER_OS.part"
-          gh release upload "$DRAFT" -- * "../SHA256-$RUNNER_OS.part" --clobber
+          gh release upload "$DRAFT" --clobber -- * "../SHA256-$RUNNER_OS.part"
       # The panel's "Versões do app" (CADERNA-DASHBOARD) keeps the same files for /baixar and
       # the client area. Runs only where the panel is online: set the repository variable
       # PANEL_URL (e.g. https://hom.caderna.ia.br) and the secret RELEASES_UPLOAD_TOKEN.

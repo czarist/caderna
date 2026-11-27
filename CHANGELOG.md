@@ -9,6 +9,8 @@ repository.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-27
+
 ### Added
 - Interface sounds, synthesized in the app (no sound files), from Know Giver 0.45.1: a soft
   tick on hover and a different sound for each kind of button (main buttons, ordinary
@@ -32,6 +34,10 @@ repository.
   finished sentence (was 1 s) and 1.5 s more for an unfinished one (was 0.8 s); the setting
   now goes up to 5 s. Settings saved with the old 1 s default move to 1.6 s once; a pause
   the student chose stays.
+
+### Fixed
+- Release uploads in the channel and version workflows passed `--clobber` after `--`, so
+  `gh` read it as a file name and the upload failed; 0.6.0 never published its release.
 
 ## [0.6.0] - 2026-11-24
 
